@@ -1,28 +1,34 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# Copyright (c) {{CURRENT_YEAR}} {{AUTHOR}} ({{OWNER}}) <{{AUTHOR_EMAIL}}>
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# META.a2ml — Project meta-level information
-# Architecture decisions, design rationale, governance.
+# META.a2ml — Meta-level information for proven-servers.
 
 [metadata]
-version = "0.1.0"
-last-updated = "{{CURRENT_DATE}}"
+version = "0.2.0"
+last-updated = "2026-03-01"
 
 [project-info]
-type = "{{PROJECT_TYPE}}"  # library | binary | monorepo | service | website
-languages = []             # e.g. ["rust", "zig", "idris2"]
+type = "library"
+languages = ["idris2", "zig", "c"]
 license = "PMPL-1.0-or-later"
-author = "{{AUTHOR}} ({{OWNER}})"
+author = "Jonathan D.A. Jewell (hyperpolymath)"
 
 [architecture-decisions]
-# ADR format: status = proposed | accepted | deprecated | superseded | rejected
-# - { id = "ADR-001", title = "Use Zig for FFI", status = "accepted", date = "2026-02-14" }
+decisions = [
+  { id = "ADR-001", title = "Use Idris2 for ABI definitions", status = "accepted", date = "2026-01-30", rationale = "Dependent types prove tag encodings, state machines, and capability witnesses at compile time. No other language can express these invariants." },
+  { id = "ADR-002", title = "Use Zig for FFI implementation", status = "accepted", date = "2026-01-30", rationale = "Native C ABI compatibility, cross-compilation, no runtime dependencies, memory-safe by default." },
+  { id = "ADR-003", title = "Zero believe_me policy", status = "accepted", date = "2026-03-01", rationale = "The original proven repo had 4566 believe_me instances. proven-servers is a clean rewrite with zero. All proofs are genuine." },
+  { id = "ADR-004", title = "Error tag 0 = no error convention", status = "accepted", date = "2026-03-01", rationale = "Matches C convention where 0 indicates success. All connector error enums reserve tag 0 for the no-error case." },
+  { id = "ADR-005", title = "Per-connector state machines", status = "accepted", date = "2026-03-01", rationale = "Each connector has a domain-specific lifecycle (auth has 6 states, cache has 4, etc.) rather than a shared generic state machine. This allows proofs specific to each domain." },
+  { id = "ADR-006", title = "Connectors are interface-only", status = "accepted", date = "2026-03-01", rationale = "Connector Zig FFI implementations are skeleton state machines, not full backend drivers. They prove the interface contract; real backends plug in via the C ABI." },
+]
 
 [development-practices]
 build-tool = "just"
 container-runtime = "podman"
 ci-platform = "github-actions"
-package-manager = "guix"  # guix | nix | cargo | mix
+package-manager = "zig"
+abi-tool = "idris2"
 
 [maintenance-axes]
 scoping-first = true
@@ -36,18 +42,9 @@ sources = "README, roadmap, status docs, maintenance checklist, CI/security docs
 marker-scan = "TODO/FIXME/XXX/HACK/STUB/PARTIAL"
 idris-unsound-scan = "believe_me/assert_total"
 
-[axis-2-maintenance-rules]
-corrective-first = true
-adaptive-second = true
-adaptive-focus = "scope-change reconciliation, stale-reference removal, obsolete-work culling"
-perfective-third = true
-perfective-source = "axis-1 honest state after corrective/adaptive updates"
-
-[axis-3-audit-rules]
-audit-focus = "systems in place, documentation explains actual state, safety/security accounted for, observed effects reviewed"
-compliance-focus = "seams/compromises/exception register, bounded exceptions, anti-drift checks"
-drift-risk-example = "single exception broadening into policy violation (e.g. ReScript->TypeScript spread)"
-effects-evidence = "benchmark execution/results and maintainer status dialogue/review"
-
 [design-rationale]
-# Key design decisions and their reasoning
+notes = [
+  "proven-servers exists because the original 'proven' repo was bulk AI-generated with 4566 believe_me escape hatches. This is the honest rewrite.",
+  "The 108-component catalog is intentionally minimal: only types, state machines, and proofs. No framework code, no HTTP handling, no database drivers. Just the verified bones.",
+  "Connectors are the integration surface — they are built first because they define how verified server cores talk to external infrastructure.",
+]

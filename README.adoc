@@ -6,10 +6,16 @@
 
 == What This Is
 
-A catalog of **94 server protocol skeletons** written in Idris 2 with dependent types.
+A catalog of **108 formally verified server components** written in Idris 2 with
+dependent types: **94 protocol skeletons**, **8 core primitives**, and **6 connector
+interfaces**.
 
-Each skeleton defines the *correct types* for a protocol: message types, valid states,
+Each component defines the *correct types* for its domain: message types, valid states,
 state transitions, error codes. Machine-checked. Proven safe at compile time.
+
+The 6 connector interfaces have a complete **ABI-FFI layer**: Idris2 ABI definitions
+with dependent-type proofs, generated C headers, and Zig FFI implementations with
+integration tests. Any language that can call C can use them.
 
 **This is the core. Nothing else.** No frameworks. No opinions. No "batteries included."
 You get the verified bones. You build the rest.
@@ -30,12 +36,20 @@ Either way, your server's protocol handling is *proven correct*.
 [source]
 ----
 proven-servers/
-├── core/              # 5 primitives (socket, frame, fsm, wire, compose)
+├── core/              # 8 primitives (socket, frame, fsm, wire, compose,
+│                      #   tls, config, audit)
 ├── protocols/         # 94 protocol skeletons
 │   ├── proven-dns/    #   Each with its own .ipkg and src/
 │   ├── proven-smtp/
 │   ├── proven-mqtt/
 │   └── ...
+├── connectors/        # 6 connector interfaces (with ABI-FFI)
+│   ├── proven-dbconn/       # Database connections
+│   ├── proven-authconn/     # Authentication lifecycle
+│   ├── proven-cacheconn/    # Cache connections
+│   ├── proven-queueconn/    # Message queue pub/sub
+│   ├── proven-resolverconn/ # DNS resolution
+│   └── proven-storageconn/  # Object storage
 ├── abi/               # Idris2 ABI definitions (src/abi/*.idr)
 ├── ffi/               # Zig FFI layer (ffi/zig/)
 └── bindings/          # Language bindings (Rust, Zig, C, ReScript, Gleam,
@@ -73,6 +87,27 @@ proven-servers/
 
 === Other
 `cli` `wasm` `lpd`
+
+== Core Primitives (8)
+
+`socket` `frame` `fsm` `wire` `compose` `tls` `config` `audit`
+
+== Connector Interfaces (6, with ABI-FFI)
+
+[cols="1,2,1"]
+|===
+| Connector | Purpose | States
+
+| `dbconn` | Relational databases (query, transaction, prepare) | 5
+| `authconn` | Authentication lifecycle (MFA, tokens, lockout) | 6
+| `cacheconn` | Cache connections (TTL, eviction, degradation) | 4
+| `queueconn` | Message queues (subscribe, publish, ack/reject) | 5
+| `resolverconn` | DNS resolution (13 RR types, DNSSEC, caching) | 4
+| `storageconn` | Object storage (upload, download, integrity) | 5
+|===
+
+Each connector has a complete ABI-FFI layer: Idris2 proofs, C headers, Zig FFI,
+and integration tests. See `connectors/README.adoc` for details.
 
 == Design Principles
 

@@ -18,6 +18,10 @@ Thumbs.db
 /dist/
 /out/
 
+# Zig
+.zig-cache/
+zig-out/
+
 # Dependencies
 /node_modules/
 /vendor/

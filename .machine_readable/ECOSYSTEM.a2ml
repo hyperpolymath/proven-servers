@@ -1,26 +1,35 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# Copyright (c) {{CURRENT_YEAR}} {{AUTHOR}} ({{OWNER}}) <{{AUTHOR_EMAIL}}>
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# ECOSYSTEM.a2ml — Project ecosystem position
-# Relationships, dependencies, integration points.
+# ECOSYSTEM.a2ml — Ecosystem position for proven-servers.
 
 [metadata]
-version = "0.1.0"
-last-updated = "{{CURRENT_DATE}}"
+version = "0.2.0"
+last-updated = "2026-03-01"
 
 [project]
-name = "{{PROJECT_NAME}}"
-purpose = "{{PROJECT_PURPOSE}}"
-role = "{{PROJECT_ROLE}}"  # e.g. ffi-infrastructure, cli-tool, library, service
+name = "proven-servers"
+purpose = "Formally verified server component catalog — protocol types, core primitives, and connector interfaces with dependent-type proofs. ABI in Idris2, FFI in Zig, consumable from any language."
+role = "ffi-infrastructure"
 
 [position-in-ecosystem]
-tier = "infrastructure"  # 1 | 2 | infrastructure
+tier = "infrastructure"
 
 [related-projects]
-# relationship types: sibling-standard, dependency, dependent, inspiration, potential-consumer
-# - { name = "language-bridges", relationship = "sibling-standard" }
-# - { name = "hypatia", relationship = "potential-consumer" }
+projects = [
+  { name = "panll", relationship = "dependent", notes = "VAB (Verified Assembly Building) panel consumes the component catalog for visual server composition" },
+  { name = "proven (original)", relationship = "predecessor", notes = "Replaced — original had 4566 believe_me instances and bulk AI-generated bindings. proven-servers is a clean rewrite with zero believe_me." },
+  { name = "language-bridges", relationship = "sibling-standard", notes = "Shares the Idris2-ABI / Zig-FFI / C-header pattern" },
+  { name = "rsr-template-repo", relationship = "template-source", notes = "Repository scaffolding, workflows, and governance structure sourced from RSR template" },
+  { name = "hypatia", relationship = "potential-consumer", notes = "Neurosymbolic CI scanning could verify proven-servers ABI compliance" },
+  { name = "stapeln", relationship = "potential-consumer", notes = "Container orchestration could use proven-servers for verified network stacks" },
+  { name = "gitbot-fleet", relationship = "potential-consumer", notes = "Automated maintenance bots could manage connector version updates" },
+]
 
 [integration-points]
-# External systems this project connects to
-# - { system = "gitbot-fleet", direction = "outbound", protocol = "repository_dispatch" }
+points = [
+  { system = "PanLL VAB", direction = "outbound", protocol = "static catalog data (108 components)" },
+  { system = "C ABI consumers", direction = "outbound", protocol = "libproven_*.so / libproven_*.a via standard C calling convention" },
+  { system = "Idris2 compiler", direction = "inbound", protocol = "dependent-type verification at compile time" },
+  { system = "Zig build system", direction = "inbound", protocol = "zig build / zig build test" },
+]

@@ -1,114 +1,120 @@
 <!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
-<!-- TOPOLOGY.md — Project architecture map and completion dashboard -->
-<!-- Last updated: 2026-02-28 -->
+<!-- TOPOLOGY.md — proven-servers architecture map and completion dashboard -->
+<!-- Last updated: 2026-03-01 -->
 
-# RSR Template Repo — Project Topology
+# proven-servers — Project Topology
 
 ## System Architecture
 
 ```
-                        ┌─────────────────────────────────────────┐
-                        │              NEW REPOSITORY             │
-                        │        (Consumer of this Template)      │
-                        └───────────────────┬─────────────────────┘
-                                            │ Scaffolding
-                                            ▼
-                        ┌─────────────────────────────────────────┐
-                        │           RSR TEMPLATE HUB              │
-                        │                                         │
-                        │  ┌───────────┐  ┌───────────────────┐  │
-                        │  │ AI Gate-  │  │  ABI / FFI        │  │
-                        │  │ keeper    │  │  Standard         │  │
-                        │  │ (0-AI-M)  │  │ (Idris2/Zig)      │  │
-                        │  └─────┬─────┘  └────────┬──────────┘  │
-                        │        │                 │              │
-                        │  ┌─────▼─────┐  ┌────────▼──────────┐  │
-                        │  │ Topology  │  │  SCM / 6SCM       │  │
-                        │  │ Guide     │  │  Metadata         │  │
-                        │  │ (Visual)  │  │ (machine_read)    │  │
-                        │  └─────┬─────┘  └────────┬──────────┘  │
-                        │        │                 │              │
-                        │  ┌─────▼─────────────────▼──────────┐  │
-                        │  │      CONTAINER ECOSYSTEM         │  │
-                        │  │  ┌──────────┐ ┌───────────────┐  │  │
-                        │  │  │ Podman / │ │ selur-compose  │  │  │
-                        │  │  │ OCI      │ │ cerro-torre    │  │  │
-                        │  │  │ Build    │ │ svalinn/vordr  │  │  │
-                        │  │  └──────────┘ └───────────────┘  │  │
-                        │  │  ct-build.sh  deploy.k9.ncl      │  │
-                        │  └──────────────────────────────────┘  │
-                        └────────│─────────────────│──────────────┘
-                                 │                 │
-                                 ▼                 ▼
-                        ┌─────────────────────────────────────────┐
-                        │          PLATFORM INTEGRATION           │
-                        │  ┌───────────┐  ┌───────────┐  ┌───────┐│
-                        │  │ GitHub    │  │ GitLab    │  │ Nix / ││
-                        │  │ Workflows │  │ CI/CD     │  │ Guix  ││
-                        │  └───────────┘  └───────────┘  └───────┘│
-                        └─────────────────────────────────────────┘
-
-                        ┌─────────────────────────────────────────┐
-                        │          REPO INFRASTRUCTURE            │
-                        │  Justfile / Mustfile  .machine_readable/  │
-                        │  Codeowners / Reuse   0-AI-MANIFEST.a2ml  │
-                        └─────────────────────────────────────────┘
+                ┌─────────────────────────────────────────────────────────┐
+                │                   PROVEN-SERVERS                        │
+                │     108 Formally Verified Server Components             │
+                └───────────────────────┬─────────────────────────────────┘
+                                        │
+              ┌─────────────────────────┼─────────────────────────┐
+              │                         │                         │
+              ▼                         ▼                         ▼
+  ┌───────────────────┐   ┌───────────────────┐   ┌───────────────────┐
+  │  CORE PRIMITIVES  │   │    PROTOCOLS       │   │   CONNECTORS      │
+  │  (8 components)   │   │  (94 skeletons)    │   │  (6 interfaces)   │
+  │                   │   │                    │   │                    │
+  │  socket  frame    │   │  dns   smtp  httpd │   │  dbconn    authconn│
+  │  fsm     wire     │   │  mqtt  bgp   tls   │   │  cacheconn queueconn│
+  │  compose tls      │   │  irc   ldap  ftp   │   │  resolverconn     │
+  │  config  audit    │   │  ... (91 more)     │   │  storageconn      │
+  └─────────┬─────────┘   └────────┬───────────┘   └────────┬──────────┘
+            │                      │                         │
+            └──────────────────────┼─────────────────────────┘
+                                   │
+                                   ▼
+                ┌─────────────────────────────────────────────────────────┐
+                │                ABI-FFI LAYER                            │
+                │                                                         │
+                │  ┌─────────────┐  ┌────────────┐  ┌─────────────────┐  │
+                │  │  Idris2 ABI │  │  C Headers  │  │  Zig FFI        │  │
+                │  │  (proofs)   │──│  (generated) │──│  (runtime)      │  │
+                │  │             │  │             │  │                 │  │
+                │  │  Layout     │  │  tag #defs  │  │  enum(u8)       │  │
+                │  │  Transitions│  │  opaques    │  │  handle structs │  │
+                │  │  Foreign    │  │  fn decls   │  │  callconv(.c)   │  │
+                │  └─────────────┘  └────────────┘  └─────────────────┘  │
+                └───────────────────────┬─────────────────────────────────┘
+                                        │
+                                        ▼
+                ┌─────────────────────────────────────────────────────────┐
+                │              LANGUAGE BINDINGS                           │
+                │  Rust · ReScript · Gleam · Elixir · Haskell · OCaml    │
+                │  Ada · Julia · C/Zig (free) · (any C-ABI language)     │
+                └───────────────────────┬─────────────────────────────────┘
+                                        │
+                                        ▼
+                ┌─────────────────────────────────────────────────────────┐
+                │              CONSUMERS                                  │
+                │  PanLL VAB · stapeln containers · user applications     │
+                └─────────────────────────────────────────────────────────┘
 ```
 
 ## Completion Dashboard
 
 ```
-COMPONENT                          STATUS              NOTES
-─────────────────────────────────  ──────────────────  ─────────────────────────────────
-CORE STANDARDS
-  ABI/FFI Standard (Idris2/Zig)     ██████████ 100%    Universal interface stable
-  AI Gatekeeper (0-AI-MANIFEST)     ██████████ 100%    Universal entry point active
-  TOPOLOGY.md Standard              ██████████ 100%    Visual summary guide active
-  6SCM Metadata Structure           ██████████ 100%    Machine-readable state stable
+COMPONENT                              STATUS              NOTES
+─────────────────────────────────────  ──────────────────  ──────────────────────────────
+
+PROTOCOL SKELETONS (94)
+  Type definitions (Types.idr)           ██████████ 100%    All 94 protocols have types
+  State machines (Idris2 proofs)         ░░░░░░░░░░   0%    Not yet started
+  ABI-FFI (Zig + C headers)             ░░░░░░░░░░   0%    Not yet started
+  Language bindings                      ░░░░░░░░░░   0%    Not yet started
+
+CORE PRIMITIVES (8)
+  Type definitions (Types.idr)           ██████████ 100%    socket, frame, fsm, wire,
+                                                            compose, tls, config, audit
+  State machines (Idris2 proofs)         ░░░░░░░░░░   0%    Not yet started
+  ABI-FFI (Zig + C headers)             ░░░░░░░░░░   0%    Not yet started
+  Language bindings                      ░░░░░░░░░░   0%    Not yet started
+
+CONNECTORS (6)
+  Type definitions (Types.idr)           ██████████ 100%    dbconn, authconn, cacheconn,
+                                                            queueconn, resolverconn,
+                                                            storageconn
+  ABI: Layout.idr (tag encodings)        ██████████ 100%    All 6 — roundtrip proofs ✓
+  ABI: Transitions.idr (state machines)  ██████████ 100%    All 6 — GADTs + witnesses ✓
+  ABI: Foreign.idr (FFI contract)        ██████████ 100%    All 6 — opaque handles ✓
+  C Headers (generated)                  ██████████ 100%    All 6 — tag #defines + decls
+  Zig FFI (runtime enforcement)          ██████████ 100%    All 6 — build clean ✓
+  Zig Tests (integration)                ██████████ 100%    All 6 — 76+ tests pass ✓
+  Language bindings                      ░░░░░░░░░░   0%    Not yet started
 
 INFRASTRUCTURE
-  Justfile Automation               ██████████ 100%    Standard build/verify tasks
-  CI/CD Workflow Templates          ██████████ 100%    GH/GL scaffolding verified
-  Multi-Forge Sync                  ██████████ 100%    Hub-and-spoke mirroring stable
+  Repository scaffolding (RSR)           ██████████ 100%    Justfile, CI, governance
+  Documentation                          ██████████ 100%    Design docs, READMEs, TOPOLOGY
+  Machine-readable metadata              ██████████ 100%    STATE, ECOSYSTEM, META (.a2ml)
+  CI/CD (Zig builds)                     ░░░░░░░░░░   0%    Not yet in GitHub Actions
+  CI/CD (Idris2 type-checking)           ░░░░░░░░░░   0%    Not yet in GitHub Actions
 
-CONTAINER ECOSYSTEM (Phase 2)
-  Containerfile (OCI build)         ██████████ 100%    Multi-stage Chainguard base
-  selur-compose orchestration       ██████████ 100%    Template + concrete example
-  cerro-torre manifest              ██████████ 100%    Bundle metadata & signing
-  svalinn gateway policy            ██████████ 100%    .gatekeeper.yaml active
-  vordr runtime monitoring          ██████████ 100%    Runtime config template
-  k9-svc deployment (Nickel)        ██████████ 100%    Hunt-level deploy descriptor
-  ct-build.sh pipeline              ██████████ 100%    Build/sign/verify script
-  Justfile container-* recipes      ██████████ 100%    8 recipes integrated
-  Trustfile CONTAINER_SUPPLY_CHAIN  ██████████ 100%    Supply chain section added
-
-REPO INFRASTRUCTURE
-  .machine_readable/                ██████████ 100%    STATE/META/ECOSYSTEM active
-  Governance & License              ██████████ 100%    PMPL & Ethical use verified
-  Development Shells (Nix/Guix)     ██████████ 100%    Reproducible env stable
-
-─────────────────────────────────────────────────────────────────────────────
-OVERALL:                            ██████████ 100%    RSR Template Stable & Certified
+─────────────────────────────────────────────────────────────────────────────────────────
+OVERALL:                                 ███░░░░░░░  35%    Connector ABI-FFI complete;
+                                                            core and protocols pending
 ```
 
 ## Key Dependencies
 
 ```
-Philosophy ──────► RSR Standard ──────► Template Scaffolding ──► New Repo
-     │                 │                      │                    │
-     ▼                 ▼                      ▼                    ▼
-CCCP Policy ─────► 0-AI-MANIFEST ────────► Justfile ──────────► Compliance
-                                              │
-                                              ▼
-                                      Container Ecosystem
-                                   ┌──────────┼──────────┐
-                                   ▼          ▼          ▼
-                              selur-compose  cerro-   svalinn/
-                              (orchestrate)  torre    vordr
-                                             (sign)   (monitor)
-                                              │
-                                              ▼
-                                         k9-svc deploy
+Idris2 compiler ───► ABI definitions ───► C header generation ───► Zig FFI
+       │                    │                     │                    │
+       ▼                    ▼                     ▼                    ▼
+  Type proofs         Tag encodings          #define tags         enum(u8) types
+  State machines      Roundtrip proofs       Opaque structs       Handle structs
+  Capabilities        Impossibility proofs   Function decls       callconv(.c) fns
+                                                                      │
+                                                                      ▼
+                                                               Language bindings
+                                                            (Rust, ReScript, etc.)
+                                                                      │
+                                                                      ▼
+                                                              PanLL VAB panel
+                                                            (visual composition)
 ```
 
 ## Update Protocol

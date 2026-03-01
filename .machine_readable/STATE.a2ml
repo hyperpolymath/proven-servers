@@ -1,64 +1,64 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# Copyright (c) {{CURRENT_YEAR}} {{AUTHOR}} ({{OWNER}}) <{{AUTHOR_EMAIL}}>
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# STATE.a2ml — Project state checkpoint (META-TEMPLATE)
-#
-# This is the STATE file for rsr-template-repo itself.
-# When consumed by a new project, replace {{PLACEHOLDER}} tokens
-# and customize sections below for the target project.
+# STATE.a2ml — Project state checkpoint for proven-servers.
 
 [metadata]
-project = "rsr-template-repo"
-version = "0.2.0"
-last-updated = "2026-02-28"
-status = "active"  # active | paused | archived
+project = "proven-servers"
+version = "0.3.0"
+last-updated = "2026-03-01"
+status = "active"
 
 [project-context]
-name = "rsr-template-repo"
-purpose = "Canonical RSR-compliant repository template providing scaffolding for all hyperpolymath projects — including CI/CD, AI manifests, ABI/FFI standards, container ecosystem, and governance infrastructure."
-completion-percentage = 95
+name = "proven-servers"
+purpose = "Catalog of 108 formally verified server components (94 protocol skeletons, 8 core primitives, 6 connector interfaces) in Idris2 with dependent types. ABI defined in Idris2, FFI implemented in Zig, callable from any language via C ABI."
+completion-percentage = 35
 
 [position]
-phase = "maintenance"      # design | implementation | testing | maintenance | archived
-maturity = "production"    # experimental | alpha | beta | production | lts
+phase = "implementation"
+maturity = "alpha"
 
 [route-to-mvp]
 milestones = [
-  { name = "Phase 0: Core scaffolding (justfile, CI/CD, .machine_readable)", completion = 100 },
-  { name = "Phase 1: ABI/FFI standard (Idris2/Zig templates)", completion = 100 },
-  { name = "Phase 1b: AI Gatekeeper Protocol (0-AI-MANIFEST.a2ml)", completion = 100 },
-  { name = "Phase 1c: TOPOLOGY.md standard and guide", completion = 100 },
-  { name = "Phase 1d: Maintenance gate (axes, checklist, approach)", completion = 100 },
-  { name = "Phase 1e: Trustfile / contractiles", completion = 100 },
-  { name = "Phase 2: Container ecosystem templates (stapeln)", completion = 100 },
-  { name = "Phase 3: Multi-forge sync hardening", completion = 0 },
-  { name = "Phase 4: Nix/Guix reproducible shells", completion = 50 },
+  { name = "Phase 0: 94 protocol skeletons (Types.idr for each)", completion = 100 },
+  { name = "Phase 0b: 8 core primitives (socket, frame, fsm, wire, compose, tls, config, audit)", completion = 100 },
+  { name = "Phase 0c: 6 connector interface skeletons (Types.idr for each)", completion = 100 },
+  { name = "Phase 1: Connector ABI-FFI (Idris2 + C headers + Zig + tests)", completion = 100 },
+  { name = "Phase 2: Core primitive ABI-FFI", completion = 0 },
+  { name = "Phase 3: Protocol ABI-FFI (high-priority: dns, httpd, tls, smtp)", completion = 0 },
+  { name = "Phase 4: Language bindings (Rust, ReScript, Gleam, Elixir)", completion = 0 },
+  { name = "Phase 5: CI/CD (Idris2 type-checking, Zig builds, cross-platform)", completion = 0 },
+  { name = "Phase 6: PanLL VAB panel integration", completion = 0 },
 ]
 
 [blockers-and-issues]
-# No active blockers
+issues = [
+  "Idris2 not yet in CI — .idr files type-check locally but not in GitHub Actions",
+  "ABI-FFI-README.md still has template placeholders from rsr-template-repo",
+]
 
 [critical-next-actions]
 actions = [
-  "Container templates complete — test with `just container-init`",
-  "Validate container templates across wolfi-base and static Chainguard images",
-  "Harden multi-forge sync for GitLab/Bitbucket mirroring edge cases",
-  "Expand Nix/Guix development shell templates",
+  "Build ABI-FFI for core primitives (socket first, then tls, then rest)",
+  "Add Idris2 type-checking to CI workflow",
+  "Begin language bindings for Rust (highest demand)",
+  "Update ABI-FFI-README.md with concrete proven-servers examples",
+]
+
+[completed-work]
+entries = [
+  { date = "2026-03-01", description = "ABI-FFI for all 6 connectors: dbconn, authconn, cacheconn, queueconn, resolverconn, storageconn. 48 new files, ~5500 lines. All build and test with Zig 0.15.2." },
+  { date = "2026-03-01", description = "6 connector interface skeletons added (Types.idr + Main.idr + top-level module)." },
+  { date = "2026-01-30", description = "Initial commit: 102 protocol skeletons with dependent types." },
 ]
 
 [maintenance-status]
 last-run-utc = "never"
 last-report = "reports/maintenance/latest.json"
-last-result = "unknown"  # unknown | pass | warn | fail
+last-result = "unknown"
 open-warnings = 0
 open-failures = 0
 
 [ecosystem]
-part-of = ["RSR Framework", "stapeln ecosystem"]
-depends-on = ["stapeln", "selur-compose", "cerro-torre", "svalinn", "vordr", "k9-svc"]
-
-# ---------------------------------------------------------------------------
-# NOTE FOR CONSUMERS: When using this template to create a new repo, reset
-# the fields above to your project's values and replace all {{PLACEHOLDER}}
-# tokens. The milestones above describe the TEMPLATE's evolution, not yours.
-# ---------------------------------------------------------------------------
+part-of = ["proven ecosystem", "PanLL VAB"]
+depends-on = ["idris2", "zig"]

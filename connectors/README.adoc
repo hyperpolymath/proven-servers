@@ -1,0 +1,137 @@
+// SPDX-License-Identifier: PMPL-1.0-or-later
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+//
+// connectors/README.adoc — Overview of the proven-servers connector interfaces.
+
+= Connector Interfaces
+:author: Jonathan D.A. Jewell
+:email: j.d.a.jewell@open.ac.uk
+:revdate: 2026-03-01
+
+== What Connectors Are
+
+Connectors define the **interface** between a formally verified server core
+and external infrastructure. Each connector is a state machine:
+connect, operate, disconnect — with every valid and invalid transition
+proven at the type level.
+
+There are 6 connectors:
+
+[cols="1,2,1,1"]
+|===
+| Connector | Purpose | States | Transitions
+
+| `proven-dbconn`
+| Relational database connections (query, transaction, prepare)
+| 5
+| 9
+
+| `proven-authconn`
+| Authentication lifecycle (MFA, tokens, lockout)
+| 6
+| 11
+
+| `proven-cacheconn`
+| Cache connections (TTL, eviction, degradation)
+| 4
+| 8
+
+| `proven-queueconn`
+| Message queue pub/sub (subscribe, publish, ack/reject)
+| 5
+| 11
+
+| `proven-resolverconn`
+| DNS resolution (13 record types, DNSSEC, caching)
+| 4
+| 9
+
+| `proven-storageconn`
+| Object storage (upload, download, integrity checks)
+| 5
+| 11
+|===
+
+== Directory Structure
+
+Each connector follows the same layout:
+
+[source]
+----
+connectors/proven-<name>/
+├── src/
+│   ├── <Name>Conn.idr              # Core types (existing skeleton)
+│   ├── <Name>Conn/Types.idr        # Sum types for the domain
+│   ├── <Name>Conn/Main.idr         # Entry point
+│   ├── <Name>ConnABI.idr           # Re-export module (ABI layer)
+│   └── <Name>ConnABI/
+│       ├── Layout.idr              # Tag encodings + roundtrip proofs
+│       ├── Transitions.idr         # GADT state machine + witnesses
+│       └── Foreign.idr             # Opaque handles + FFI contract
+├── generated/abi/
+│   └── <name>.h                    # C ABI header
+└── ffi/zig/
+    ├── build.zig                   # Zig build configuration
+    ├── src/<name>.zig              # Zig FFI implementation
+    └── test/<name>_test.zig        # Integration tests
+----
+
+== The ABI-FFI Pattern
+
+Each connector has three Idris2 ABI modules and a Zig FFI implementation.
+
+=== Layer 1: Layout.idr (tag encodings)
+
+Encodes each sum type as `Bits8` tags. Provides an encoder, a decoder,
+and a **roundtrip proof** ensuring they are inverse:
+
+[source,idris]
+----
+storageOpToTag : StorageOp -> Bits8
+tagToStorageOp : Bits8 -> Maybe StorageOp
+tagToStorageOpRoundtrip : (x : StorageOp) -> tagToStorageOp (storageOpToTag x) = Just x
+----
+
+=== Layer 2: Transitions.idr (state machine)
+
+A GADT encoding every legal state transition, **capability witnesses**
+(predicates on which states allow certain operations), **impossibility
+proofs** (eliminating bad states), and **decidability procedures**
+(compile-time branching on capability).
+
+=== Layer 3: Foreign.idr (FFI contract)
+
+Opaque handle types via `[external]` and a documented function contract
+listing every exported C-ABI function.
+
+=== Layer 4: Zig FFI (runtime enforcement)
+
+`enum(u8)` types matching the C header, handle structs tracking runtime
+state, and exported `callconv(.c)` functions that enforce the state
+machine by switching on the handle's current state.
+
+== Building
+
+[source,bash]
+----
+# Build any connector (shared + static libraries)
+cd connectors/proven-dbconn/ffi/zig && zig build
+
+# Run tests
+cd connectors/proven-authconn/ffi/zig && zig build test
+
+# Build all connectors
+for conn in dbconn authconn cacheconn queueconn resolverconn storageconn; do
+  (cd connectors/proven-$conn/ffi/zig && zig build test)
+done
+----
+
+== Error Convention
+
+All connectors use tag `0` for "no error". Error variants start at tag `1`.
+This matches the C convention where `0` indicates success.
+
+== See Also
+
+* link:../docs/design/DESIGN-2026-03-01-connector-abi-ffi.md[Design document]
+* link:../ABI-FFI-README.md[ABI-FFI standard overview]

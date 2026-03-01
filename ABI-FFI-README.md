@@ -1,6 +1,7 @@
-{{~ Aditionally delete this line and fill out the template below ~}}
+<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> -->
 
-# {{PROJECT}} ABI/FFI Documentation
+# proven-servers ABI/FFI Documentation
 
 ## Overview
 
@@ -16,130 +17,108 @@ This library follows the **Hyperpolymath RSR Standard** for ABI and FFI design:
 ```
 ┌─────────────────────────────────────────────┐
 │  ABI Definitions (Idris2)                   │
-│  src/abi/                                   │
-│  - Types.idr      (Type definitions)        │
-│  - Layout.idr     (Memory layout proofs)    │
-│  - Foreign.idr    (FFI declarations)        │
+│  src/<Name>ConnABI/                         │
+│  - Layout.idr      (Tag encodings + proofs) │
+│  - Transitions.idr (State machine GADTs)    │
+│  - Foreign.idr     (Opaque handles + FFI)   │
 └─────────────────┬───────────────────────────┘
                   │
-                  │ generates (at compile time)
+                  │ generates
                   ▼
 ┌─────────────────────────────────────────────┐
-│  C Headers (auto-generated)                 │
-│  generated/abi/{{project}}.h                │
+│  C Headers (generated)                      │
+│  generated/abi/<name>.h                     │
 └─────────────────┬───────────────────────────┘
                   │
                   │ imported by
                   ▼
 ┌─────────────────────────────────────────────┐
 │  FFI Implementation (Zig)                   │
-│  ffi/zig/src/main.zig                       │
+│  ffi/zig/src/<name>.zig                     │
 │  - Implements C-compatible functions        │
 │  - Zero-cost abstractions                   │
 │  - Memory-safe by default                   │
 └─────────────────┬───────────────────────────┘
                   │
-                  │ compiled to lib{{project}}.so/.a
+                  │ compiled to libproven_<name>.so/.a
                   ▼
 ┌─────────────────────────────────────────────┐
 │  Any Language via C ABI                     │
-│  - Rust, ReScript, Julia, Python, etc.     │
+│  - Rust, ReScript, Gleam, Elixir, etc.     │
 └─────────────────────────────────────────────┘
 ```
 
 ## Directory Structure
 
+Each connector follows this layout:
+
 ```
-{{project}}/
+connectors/proven-<name>/
 ├── src/
-│   ├── abi/                    # ABI definitions (Idris2)
-│   │   ├── Types.idr           # Core type definitions with proofs
-│   │   ├── Layout.idr          # Memory layout verification
-│   │   └── Foreign.idr         # FFI function declarations
-│   └── lib/                    # Core library (any language)
-│
-├── ffi/
-│   └── zig/                    # FFI implementation (Zig)
-│       ├── build.zig           # Build configuration
-│       ├── build.zig.zon       # Dependencies
-│       ├── src/
-│       │   └── main.zig        # C-compatible FFI implementation
-│       ├── test/
-│       │   └── integration_test.zig
-│       └── include/
-│           └── {{project}}.h   # C header (optional, can be generated)
-│
-├── generated/                  # Auto-generated files
-│   └── abi/
-│       └── {{project}}.h       # Generated from Idris2 ABI
-│
-└── bindings/                   # Language-specific wrappers (optional)
-    ├── rust/
-    ├── rescript/
-    └── julia/
+│   ├── <Name>Conn.idr               # Core types and constants
+│   ├── <Name>Conn/Types.idr         # Sum type definitions
+│   ├── <Name>Conn/Main.idr          # Entry point
+│   ├── <Name>ConnABI.idr            # Re-export module
+│   └── <Name>ConnABI/
+│       ├── Layout.idr               # Tag encodings + roundtrip proofs
+│       ├── Transitions.idr          # GADT state machine + witnesses
+│       └── Foreign.idr              # Opaque handles + FFI contract
+├── generated/abi/
+│   └── <name>.h                     # C ABI header
+└── ffi/zig/
+    ├── build.zig                    # Build configuration
+    ├── src/<name>.zig               # C-compatible FFI implementation
+    └── test/<name>_test.zig         # Integration tests
 ```
 
 ## Why Idris2 for ABI?
 
 ### 1. **Formal Verification**
 
-Idris2's dependent types allow proving properties about the ABI at compile-time:
+Idris2's dependent types prove properties about the ABI at compile-time:
 
 ```idris
--- Prove struct size is correct
-public export
-exampleStructSize : HasSize ExampleStruct 16
-
--- Prove field alignment is correct
-public export
-fieldAligned : Divides 8 (offsetOf ExampleStruct.field)
-
--- Prove ABI is platform-compatible
-public export
-abiCompatible : Compatible (ABI 1) (ABI 2)
+-- Prove tag encoding roundtrips correctly
+tagToStorageOpRoundtrip : (x : StorageOp) -> tagToStorageOp (storageOpToTag x) = Just x
+tagToStorageOpRoundtrip PutObject    = Refl
+tagToStorageOpRoundtrip GetObject    = Refl
+tagToStorageOpRoundtrip DeleteObject = Refl
+-- ...every variant reduces to Refl
 ```
 
-### 2. **Type Safety**
+### 2. **State Machine Proofs**
 
-Encode invariants that C/Zig cannot express:
+Encode exactly which transitions are legal as a GADT:
 
 ```idris
--- Non-null pointer guaranteed at type level
-data Handle : Type where
-  MkHandle : (ptr : Bits64) -> {auto 0 nonNull : So (ptr /= 0)} -> Handle
-
--- Array with length proof
-data Buffer : (n : Nat) -> Type where
-  MkBuffer : Vect n Byte -> Buffer n
+data ValidTransition : AuthState -> AuthState -> Type where
+  InitAuth   : ValidTransition Unauthenticated Challenging
+  DirectAuth : ValidTransition Unauthenticated Authenticated
+  LockOut    : ValidTransition Unauthenticated Locked
+  -- Invalid transitions are simply absent — impossible to construct
 ```
 
-### 3. **Platform Abstraction**
+### 3. **Capability Witnesses**
 
-Platform-specific types with compile-time selection:
+Prove at the type level which states permit which operations:
 
 ```idris
-CInt : Platform -> Type
-CInt Linux = Bits32
-CInt Windows = Bits32
+data CanAuthenticate : AuthState -> Type where
+  AuthWhenUnauth : CanAuthenticate Unauthenticated
 
-CSize : Platform -> Type
-CSize Linux = Bits64
-CSize Windows = Bits64
+-- Impossible in other states — the compiler proves this
+noAuthFromLocked : CanAuthenticate Locked -> Void
+noAuthFromLocked x impossible
 ```
 
-### 4. **Safe Evolution**
+### 4. **Decidability**
 
-Prove that new ABI versions are backward-compatible:
+Compile-time branching on capability:
 
 ```idris
--- Compiler enforces compatibility
-abiUpgrade : ABI 1 -> ABI 2
-abiUpgrade old = MkABI2 {
-  -- Must preserve all v1 fields
-  v1_compat = old,
-  -- Can add new fields
-  new_features = defaults
-}
+decCanAuthenticate : (s : AuthState) -> Dec (CanAuthenticate s)
+decCanAuthenticate Unauthenticated = Yes AuthWhenUnauth
+decCanAuthenticate _ = No (\case AuthWhenUnauth impossible)
 ```
 
 ## Why Zig for FFI?
@@ -149,8 +128,8 @@ abiUpgrade old = MkABI2 {
 Zig exports C-compatible functions naturally:
 
 ```zig
-export fn library_function(param: i32) i32 {
-    return param * 2;
+pub export fn authconn_abi_version() callconv(.c) u32 {
+    return ABI_VERSION;
 }
 ```
 
@@ -159,9 +138,8 @@ export fn library_function(param: i32) i32 {
 Compile-time safety without runtime overhead:
 
 ```zig
-// Null check enforced at compile time
-const handle = init() orelse return error.InitFailed;
-defer free(handle);
+const handle = h orelse return AuthError.invalid_handle;
+// NULL check enforced — impossible to dereference null
 ```
 
 ### 3. **Cross-Compilation**
@@ -176,44 +154,44 @@ zig build -Dtarget=x86_64-windows
 
 ### 4. **Zero Dependencies**
 
-No runtime, no libc required (unless explicitly needed):
+No runtime, no libc required (unless explicitly needed).
 
-```zig
-// Minimal binary size
-pub const lib = @import("std");
-// Only includes what you use
-```
+## Components with ABI-FFI (as of 2026-03-01)
+
+| Component | States | Transitions | Tests | Library |
+|-----------|--------|-------------|-------|---------|
+| proven-dbconn | 5 | 9 | ✓ | libproven_dbconn |
+| proven-authconn | 6 | 11 | 20 | libproven_authconn |
+| proven-cacheconn | 4 | 8 | 13 | libproven_cacheconn |
+| proven-queueconn | 5 | 11 | 17 | libproven_queueconn |
+| proven-resolverconn | 4 | 9 | 12 | libproven_resolverconn |
+| proven-storageconn | 5 | 11 | 14 | libproven_storageconn |
 
 ## Building
 
-### Build FFI Library
+### Build a single connector
 
 ```bash
-cd ffi/zig
-zig build                         # Build debug
-zig build -Doptimize=ReleaseFast  # Build optimized
-zig build test                    # Run tests
+cd connectors/proven-dbconn/ffi/zig
+zig build                         # Build debug (shared + static)
+zig build -Doptimize=ReleaseFast  # Build optimised
+zig build test                    # Run integration tests
 ```
 
-### Generate C Header from Idris2 ABI
+### Build all connectors
 
 ```bash
-cd src/abi
-idris2 --cg c-header Types.idr -o ../../generated/abi/{{project}}.h
+for conn in dbconn authconn cacheconn queueconn resolverconn storageconn; do
+  (cd connectors/proven-$conn/ffi/zig && zig build test) && echo "$conn: OK"
+done
 ```
 
 ### Cross-Compile
 
 ```bash
-cd ffi/zig
-
-# Linux x86_64
+cd connectors/proven-dbconn/ffi/zig
 zig build -Dtarget=x86_64-linux
-
-# macOS ARM64
 zig build -Dtarget=aarch64-macos
-
-# Windows x86_64
 zig build -Dtarget=x86_64-windows
 ```
 
@@ -222,64 +200,45 @@ zig build -Dtarget=x86_64-windows
 ### From C
 
 ```c
-#include "{{project}}.h"
+#include "dbconn.h"
 
 int main() {
-    void* handle = {{project}}_init();
-    if (!handle) return 1;
+    dbconn_error_t err;
+    dbconn_handle_t *h = dbconn_connect("localhost", 5432, 1, &err);
+    if (!h || err != DBCONN_ERR_NONE) return 1;
 
-    int result = {{project}}_process(handle, 42);
-    if (result != 0) {
-        const char* err = {{project}}_last_error();
-        fprintf(stderr, "Error: %s\n", err);
-    }
+    // State is now Connected — can query
+    err = dbconn_query(h, "SELECT 1", 8, NULL, 0, NULL);
 
-    {{project}}_free(handle);
+    dbconn_disconnect(h);
     return 0;
 }
 ```
 
 Compile with:
 ```bash
-gcc -o example example.c -l{{project}} -L./zig-out/lib
-```
-
-### From Idris2
-
-```idris
-import {{PROJECT}}.ABI.Foreign
-
-main : IO ()
-main = do
-  Just handle <- init
-    | Nothing => putStrLn "Failed to initialize"
-
-  Right result <- process handle 42
-    | Left err => putStrLn $ "Error: " ++ errorDescription err
-
-  free handle
-  putStrLn "Success"
+gcc -o example example.c -lproven_dbconn -L./zig-out/lib
 ```
 
 ### From Rust
 
 ```rust
-#[link(name = "{{project}}")]
+#[link(name = "proven_authconn")]
 extern "C" {
-    fn {{project}}_init() -> *mut std::ffi::c_void;
-    fn {{project}}_free(handle: *mut std::ffi::c_void);
-    fn {{project}}_process(handle: *mut std::ffi::c_void, input: u32) -> i32;
+    fn authconn_abi_version() -> u32;
+    fn authconn_create_session(method: u8, err: *mut u8) -> *mut std::ffi::c_void;
+    fn authconn_authenticate(h: *mut std::ffi::c_void,
+                             cred: *const u8, cred_len: u32) -> u8;
+    fn authconn_destroy_session(h: *mut std::ffi::c_void) -> u8;
 }
 
 fn main() {
     unsafe {
-        let handle = {{project}}_init();
-        assert!(!handle.is_null());
-
-        let result = {{project}}_process(handle, 42);
-        assert_eq!(result, 0);
-
-        {{project}}_free(handle);
+        assert_eq!(authconn_abi_version(), 1);
+        let mut err: u8 = 0;
+        let h = authconn_create_session(0, &mut err); // password auth
+        assert!(!h.is_null());
+        authconn_destroy_session(h);
     }
 }
 ```
@@ -287,99 +246,81 @@ fn main() {
 ### From Julia
 
 ```julia
-const lib{{project}} = "lib{{project}}"
+const libdbconn = "libproven_dbconn"
 
-function init()
-    handle = ccall((:{{project}}_init, lib{{project}}), Ptr{Cvoid}, ())
-    handle == C_NULL && error("Failed to initialize")
-    handle
+function connect(host, port, require_tls)
+    err = Ref{UInt8}(0)
+    h = ccall((:dbconn_connect, libdbconn), Ptr{Cvoid},
+              (Cstring, UInt16, UInt8, Ptr{UInt8}),
+              host, port, require_tls, err)
+    h == C_NULL && error("Connection failed: error $(err[])")
+    h
 end
 
-function process(handle, input)
-    result = ccall((:{{project}}_process, lib{{project}}), Cint, (Ptr{Cvoid}, UInt32), handle, input)
-    result
+function disconnect(h)
+    ccall((:dbconn_disconnect, libdbconn), UInt8, (Ptr{Cvoid},), h)
 end
 
-function cleanup(handle)
-    ccall((:{{project}}_free, lib{{project}}), Cvoid, (Ptr{Cvoid},), handle)
-end
-
-# Usage
-handle = init()
+h = connect("localhost", 5432, 1)
 try
-    result = process(handle, 42)
-    println("Result: $result")
+    # ... use connection ...
 finally
-    cleanup(handle)
+    disconnect(h)
 end
 ```
 
 ## Testing
 
-### Unit Tests (Zig)
+### Run connector tests
 
 ```bash
-cd ffi/zig
+cd connectors/proven-storageconn/ffi/zig
 zig build test
 ```
 
-### Integration Tests
-
-```bash
-cd ffi/zig
-zig build test-integration
-```
-
-### ABI Verification (Idris2)
-
-```idris
--- Compile-time verification
-%runElab verifyABI
-
--- Runtime checks
-main : IO ()
-main = do
-  verifyLayoutsCorrect
-  verifyAlignmentsCorrect
-  putStrLn "ABI verification passed"
-```
+Tests cover:
+- **ABI version** — `_abi_version()` returns 1
+- **Lifecycle** — connect → operate → disconnect
+- **Invalid transitions** — wrong-state operations return errors
+- **NULL safety** — all functions handle NULL handles gracefully
+- **Enum tag consistency** — `@intFromEnum` matches C header `#define` values
 
 ## Contributing
 
 When modifying the ABI/FFI:
 
-1. **Update ABI first** (`src/abi/*.idr`)
-   - Modify type definitions
-   - Update proofs
-   - Ensure backward compatibility
+1. **Update ABI first** (`src/<Name>ConnABI/*.idr`)
+   - Modify type definitions and proofs
+   - Ensure roundtrip proofs still hold
+   - Maintain backward compatibility
 
-2. **Generate C header**
-   ```bash
-   idris2 --cg c-header src/abi/Types.idr -o generated/abi/{{project}}.h
-   ```
+2. **Regenerate C header** (`generated/abi/<name>.h`)
+   - Update tag `#define` values
+   - Update function declarations
 
-3. **Update FFI implementation** (`ffi/zig/src/main.zig`)
+3. **Update FFI implementation** (`ffi/zig/src/<name>.zig`)
    - Implement new functions
    - Match ABI types exactly
 
-4. **Add tests**
-   - Unit tests in Zig
-   - Integration tests
-   - ABI verification tests
+4. **Add tests** (`ffi/zig/test/<name>_test.zig`)
+   - Lifecycle tests for new transitions
+   - Enum tag consistency for new variants
+   - NULL safety for new functions
 
 5. **Update documentation**
-   - Function signatures
-   - Usage examples
-   - Migration guide (if breaking changes)
+   - Design doc in `docs/design/`
+   - TOPOLOGY.md completion dashboard
+   - STATE.a2ml milestones
 
 ## License
 
-{{LICENSE}}
+SPDX-License-Identifier: PMPL-1.0-or-later
+
+Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 
 ## See Also
 
+- [Connector overview](connectors/README.adoc)
+- [Design document](docs/design/DESIGN-2026-03-01-connector-abi-ffi.md)
 - [Idris2 Documentation](https://idris2.readthedocs.io)
 - [Zig Documentation](https://ziglang.org/documentation/master/)
-- [Rhodium Standard Repositories](https://github.com/{{OWNER}}/rhodium-standard-repositories)
-- [FFI Migration Guide](../ffi-migration-guide.md)
-- [ABI Migration Guide](../abi-migration-guide.md)
