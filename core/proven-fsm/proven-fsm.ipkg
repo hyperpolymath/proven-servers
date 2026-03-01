@@ -1,0 +1,17 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-fsm: Linear finite state machine for proven-servers core primitives.
+-- Generic state machine with typed transitions. Use-once transitions consume
+-- the old state and produce the new one — states cannot be reused.
+
+package proven-fsm
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Linear finite state machine — core primitive for proven-servers"
+
+sourcedir = "src"
+modules   = FSM, FSM.Types, Main
+
+main      = Main
+executable = proven-fsm

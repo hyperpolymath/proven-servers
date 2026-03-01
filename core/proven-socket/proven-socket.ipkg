@@ -1,0 +1,16 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-socket: Typed socket operations for proven-servers core primitives.
+-- Defines socket domains, types, states, operations, and error conditions.
+
+package proven-socket
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Typed socket operations — core primitive for proven-servers"
+
+sourcedir = "src"
+modules   = Socket, Socket.Types, Main
+
+main      = Main
+executable = proven-socket

@@ -1,0 +1,16 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-frame: Framing strategies for proven-servers core primitives.
+-- Defines how protocols turn raw byte streams into discrete messages.
+
+package proven-frame
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Framing strategies — core primitive for proven-servers"
+
+sourcedir = "src"
+modules   = Frame, Frame.Types, Main
+
+main      = Main
+executable = proven-frame

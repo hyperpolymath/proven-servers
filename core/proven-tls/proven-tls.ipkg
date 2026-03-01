@@ -1,0 +1,17 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-tls: TLS types in the verified core for proven-servers.
+-- TLS handshake, cipher suites, certificate validation — so the TLS
+-- boundary is also verified.
+
+package proven-tls
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "TLS types in the verified core — core primitive for proven-servers"
+
+sourcedir = "src"
+modules   = TLS, TLS.Types, Main
+
+main      = Main
+executable = proven-tls

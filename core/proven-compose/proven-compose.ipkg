@@ -1,0 +1,16 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-compose: Composition combinators for proven-servers core primitives.
+-- How you snap two protocols together — the glue types.
+
+package proven-compose
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Composition combinators — core primitive for proven-servers"
+
+sourcedir = "src"
+modules   = Compose, Compose.Types, Main
+
+main      = Main
+executable = proven-compose

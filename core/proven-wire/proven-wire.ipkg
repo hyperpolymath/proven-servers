@@ -1,0 +1,17 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-wire: Verified serialisation/deserialisation for proven-servers
+-- core primitives. The boundary between typed Idris values and raw bytes
+-- on the wire.
+
+package proven-wire
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Verified serialisation/deserialisation — core primitive for proven-servers"
+
+sourcedir = "src"
+modules   = Wire, Wire.Types, Main
+
+main      = Main
+executable = proven-wire

@@ -1,0 +1,16 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-config: Configuration validation for proven-servers core primitives.
+-- Config types that prevent defeating security defaults.
+
+package proven-config
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Configuration validation — core primitive for proven-servers"
+
+sourcedir = "src"
+modules   = Config, Config.Types, Main
+
+main      = Main
+executable = proven-config

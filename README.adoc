@@ -1,0 +1,101 @@
+= proven-servers — Formally Verified Server Cores
+:author: Jonathan D.A. Jewell
+:email: j.d.a.jewell@open.ac.uk
+:revdate: 2026-03-01
+:license: PMPL-1.0-or-later
+
+== What This Is
+
+A catalog of **94 server protocol skeletons** written in Idris 2 with dependent types.
+
+Each skeleton defines the *correct types* for a protocol: message types, valid states,
+state transitions, error codes. Machine-checked. Proven safe at compile time.
+
+**This is the core. Nothing else.** No frameworks. No opinions. No "batteries included."
+You get the verified bones. You build the rest.
+
+== Who This Is For
+
+**If you want to learn Idris 2:** Read the source. It's clean, documented, and teaches you
+both the protocol and the language.
+
+**If you never want to touch Idris 2:** Use the FFI bindings from Rust, Zig, Elixir, or
+any of the 10 supported languages. Your server core is still formally verified. You don't
+care how. It just is.
+
+Either way, your server's protocol handling is *proven correct*.
+
+== Structure
+
+[source]
+----
+proven-servers/
+├── core/              # 5 primitives (socket, frame, fsm, wire, compose)
+├── protocols/         # 94 protocol skeletons
+│   ├── proven-dns/    #   Each with its own .ipkg and src/
+│   ├── proven-smtp/
+│   ├── proven-mqtt/
+│   └── ...
+├── abi/               # Idris2 ABI definitions (src/abi/*.idr)
+├── ffi/               # Zig FFI layer (ffi/zig/)
+└── bindings/          # Language bindings (Rust, Zig, C, ReScript, Gleam,
+                       #   Elixir, Haskell, OCaml, Ada, Julia)
+----
+
+== Protocol Catalog (94 skeletons)
+
+=== Network Protocols
+`dns` `smtp` `httpd` `ftp` `imap` `pop3` `irc` `xmpp` `mqtt` `ldap`
+`radius` `snmp` `nfs` `smb` `syslog` `tftp` `dhcp` `mdns` `coap` `amqp`
+`grpc` `graphql` `modbus` `netconf` `opcua` `telnet` `rtsp` `voip` `stun`
+`bgp` `ospf` `bfd` `sdn` `ptp` `ntp` `nts` `ws`
+
+=== Security
+`firewall` `vpn` `ids` `siem` `honeypot` `deception` `ca` `ocsp` `kms`
+`pqc` `zerotrust` `ctlog` `airgap` `diode` `sandbox` `hardened`
+`authserver` `kerberos` `socks` `tacacs` `ssh-bastion`
+
+=== DNS Variants
+`doh` `dot` `doq` `odns`
+
+=== Application / Data
+`proxy` `loadbalancer` `apiserver` `appserver` `fileserver` `dbserver`
+`objectstore` `cache` `webdav` `graphdb` `sparql` `triplestore` `semweb` `ldp`
+
+=== Operations
+`monitor` `metrics` `logcollector` `configmgmt` `backup` `container` `virt` `git`
+
+=== Media / Communication
+`media` `chat` `gameserver`
+
+=== AI / Neurosymbolic
+`neurosym` `agentic` `mcp` `federation`
+
+=== Other
+`cli` `wasm` `lpd`
+
+== Design Principles
+
+1. **Secure by default.** If there is a secure and insecure version of something,
+   only the secure version exists here.
+2. **Minimal.** Only the types needed to define protocol correctness. No helpers,
+   no utilities, no extras.
+3. **Composable.** Protocols are atoms. Oblivious DNS is `odns` relay + `dns`.
+   An OIDC proxy is `proxy` + `authserver`. Compose them; don't create new skeletons.
+4. **Proven.** Every type is total. No `believe_me`. No `assert_total`. No escape hatches.
+5. **Permanent.** Protocol types don't change. DNS message types from 1987 are still
+   the same types today. This code is meant to last.
+
+== ABI / FFI Standard
+
+* **ABI** (Idris 2): Interface definitions with dependent type proofs → `abi/`
+* **FFI** (Zig): C-compatible implementation → `ffi/`
+* **Bindings**: Thin wrappers for 10 languages → `bindings/`
+
+See `ABI-FFI-README.md` for the full standard.
+
+== License
+
+SPDX-License-Identifier: PMPL-1.0-or-later
+
+Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
