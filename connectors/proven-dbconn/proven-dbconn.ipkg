@@ -12,7 +12,7 @@ authors = "Jonathan D.A. Jewell"
 brief   = "Database connector interface types for proven-servers"
 
 sourcedir = "src"
-modules   = DBConn, DBConn.Types, Main
+modules   = DBConn, DBConn.Types, DBConnABI, DBConnABI.Layout, DBConnABI.Transitions, DBConnABI.Foreign, Main
 
 main      = Main
 executable = proven-dbconn
