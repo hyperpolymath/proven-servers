@@ -1,0 +1,18 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-queueconn: Message queue connector interface types for
+-- proven-servers.  Defines the type-safe boundary that any message queue
+-- backend connector must satisfy — operations, delivery guarantees,
+-- connection states, message lifecycle states, and error categories.
+
+package proven-queueconn
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Message queue connector interface types for proven-servers"
+
+sourcedir = "src"
+modules   = QueueConn, QueueConn.Types, Main
+
+main      = Main
+executable = proven-queueconn

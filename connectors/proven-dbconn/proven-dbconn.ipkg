@@ -1,0 +1,18 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-dbconn: Database connector interface types for proven-servers.
+-- Defines the type-safe boundary that any database backend connector must
+-- satisfy — connection states, isolation levels, parameterised query types,
+-- result types, error types, and connection pool states.
+
+package proven-dbconn
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Database connector interface types for proven-servers"
+
+sourcedir = "src"
+modules   = DBConn, DBConn.Types, Main
+
+main      = Main
+executable = proven-dbconn

@@ -1,0 +1,18 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-storageconn: Object storage connector interface types for
+-- proven-servers.  Defines the type-safe boundary that any object storage
+-- backend connector must satisfy — operations, states, object statuses,
+-- error categories, and integrity check algorithms.
+
+package proven-storageconn
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Object storage connector interface types for proven-servers"
+
+sourcedir = "src"
+modules   = StorageConn, StorageConn.Types, Main
+
+main      = Main
+executable = proven-storageconn

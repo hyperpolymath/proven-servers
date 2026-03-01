@@ -1,0 +1,18 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-resolverconn: DNS resolver (client-side) connector interface
+-- types for proven-servers.  Defines the type-safe boundary that any DNS
+-- resolver backend connector must satisfy — record types, resolver states,
+-- DNSSEC validation statuses, error categories, and cache policies.
+
+package proven-resolverconn
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "DNS resolver connector interface types for proven-servers"
+
+sourcedir = "src"
+modules   = ResolverConn, ResolverConn.Types, Main
+
+main      = Main
+executable = proven-resolverconn

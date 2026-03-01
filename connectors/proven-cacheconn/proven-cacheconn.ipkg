@@ -1,0 +1,18 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-cacheconn: Cache connector interface types for proven-servers.
+-- Defines the type-safe boundary that any cache backend connector must
+-- satisfy — operations, results, eviction policies, connection states,
+-- and error categories.
+
+package proven-cacheconn
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Cache connector interface types for proven-servers"
+
+sourcedir = "src"
+modules   = CacheConn, CacheConn.Types, Main
+
+main      = Main
+executable = proven-cacheconn
