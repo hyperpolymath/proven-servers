@@ -1,34 +1,34 @@
-= {{PROJECT_NAME}} - Citation Guide
+= proven-servers - Citation Guide
 :toc:
 
 == BibTeX
 
 [source,bibtex]
 ----
-@software{{{PROJECT_NAME}}_{{CURRENT_YEAR}},
-  author = {{{AUTHOR_LAST}}, {{AUTHOR_FIRST}}},
-  title = {{{PROJECT_NAME}}},
-  year = {{{CURRENT_YEAR}}},
-  url = {https://github.com/{{OWNER}}/{{PROJECT_NAME}}},
+@software{proven-servers_2026,
+  author = {Jewell, Jonathan},
+  title = {proven-servers},
+  year = {2026},
+  url = {https://github.com/hyperpolymath/proven-servers},
   license = {PMPL-1.0-or-later}
 }
 ----
 
 == Harvard Style
 
-{{AUTHOR_LAST}}, {{AUTHOR_INITIALS}} ({{CURRENT_YEAR}}) _{{PROJECT_NAME}}_ [Computer software]. Available at: https://github.com/{{OWNER}}/{{PROJECT_NAME}}
+Jewell, J.D.A. (2026) _proven-servers_ [Computer software]. Available at: https://github.com/hyperpolymath/proven-servers
 
 == OSCOLA
 
-{{AUTHOR}}, '{{PROJECT_NAME}}' ({{CURRENT_YEAR}}) <https://github.com/{{OWNER}}/{{PROJECT_NAME}}>
+Jonathan D.A. Jewell, 'proven-servers' (2026) <https://github.com/hyperpolymath/proven-servers>
 
 == MLA
 
-{{AUTHOR_LAST}}, {{AUTHOR_FIRST}} "{{PROJECT_NAME}}." {{CURRENT_YEAR}}, github.com/{{OWNER}}/{{PROJECT_NAME}}.
+Jewell, Jonathan "proven-servers." 2026, github.com/hyperpolymath/proven-servers.
 
 == APA 7
 
-{{AUTHOR_LAST}}, {{AUTHOR_INITIALS}} ({{CURRENT_YEAR}}). _{{PROJECT_NAME}}_ [Computer software]. GitHub. https://github.com/{{OWNER}}/{{PROJECT_NAME}}
+Jewell, J.D.A. (2026). _proven-servers_ [Computer software]. GitHub. https://github.com/hyperpolymath/proven-servers
 
 == See Also
 
