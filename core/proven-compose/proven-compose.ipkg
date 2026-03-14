@@ -10,7 +10,7 @@ authors = "Jonathan D.A. Jewell"
 brief   = "Composition combinators — core primitive for proven-servers"
 
 sourcedir = "src"
-modules   = Compose, Compose.Types, Main
+modules   = Compose, Compose.Types, ComposeABI.Layout, ComposeABI.Transitions, ComposeABI.Foreign, Main
 
 main      = Main
 executable = proven-compose
