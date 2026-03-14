@@ -17,5 +17,8 @@ modules = SSH
         , SSH.Channel
         , SSH.Session
         , SSH.Config
+        , SSHABI.Layout
+        , SSHABI.Transitions
+        , SSHABI.Foreign
 
 -- depends = proven
