@@ -11,7 +11,7 @@ authors = "Jonathan D.A. Jewell"
 brief   = "TLS types in the verified core — core primitive for proven-servers"
 
 sourcedir = "src"
-modules   = TLS, TLS.Types, Main
+modules   = TLS, TLS.Types, TLSABI.Layout, TLSABI.Transitions, TLSABI.Foreign, Main
 
 main      = Main
 executable = proven-tls
