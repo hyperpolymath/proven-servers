@@ -17,5 +17,8 @@ modules = HTTP
         , HTTP.Request
         , HTTP.Response
         , HTTP.Router
+        , HTTPABI.Layout
+        , HTTPABI.Transitions
+        , HTTPABI.Foreign
 
 -- depends = proven

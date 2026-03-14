@@ -17,5 +17,8 @@ modules = DNS
         , DNS.Response
         , DNS.Zone
         , DNS.Name
+        , DNSABI.Layout
+        , DNSABI.Transitions
+        , DNSABI.Foreign
 
 -- depends = proven
