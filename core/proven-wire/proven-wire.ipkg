@@ -11,7 +11,7 @@ authors = "Jonathan D.A. Jewell"
 brief   = "Verified serialisation/deserialisation — core primitive for proven-servers"
 
 sourcedir = "src"
-modules   = Wire, Wire.Types, Main
+modules   = Wire, Wire.Types, WireABI.Layout, WireABI.Transitions, WireABI.Foreign, Main
 
 main      = Main
 executable = proven-wire
