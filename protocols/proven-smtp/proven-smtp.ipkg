@@ -17,5 +17,8 @@ modules = SMTP
         , SMTP.Session
         , SMTP.Message
         , SMTP.Auth
+        , SMTPABI.Layout
+        , SMTPABI.Transitions
+        , SMTPABI.Foreign
 
 -- depends = proven
