@@ -11,7 +11,7 @@ authors = "Jonathan D.A. Jewell"
 brief   = "Linear finite state machine — core primitive for proven-servers"
 
 sourcedir = "src"
-modules   = FSM, FSM.Types, Main
+modules   = FSM, FSM.Types, FSMABI.Layout, FSMABI.Transitions, FSMABI.Foreign, Main
 
 main      = Main
 executable = proven-fsm
