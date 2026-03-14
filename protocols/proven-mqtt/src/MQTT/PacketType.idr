@@ -48,6 +48,8 @@ data PacketType : Type where
   PINGRESP    : PacketType
   ||| Client disconnect notification (type 14).
   DISCONNECT  : PacketType
+  ||| Authentication exchange (MQTTv5, type 15).
+  AUTH        : PacketType
 
 public export
 Eq PacketType where
@@ -65,6 +67,7 @@ Eq PacketType where
   PINGREQ     == PINGREQ     = True
   PINGRESP    == PINGRESP    = True
   DISCONNECT  == DISCONNECT  = True
+  AUTH        == AUTH        = True
   _           == _           = False
 
 public export
@@ -83,6 +86,7 @@ Show PacketType where
   show PINGREQ     = "PINGREQ"
   show PINGRESP    = "PINGRESP"
   show DISCONNECT  = "DISCONNECT"
+  show AUTH        = "AUTH"
 
 -- ============================================================================
 -- Numeric code conversion
@@ -106,6 +110,7 @@ packetTypeCode UNSUBACK    = 11
 packetTypeCode PINGREQ     = 12
 packetTypeCode PINGRESP    = 13
 packetTypeCode DISCONNECT  = 14
+packetTypeCode AUTH        = 15
 
 ||| Decode a 4-bit numeric code to a packet type.
 ||| Returns Nothing for reserved codes (0, 15) and unknown values.
@@ -125,6 +130,7 @@ packetTypeFromCode 11 = Just UNSUBACK
 packetTypeFromCode 12 = Just PINGREQ
 packetTypeFromCode 13 = Just PINGRESP
 packetTypeFromCode 14 = Just DISCONNECT
+packetTypeFromCode 15 = Just AUTH
 packetTypeFromCode _  = Nothing
 
 -- ============================================================================
@@ -172,6 +178,7 @@ packetDirection UNSUBACK    = ServerToClient
 packetDirection PINGREQ     = ClientToServer
 packetDirection PINGRESP    = ServerToClient
 packetDirection DISCONNECT  = ClientToServer
+packetDirection AUTH        = Bidirectional
 
 ||| Check whether a packet type requires a packet identifier.
 ||| PUBLISH with QoS > 0, PUBACK, PUBREC, PUBREL, PUBCOMP,
@@ -186,4 +193,5 @@ requiresPacketId SUBSCRIBE   = True
 requiresPacketId SUBACK      = True
 requiresPacketId UNSUBSCRIBE = True
 requiresPacketId UNSUBACK    = True
+requiresPacketId AUTH        = False
 requiresPacketId _           = False

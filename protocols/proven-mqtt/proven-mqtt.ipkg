@@ -17,5 +17,8 @@ modules = MQTT
         , MQTT.Topic
         , MQTT.Session
         , MQTT.Packet
+        , MQTTABI.Layout
+        , MQTTABI.Transitions
+        , MQTTABI.Foreign
 
 -- depends = proven
