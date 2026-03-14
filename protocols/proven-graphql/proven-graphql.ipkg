@@ -13,4 +13,7 @@ executable = "proven-graphql"
 
 modules = GraphQL
         , GraphQL.Types
+        , GraphQLABI.Layout
+        , GraphQLABI.Transitions
+        , GraphQLABI.Foreign
         , Main

@@ -13,3 +13,6 @@ executable = "proven-dhcp"
 
 modules = DHCP
         , DHCP.Types
+        , DHCPABI.Layout
+        , DHCPABI.Transitions
+        , DHCPABI.Foreign

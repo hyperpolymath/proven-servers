@@ -13,3 +13,6 @@ executable = "proven-grpc"
 
 modules = GRPC
         , GRPC.Types
+        , GRPCABI.Layout
+        , GRPCABI.Transitions
+        , GRPCABI.Foreign
