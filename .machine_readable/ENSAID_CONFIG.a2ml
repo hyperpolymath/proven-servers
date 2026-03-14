@@ -1,0 +1,231 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# ENSAID_CONFIG.a2ml — eNSAID Environment Configuration for proven-servers
+#
+# Configures PanLL for formal server/protocol development. This repo contains
+# 94 protocol skeletons, 8 core primitives, 6 connector interfaces — all using
+# the Idris2 ABI → Zig FFI → V-lang adapter architecture.
+#
+# This is a dogfooding config: PanLL developing BoJ cartridge components that
+# BoJ then serves back to PanLL. The recursive value loop.
+#
+# Canonical location: .machine_readable/ENSAID_CONFIG.a2ml
+# Spec: https://github.com/hyperpolymath/standards/tree/main/ensaid-config
+
+# ─────────────────────────────────────────────────────────────────
+# [ensaid] — Core eNSAID identity
+# ─────────────────────────────────────────────────────────────────
+[ensaid]
+version = "1.0.0"
+tool = "panll"
+
+# ─────────────────────────────────────────────────────────────────
+# [workspace] — Formal verification + systems development mode
+#
+# "rhodium" because proven-servers is an RSR-compliant repo.
+# "language-locked" restricts edits to Idris2/Zig/V-lang files — you don't
+# want accidental edits to generated C headers or .so files.
+# "live" because we're building real shared libraries that need testing.
+# ─────────────────────────────────────────────────────────────────
+[workspace]
+mode = "rhodium"
+protection = "language-locked"
+execution = "live"
+
+[workspace.language-lock]
+extensions = [".idr", ".zig", ".v", ".ipkg", ".a2ml", ".adoc", ".toml", ".just"]
+
+# ─────────────────────────────────────────────────────────────────
+# [preferences] — Low humidity for focused systems work
+# ─────────────────────────────────────────────────────────────────
+[preferences]
+humidity = "low"
+default-arrangement = "server-dev-3-panel"
+auto-connect = true
+
+# ─────────────────────────────────────────────────────────────────
+# [panels] — Panels relevant to protocol/server development
+#
+# Core workflow:
+#   1. Editor Bridge — edit Idris2 ABI, Zig FFI, V-lang adapter in VSCodium
+#   2. Build Dashboard — compile Idris2, run Zig tests, build .so
+#   3. BoJ — load cartridge, test via invoke, check matrix
+#   4. Valence Shell — run CLI commands (idris2, zig build, v run)
+#   5. VM Inspector — debug FFI state machines
+#   6. Security — verify SHA-256 hashes, secrets redaction
+#
+# Supporting panels:
+#   7. Reposystem — RSR compliance (this is an RSR repo)
+#   8. Migration — track believe_me elimination progress
+#   9. panic-attack — stress test the .so files
+#  10. TSDM — triaxial priority ordering across ABI/FFI/Adapter layers
+# ─────────────────────────────────────────────────────────────────
+[panels]
+version = "1.0.0"
+
+# Core development panels
+[[panels.enabled]]
+id = "valence-shell"
+isolation = "native"
+auto-connect = true
+
+[[panels.enabled]]
+id = "editor-bridge"
+isolation = "native"
+auto-connect = true
+
+[[panels.enabled]]
+id = "build-dashboard"
+isolation = "native"
+auto-connect = true
+
+[[panels.enabled]]
+id = "boj"
+isolation = "native"
+endpoint = "http://localhost:7700/api/v1"
+auto-connect = true
+
+[[panels.enabled]]
+id = "vm-inspector"
+isolation = "native"
+
+[[panels.enabled]]
+id = "security"
+isolation = "native"
+auto-connect = true
+
+# Supporting panels
+[[panels.enabled]]
+id = "reposystem"
+isolation = "native"
+
+[[panels.enabled]]
+id = "migration"
+isolation = "native"
+
+[[panels.enabled]]
+id = "panic-attack"
+isolation = "native"
+
+[[panels.enabled]]
+id = "tsdm"
+isolation = "native"
+
+# Hide panels irrelevant to server development
+[panels.disabled]
+ids = [
+  "cloudguard",     # No Cloudflare domains in this repo
+  "game-preview",   # Not a game
+  "level-architect", # Not a game
+  "network-topology", # Game-specific
+  "coprocessors",   # Game-specific
+  "multiplayer-monitor", # Game-specific
+  "dlc-workshop",   # Game-specific
+  "plaza",          # PMPL licensing managed at org level
+  "farm",           # Repo admin — not needed during development
+]
+
+# ─────────────────────────────────────────────────────────────────
+# [workflows] — Automation rules for the ABI → FFI → Adapter pipeline
+#
+# These rules automate the proven-servers build pipeline:
+#   Idris2 change → rebuild ABI → regenerate C headers → rebuild Zig → rebuild .so
+# ─────────────────────────────────────────────────────────────────
+[workflows]
+version = "1.0.0"
+
+# Rebuild Zig FFI when Idris2 ABI files change
+[[workflows.rule]]
+name = "zig-on-abi-change"
+trigger = { event = "file-changed", pattern = "**/*.idr" }
+action = { panel = "build-dashboard", message = "TriggerBuild", args = { target = "zig-ffi" } }
+approval = "auto-fire"
+
+# Rebuild V-lang adapter when Zig FFI changes
+[[workflows.rule]]
+name = "adapter-on-ffi-change"
+trigger = { event = "file-changed", pattern = "**/*.zig" }
+action = { panel = "build-dashboard", message = "TriggerBuild", args = { target = "v-adapter" } }
+approval = "auto-fire"
+
+# Refresh BoJ cartridge list after a .so is built
+[[workflows.rule]]
+name = "boj-refresh-on-build"
+trigger = { event = "panel-message", panel = "build-dashboard", message = "BuildTriggered" }
+action = { panel = "boj", message = "RefreshCartridges" }
+approval = "auto-fire"
+
+# Run panic-attack stress tests on completed .so
+[[workflows.rule]]
+name = "stress-test-on-so-build"
+trigger = { event = "file-changed", pattern = "**/*.so" }
+action = { panel = "panic-attack", message = "RunScan", args = { target = "ffi/" } }
+approval = "approve-once"
+
+# Verify SHA-256 hash after .so build (security gate)
+[[workflows.rule]]
+name = "hash-verify-on-so-build"
+trigger = { event = "file-changed", pattern = "**/*.so" }
+action = { panel = "security", message = "VerifyHash" }
+approval = "auto-fire"
+
+# ─────────────────────────────────────────────────────────────────
+# [clades] — Override traits for server development context
+# ─────────────────────────────────────────────────────────────────
+[clades]
+version = "1.0.0"
+
+# Build dashboard gets a "formal verification" trait for Idris2 type-checking
+[[clades.override]]
+id = "build-dashboard"
+traits = { has-formal-verification = true, has-multi-language = true }
+capabilities-add = ["Idris2TypeCheck", "ZigTest", "VLangBuild", "SharedLibBuild"]
+
+# BoJ panel gets "development" trait (we're building cartridges, not just consuming them)
+[[clades.override]]
+id = "boj"
+traits = { is-development-target = true }
+capabilities-add = ["CartridgeDev", "HotReloadTest"]
+
+# ─────────────────────────────────────────────────────────────────
+# [portfolios] — Panel bundles for different server development workflows
+# ─────────────────────────────────────────────────────────────────
+[portfolios]
+version = "1.0.0"
+
+# Full server development suite
+[[portfolios.custom]]
+id = "server-dev-full"
+name = "Server Development (Full)"
+description = "All panels for Idris2 ABI + Zig FFI + V-lang adapter development with BoJ testing"
+panels = [
+  "valence-shell", "editor-bridge", "build-dashboard", "boj",
+  "vm-inspector", "security", "reposystem", "migration",
+  "panic-attack", "tsdm", "automation-router"
+]
+default-isolation = "native"
+
+# Minimal ABI-focused portfolio (just Idris2 + editor + shell)
+[[portfolios.custom]]
+id = "abi-focus"
+name = "ABI Development"
+description = "Focused Idris2 ABI development — editor, shell, type checker"
+panels = ["valence-shell", "editor-bridge", "build-dashboard"]
+default-isolation = "native"
+
+# FFI testing portfolio (Zig + VM inspector + stress testing)
+[[portfolios.custom]]
+id = "ffi-testing"
+name = "FFI Testing"
+description = "Zig FFI development and testing — VM debugger, stress tests, hash verification"
+panels = ["valence-shell", "editor-bridge", "build-dashboard", "vm-inspector", "panic-attack", "security"]
+default-isolation = "native"
+
+# Integration portfolio (BoJ + all adapters)
+[[portfolios.custom]]
+id = "integration"
+name = "Integration Testing"
+description = "End-to-end cartridge testing — load into BoJ, invoke tools, verify federation"
+panels = ["valence-shell", "boj", "build-dashboard", "security"]
+default-isolation = "native"
