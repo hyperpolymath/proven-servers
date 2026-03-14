@@ -10,7 +10,7 @@ authors = "Jonathan D.A. Jewell"
 brief   = "Configuration validation — core primitive for proven-servers"
 
 sourcedir = "src"
-modules   = Config, Config.Types, Main
+modules   = Config, Config.Types, ConfigABI.Layout, ConfigABI.Transitions, ConfigABI.Foreign, Main
 
 main      = Main
 executable = proven-config

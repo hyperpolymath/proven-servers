@@ -10,7 +10,7 @@ authors = "Jonathan D.A. Jewell"
 brief   = "Provably complete audit trail — core primitive for proven-servers"
 
 sourcedir = "src"
-modules   = Audit, Audit.Types, Main
+modules   = Audit, Audit.Types, AuditABI.Layout, AuditABI.Transitions, AuditABI.Foreign, Main
 
 main      = Main
 executable = proven-audit
