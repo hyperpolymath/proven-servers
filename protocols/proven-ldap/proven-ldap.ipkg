@@ -13,3 +13,6 @@ executable = "proven-ldap"
 
 modules = LDAP
         , LDAP.Types
+        , LDAPABI.Layout
+        , LDAPABI.Transitions
+        , LDAPABI.Foreign
