@@ -17,5 +17,8 @@ modules = NTP
         , NTP.Mode
         , NTP.Stratum
         , NTP.Filter
+        , NTPABI.Layout
+        , NTPABI.Transitions
+        , NTPABI.Foreign
 
 -- depends = proven
