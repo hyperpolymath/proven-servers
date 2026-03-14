@@ -17,5 +17,8 @@ modules = FTP
         , FTP.Session
         , FTP.Transfer
         , FTP.Path
+        , FTPABI.Layout
+        , FTPABI.Transitions
+        , FTPABI.Foreign
 
 -- depends = proven
