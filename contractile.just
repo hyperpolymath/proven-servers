@@ -24,7 +24,11 @@ dust-source-rollback:
 intend-list:
     @echo '=== Declared Intent ==='
     @echo ''
-    @echo 'Features:'
+    @echo 'ABI-FFI:'
+    @echo ''
+    @echo 'Servers:'
+    @echo ''
+    @echo 'Verification:'
     @echo ''
     @echo 'Quality:'
 
@@ -33,7 +37,7 @@ intend-list:
 # Source: Mustfile.a2ml
 
 # Run all must checks
-must-check: must-license-present must-readme-present must-spdx-headers must-no-banned-files
+must-check: must-license-present must-readme-present must-security-md must-containerfile-present must-ai-manifest must-idris2-abi-exists must-zig-ffi-exists must-generated-headers must-no-dangerous-patterns must-spdx-headers must-no-dockerfile must-no-makefile must-no-env-files
     @echo 'All must checks passed'
 
 # LICENSE file must exist
@@ -44,13 +48,49 @@ must-license-present:
 must-readme-present:
     test -f README.adoc || test -f README.md
 
-# Source files should have SPDX license headers
-must-spdx-headers:
-    find . -name '*.rs' -o -name '*.res' -o -name '*.gleam' | head -20 | xargs -r grep -L 'SPDX-License-Identifier' | wc -l | grep -q '^0$'
+# SECURITY.md must exist
+must-security-md:
+    test -f SECURITY.md
 
-# No Dockerfiles or Makefiles
-must-no-banned-files:
-    test ! -f Dockerfile && test ! -f Makefile
+# Containerfile must exist
+must-containerfile-present:
+    test -f Containerfile
+
+# AI manifest must exist
+must-ai-manifest:
+    test -f 0-AI-MANIFEST.a2ml || test -f AI.a2ml
+
+# Idris2 ABI definitions must exist in src/abi/
+must-idris2-abi-exists:
+    test -f src/abi/Types.idr && test -f src/abi/Layout.idr && test -f src/abi/Foreign.idr
+
+# Zig FFI implementation must exist
+must-zig-ffi-exists:
+    test -f ffi/zig/build.zig && test -f ffi/zig/src/main.zig
+
+# Generated C headers directory should exist
+must-generated-headers:
+    test -d generated/abi || test -d abi
+
+# No believe_me, assert_total, or similar unsafe patterns
+must-no-dangerous-patterns:
+    grep -rn 'believe_me\|assert_total\|unsafeCoerce\|Admitted\|sorry' src/ --include='*.idr' --include='*.rs' | wc -l | grep -q '^0$'
+
+# Source files should have SPDX headers
+must-spdx-headers:
+    find src/ -name '*.idr' -o -name '*.rs' -o -name '*.zig' | head -20 | xargs -r grep -L 'SPDX-License-Identifier' | wc -l | grep -q '^0$'
+
+# No Dockerfiles (use Containerfile)
+must-no-dockerfile:
+    test ! -f Dockerfile
+
+# No Makefiles (use Justfile)
+must-no-makefile:
+    test ! -f Makefile
+
+# No .env files committed
+must-no-env-files:
+    test ! -f .env
 
 
 # === TRUST (Integrity & Provenance Verification) ===

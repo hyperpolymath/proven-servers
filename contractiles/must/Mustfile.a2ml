@@ -1,16 +1,20 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
 # Mustfile (A2ML Canonical)
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 
 @abstract:
-Physical State contract for proven-servers.
-Declares what must be true about this project's files and configuration.
+Physical State contract for proven-servers — formally verified server
+implementations with Idris2 ABI definitions and Zig FFI layer.
 @end
 
 @requires:
-- section: Checks
+- section: Core-Files
+- section: ABI-FFI
+- section: Verification
+- section: Banned
 @end
 
-## Checks
+## Core-Files
 
 ### license-present
 - description: LICENSE file must exist
@@ -22,12 +26,63 @@ Declares what must be true about this project's files and configuration.
 - run: test -f README.adoc || test -f README.md
 - severity: critical
 
-### spdx-headers
-- description: Source files should have SPDX license headers
-- run: find . -name '*.rs' -o -name '*.res' -o -name '*.gleam' | head -20 | xargs -r grep -L 'SPDX-License-Identifier' | wc -l | grep -q '^0$'
+### security-md
+- description: SECURITY.md must exist
+- run: test -f SECURITY.md
+- severity: critical
+
+### containerfile-present
+- description: Containerfile must exist
+- run: test -f Containerfile
+- severity: critical
+
+### ai-manifest
+- description: AI manifest must exist
+- run: test -f 0-AI-MANIFEST.a2ml || test -f AI.a2ml
+- severity: critical
+
+## ABI-FFI
+
+### idris2-abi-exists
+- description: Idris2 ABI definitions must exist in src/abi/
+- run: test -f src/abi/Types.idr && test -f src/abi/Layout.idr && test -f src/abi/Foreign.idr
+- severity: critical
+
+### zig-ffi-exists
+- description: Zig FFI implementation must exist
+- run: test -f ffi/zig/build.zig && test -f ffi/zig/src/main.zig
+- severity: critical
+
+### generated-headers
+- description: Generated C headers directory should exist
+- run: test -d generated/abi || test -d abi
 - severity: warning
 
-### no-banned-files
-- description: No Dockerfiles or Makefiles
-- run: test ! -f Dockerfile && test ! -f Makefile
+## Verification
+
+### no-dangerous-patterns
+- description: No believe_me, assert_total, or similar unsafe patterns
+- run: grep -rn 'believe_me\|assert_total\|unsafeCoerce\|Admitted\|sorry' src/ --include='*.idr' --include='*.rs' | wc -l | grep -q '^0$'
+- severity: critical
+
+### spdx-headers
+- description: Source files should have SPDX headers
+- run: find src/ -name '*.idr' -o -name '*.rs' -o -name '*.zig' | head -20 | xargs -r grep -L 'SPDX-License-Identifier' | wc -l | grep -q '^0$'
+- severity: warning
+
+## Banned
+
+### no-dockerfile
+- description: No Dockerfiles (use Containerfile)
+- run: test ! -f Dockerfile
+- severity: critical
+
+### no-makefile
+- description: No Makefiles (use Justfile)
+- run: test ! -f Makefile
+- severity: critical
+
+### no-env-files
+- description: No .env files committed
+- run: test ! -f .env
 - severity: critical

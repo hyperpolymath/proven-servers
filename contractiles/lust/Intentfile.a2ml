@@ -1,25 +1,79 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
 # Intentfile (A2ML Canonical)
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 
 @abstract:
-Declared future intent for proven-servers.
+Declared future intent for proven-servers — formally verified server
+implementations with ABI-FFI architecture.
 @end
 
 @requires:
-- section: Features
+- section: ABI-FFI
+- section: Servers
+- section: Verification
 - section: Quality
 @end
 
-## Features
+## ABI-FFI
 
-### initial-release
-- description: Ship v1.0.0
+### idris2-abi-proofs
+- description: Complete dependent type proofs for all ABI definitions
 - status: in-progress
 - priority: critical
+- evidence: command: find src/abi -name '*.idr' -exec grep -l 'total' {} + | wc -l | grep -v '^0$'
+
+### zig-ffi-integration-tests
+- description: Full integration test suite for Zig FFI layer
+- status: in-progress
+- priority: high
+- evidence: command: test -f ffi/zig/test/integration_test.zig
+
+### c-header-generation
+- description: Auto-generate C headers from Idris2 ABI
+- status: declared
+- priority: high
+- evidence: generated/abi/ exists
+
+## Servers
+
+### http-server
+- description: Formally verified HTTP server implementation
+- status: in-progress
+- priority: critical
+
+### dns-server
+- description: Formally verified DNS server
+- status: declared
+- priority: high
+
+### tls-server
+- description: TLS 1.3 server with post-quantum support
+- status: declared
+- priority: high
+- depends_on: http-server
+
+## Verification
+
+### no-unsafe-patterns
+- description: Zero unsafe escape hatches in verified code
+- status: in-progress
+- priority: critical
+- evidence: command: grep -rn 'believe_me\|assert_total' src/ --include='*.idr' | wc -l | grep -q '^0$'
+
+### cross-platform-abi
+- description: ABI compliance verified across Linux/macOS/Windows
+- status: declared
+- priority: medium
 
 ## Quality
 
 ### test-coverage
-- description: Achieve meaningful test coverage
+- description: Integration tests for all server types
 - status: declared
 - priority: medium
+
+### containerised-tests
+- description: Run tests in Chainguard containers
+- status: declared
+- priority: medium
+- evidence: command: test -f container/test.containerfile
