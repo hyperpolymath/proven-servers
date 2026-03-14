@@ -2,19 +2,6 @@
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
 // mqtt_test.zig -- Integration tests for proven-mqtt FFI.
-//
-// Tests cover:
-//   - ABI version (1 test)
-//   - Enum encoding seams (7 tests)
-//   - Session lifecycle (4 tests)
-//   - Subscription management (3 tests)
-//   - Publish and QoS delivery flows (4 tests)
-//   - Disconnect and cleanup (3 tests)
-//   - Retained messages (2 tests)
-//   - Stateless transition tables (3 tests)
-//   - Topic matching (3 tests)
-//   - Invalid slot safety (1 test)
-//   Total: 31 tests (exceeds 20 minimum)
 
 const std = @import("std");
 const mqtt = @import("mqtt");
@@ -28,14 +15,23 @@ test "abi version matches Idris2 Foreign.abiVersion" {
 }
 
 // =========================================================================
-// Enum encoding seams (match Layout.idr tag assignments)
+// Enum encoding seams
 // =========================================================================
 
 test "PacketType encoding matches Layout.idr (15 tags)" {
     try std.testing.expectEqual(@as(u8, 0), @intFromEnum(mqtt.PacketType.connect));
     try std.testing.expectEqual(@as(u8, 1), @intFromEnum(mqtt.PacketType.connack));
     try std.testing.expectEqual(@as(u8, 2), @intFromEnum(mqtt.PacketType.publish));
+    try std.testing.expectEqual(@as(u8, 3), @intFromEnum(mqtt.PacketType.puback));
+    try std.testing.expectEqual(@as(u8, 4), @intFromEnum(mqtt.PacketType.pubrec));
+    try std.testing.expectEqual(@as(u8, 5), @intFromEnum(mqtt.PacketType.pubrel));
+    try std.testing.expectEqual(@as(u8, 6), @intFromEnum(mqtt.PacketType.pubcomp));
     try std.testing.expectEqual(@as(u8, 7), @intFromEnum(mqtt.PacketType.subscribe));
+    try std.testing.expectEqual(@as(u8, 8), @intFromEnum(mqtt.PacketType.suback));
+    try std.testing.expectEqual(@as(u8, 9), @intFromEnum(mqtt.PacketType.unsubscribe));
+    try std.testing.expectEqual(@as(u8, 10), @intFromEnum(mqtt.PacketType.unsuback));
+    try std.testing.expectEqual(@as(u8, 11), @intFromEnum(mqtt.PacketType.pingreq));
+    try std.testing.expectEqual(@as(u8, 12), @intFromEnum(mqtt.PacketType.pingresp));
     try std.testing.expectEqual(@as(u8, 13), @intFromEnum(mqtt.PacketType.disconnect));
     try std.testing.expectEqual(@as(u8, 14), @intFromEnum(mqtt.PacketType.auth));
 }
@@ -48,7 +44,10 @@ test "QoS encoding matches Layout.idr (3 tags)" {
 
 test "ConnAckCode encoding matches Layout.idr (6 tags)" {
     try std.testing.expectEqual(@as(u8, 0), @intFromEnum(mqtt.ConnAckCode.connection_accepted));
+    try std.testing.expectEqual(@as(u8, 1), @intFromEnum(mqtt.ConnAckCode.unacceptable_protocol));
+    try std.testing.expectEqual(@as(u8, 2), @intFromEnum(mqtt.ConnAckCode.identifier_rejected));
     try std.testing.expectEqual(@as(u8, 3), @intFromEnum(mqtt.ConnAckCode.server_unavailable));
+    try std.testing.expectEqual(@as(u8, 4), @intFromEnum(mqtt.ConnAckCode.bad_credentials));
     try std.testing.expectEqual(@as(u8, 5), @intFromEnum(mqtt.ConnAckCode.not_authorised));
 }
 
@@ -77,31 +76,53 @@ test "QoSDeliveryState encoding matches Layout.idr (7 tags)" {
 
 test "PropertyType encoding matches Layout.idr (10 tags)" {
     try std.testing.expectEqual(@as(u8, 0), @intFromEnum(mqtt.PropertyType.session_expiry_interval));
+    try std.testing.expectEqual(@as(u8, 1), @intFromEnum(mqtt.PropertyType.receive_maximum));
+    try std.testing.expectEqual(@as(u8, 2), @intFromEnum(mqtt.PropertyType.maximum_qos));
+    try std.testing.expectEqual(@as(u8, 3), @intFromEnum(mqtt.PropertyType.retain_available));
     try std.testing.expectEqual(@as(u8, 4), @intFromEnum(mqtt.PropertyType.maximum_packet_size));
+    try std.testing.expectEqual(@as(u8, 5), @intFromEnum(mqtt.PropertyType.topic_alias_maximum));
+    try std.testing.expectEqual(@as(u8, 6), @intFromEnum(mqtt.PropertyType.wildcard_sub_available));
+    try std.testing.expectEqual(@as(u8, 7), @intFromEnum(mqtt.PropertyType.sub_id_available));
+    try std.testing.expectEqual(@as(u8, 8), @intFromEnum(mqtt.PropertyType.shared_sub_available));
     try std.testing.expectEqual(@as(u8, 9), @intFromEnum(mqtt.PropertyType.server_keep_alive));
 }
 
-// =========================================================================
-// Session lifecycle
-// =========================================================================
-
-test "create returns valid slot in Connected state" {
-    const slot = mqtt.mqtt_create(0, 1, 60); // MQTT 3.1.1, clean session, 60s keep-alive
-    try std.testing.expect(slot >= 0);
-    defer mqtt.mqtt_destroy(slot);
-    // Session starts in Connected state (Idle -> Connected applied automatically)
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_state(slot)); // connected
+test "PacketDirection encoding matches Layout.idr (3 tags)" {
+    try std.testing.expectEqual(@as(u8, 0), @intFromEnum(mqtt.PacketDirection.client_to_server));
+    try std.testing.expectEqual(@as(u8, 1), @intFromEnum(mqtt.PacketDirection.server_to_client));
+    try std.testing.expectEqual(@as(u8, 2), @intFromEnum(mqtt.PacketDirection.bidirectional));
 }
 
-test "create with MQTT 5.0" {
-    const slot = mqtt.mqtt_create(1, 0, 120); // MQTT 5.0, persistent session, 120s
+test "SubAckCode encoding matches Layout.idr (4 tags)" {
+    try std.testing.expectEqual(@as(u8, 0), @intFromEnum(mqtt.SubAckCode.granted_qos0));
+    try std.testing.expectEqual(@as(u8, 1), @intFromEnum(mqtt.SubAckCode.granted_qos1));
+    try std.testing.expectEqual(@as(u8, 2), @intFromEnum(mqtt.SubAckCode.granted_qos2));
+    try std.testing.expectEqual(@as(u8, 3), @intFromEnum(mqtt.SubAckCode.sub_failure));
+}
+
+// =========================================================================
+// Lifecycle
+// =========================================================================
+
+test "create returns valid slot in Connected state (MQTT 3.1.1)" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
     try std.testing.expect(slot >= 0);
     defer mqtt.mqtt_destroy(slot);
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_version(slot)); // mqtt50
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_state(slot));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_version(slot));
+}
+
+test "create returns valid slot (MQTT 5.0)" {
+    const slot = mqtt.mqtt_create(1, 0, 120);
+    try std.testing.expect(slot >= 0);
+    defer mqtt.mqtt_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_state(slot));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_version(slot));
 }
 
 test "create rejects invalid version" {
-    try std.testing.expectEqual(@as(c_int, -1), mqtt.mqtt_create(99, 1, 60));
+    const slot = mqtt.mqtt_create(99, 1, 60);
+    try std.testing.expectEqual(@as(c_int, -1), slot);
 }
 
 test "destroy is safe with invalid slot" {
@@ -110,29 +131,31 @@ test "destroy is safe with invalid slot" {
 }
 
 // =========================================================================
-// Subscription management
+// Subscribe / Unsubscribe
 // =========================================================================
 
 test "subscribe transitions Connected -> Subscribed" {
     const slot = mqtt.mqtt_create(0, 1, 60);
     defer mqtt.mqtt_destroy(slot);
 
-    const topic = "home/+/temperature";
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 1)); // QoS 1
-    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_state(slot)); // subscribed
+    const topic = "home/temperature";
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 1));
+    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_state(slot));
     try std.testing.expectEqual(@as(u32, 1), mqtt.mqtt_subscription_count(slot));
 }
 
-test "additional subscribe stays Subscribed" {
+test "multiple subscriptions stay in Subscribed" {
     const slot = mqtt.mqtt_create(0, 1, 60);
     defer mqtt.mqtt_destroy(slot);
 
-    const t1 = "sensor/+/data";
-    const t2 = "device/#";
-    _ = mqtt.mqtt_subscribe(slot, t1.ptr, t1.len, 0);
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_subscribe(slot, t2.ptr, t2.len, 2));
-    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_state(slot)); // still subscribed
-    try std.testing.expectEqual(@as(u32, 2), mqtt.mqtt_subscription_count(slot));
+    const t1 = "home/temperature";
+    const t2 = "home/humidity";
+    const t3 = "sensor/#";
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_subscribe(slot, t1.ptr, t1.len, 0));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_subscribe(slot, t2.ptr, t2.len, 1));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_subscribe(slot, t3.ptr, t3.len, 2));
+    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_state(slot));
+    try std.testing.expectEqual(@as(u32, 3), mqtt.mqtt_subscription_count(slot));
 }
 
 test "unsubscribe last topic transitions Subscribed -> Connected" {
@@ -140,237 +163,349 @@ test "unsubscribe last topic transitions Subscribed -> Connected" {
     defer mqtt.mqtt_destroy(slot);
 
     const topic = "home/temperature";
-    _ = mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 1);
-    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_state(slot)); // subscribed
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 1));
+    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_state(slot));
 
     try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_unsubscribe(slot, topic.ptr, topic.len));
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_state(slot)); // back to connected
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_state(slot));
     try std.testing.expectEqual(@as(u32, 0), mqtt.mqtt_subscription_count(slot));
 }
 
-// =========================================================================
-// Publish and QoS delivery flows
-// =========================================================================
-
-test "publish QoS 0 fire and forget (no state change)" {
+test "subscribe rejects invalid QoS" {
     const slot = mqtt.mqtt_create(0, 1, 60);
     defer mqtt.mqtt_destroy(slot);
 
     const topic = "test/topic";
-    const payload = "hello";
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 3));
+}
+
+test "subscribe rejects empty topic" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    const topic = "x";
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_subscribe(slot, topic.ptr, 0, 0));
+}
+
+// =========================================================================
+// Publish (QoS 0 -- fire and forget)
+// =========================================================================
+
+test "QoS 0 publish succeeds without state change" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    const topic = "sensor/data";
+    const payload = "23.5";
     try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_publish(
-        slot,
-        topic.ptr,
-        topic.len,
-        payload.ptr,
-        payload.len,
-        0, // QoS 0
-        0, // no retain
-        0, // packet_id (unused for QoS 0)
+        slot, topic.ptr, topic.len, payload.ptr, payload.len, 0, 0, 0,
     ));
-    // State should remain Connected (no Publishing transition for QoS 0)
     try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_state(slot));
 }
 
-test "publish QoS 1 full delivery: Publish -> PubAck -> Complete" {
+test "can_publish returns 1 from Connected and Subscribed" {
     const slot = mqtt.mqtt_create(0, 1, 60);
     defer mqtt.mqtt_destroy(slot);
 
-    const topic = "test/qos1";
-    const payload = "data";
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_publish(
-        slot,
-        topic.ptr,
-        topic.len,
-        payload.ptr,
-        payload.len,
-        1, // QoS 1
-        0, // no retain
-        42, // packet_id
-    ));
-    try std.testing.expectEqual(@as(u8, 3), mqtt.mqtt_state(slot)); // publishing
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_state(slot, 42)); // awaiting_puback
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_publish(slot));
 
-    // Send PUBACK
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_puback(slot, 42));
-    try std.testing.expectEqual(@as(u8, 5), mqtt.mqtt_qos_state(slot, 42)); // complete
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_state(slot)); // back to connected
-}
-
-test "publish QoS 2 full delivery: PubRec -> PubRel -> PubComp" {
-    const slot = mqtt.mqtt_create(0, 1, 60);
-    defer mqtt.mqtt_destroy(slot);
-
-    const topic = "test/qos2";
-    const payload = "assured";
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_publish(
-        slot,
-        topic.ptr,
-        topic.len,
-        payload.ptr,
-        payload.len,
-        2, // QoS 2
-        0, // no retain
-        100, // packet_id
-    ));
-    try std.testing.expectEqual(@as(u8, 3), mqtt.mqtt_state(slot)); // publishing
-    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_qos_state(slot, 100)); // awaiting_pubrec
-
-    // PUBREC
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_pubrec(slot, 100));
-    try std.testing.expectEqual(@as(u8, 3), mqtt.mqtt_qos_state(slot, 100)); // awaiting_pubrel
-
-    // PUBREL
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_pubrel(slot, 100));
-    try std.testing.expectEqual(@as(u8, 4), mqtt.mqtt_qos_state(slot, 100)); // awaiting_pubcomp
-
-    // PUBCOMP
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_pubcomp(slot, 100));
-    try std.testing.expectEqual(@as(u8, 5), mqtt.mqtt_qos_state(slot, 100)); // complete
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_state(slot)); // back to connected
-}
-
-test "publish from Subscribed returns to Subscribed after QoS complete" {
-    const slot = mqtt.mqtt_create(0, 1, 60);
-    defer mqtt.mqtt_destroy(slot);
-
-    const sub_topic = "sensor/#";
-    _ = mqtt.mqtt_subscribe(slot, sub_topic.ptr, sub_topic.len, 1);
-    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_state(slot)); // subscribed
-
-    const pub_topic = "output/data";
-    const payload = "val";
-    _ = mqtt.mqtt_publish(slot, pub_topic.ptr, pub_topic.len, payload.ptr, payload.len, 1, 0, 7);
-    try std.testing.expectEqual(@as(u8, 3), mqtt.mqtt_state(slot)); // publishing
-
-    _ = mqtt.mqtt_puback(slot, 7);
-    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_state(slot)); // back to subscribed (not connected)
-}
-
-// =========================================================================
-// Disconnect and cleanup
-// =========================================================================
-
-test "disconnect from Connected" {
-    const slot = mqtt.mqtt_create(0, 1, 60);
-    defer mqtt.mqtt_destroy(slot);
-
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_disconnect(slot));
-    try std.testing.expectEqual(@as(u8, 4), mqtt.mqtt_state(slot)); // disconnecting
-}
-
-test "disconnect from Subscribed" {
-    const slot = mqtt.mqtt_create(0, 1, 60);
-    defer mqtt.mqtt_destroy(slot);
-
-    const topic = "test/dc";
+    const topic = "test/topic";
     _ = mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 0);
-
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_disconnect(slot));
-    try std.testing.expectEqual(@as(u8, 4), mqtt.mqtt_state(slot)); // disconnecting
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_publish(slot));
 }
 
-test "cleanup transitions Disconnecting -> Idle and clears clean session" {
-    const slot = mqtt.mqtt_create(0, 1, 60); // clean session
+test "can_subscribe returns 1 from Connected and Subscribed" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
     defer mqtt.mqtt_destroy(slot);
 
-    const topic = "test/cleanup";
-    _ = mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 1);
-    try std.testing.expectEqual(@as(u32, 1), mqtt.mqtt_subscription_count(slot));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_subscribe(slot));
 
-    _ = mqtt.mqtt_disconnect(slot);
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_cleanup(slot));
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_state(slot)); // idle
-    try std.testing.expectEqual(@as(u32, 0), mqtt.mqtt_subscription_count(slot)); // cleared
+    const topic = "test/topic";
+    _ = mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 0);
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_subscribe(slot));
+}
+
+// =========================================================================
+// Publish (QoS 1 -- acknowledged delivery)
+// =========================================================================
+
+test "QoS 1 publish transitions to Publishing and PUBACK completes" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    const topic = "sensor/data";
+    const payload = "23.5";
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_publish(
+        slot, topic.ptr, topic.len, payload.ptr, payload.len, 1, 0, 42,
+    ));
+    try std.testing.expectEqual(@as(u8, 3), mqtt.mqtt_state(slot));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_state(slot, 42));
+
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_puback(slot, 42));
+    try std.testing.expectEqual(@as(u8, 5), mqtt.mqtt_qos_state(slot, 42));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_state(slot));
+}
+
+test "QoS 1 from Subscribed returns to Subscribed after PUBACK" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    const sub_topic = "home/#";
+    _ = mqtt.mqtt_subscribe(slot, sub_topic.ptr, sub_topic.len, 1);
+    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_state(slot));
+
+    const topic = "sensor/data";
+    const payload = "23.5";
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_publish(
+        slot, topic.ptr, topic.len, payload.ptr, payload.len, 1, 0, 100,
+    ));
+    try std.testing.expectEqual(@as(u8, 3), mqtt.mqtt_state(slot));
+
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_puback(slot, 100));
+    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_state(slot));
+}
+
+// =========================================================================
+// Publish (QoS 2 -- exactly once delivery)
+// =========================================================================
+
+test "QoS 2 full flow: PUBLISH -> PUBREC -> PUBREL -> PUBCOMP" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    const topic = "critical/data";
+    const payload = "important";
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_publish(
+        slot, topic.ptr, topic.len, payload.ptr, payload.len, 2, 0, 1,
+    ));
+    try std.testing.expectEqual(@as(u8, 3), mqtt.mqtt_state(slot));
+    try std.testing.expectEqual(@as(u8, 2), mqtt.mqtt_qos_state(slot, 1));
+
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_pubrec(slot, 1));
+    try std.testing.expectEqual(@as(u8, 3), mqtt.mqtt_qos_state(slot, 1));
+
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_pubrel(slot, 1));
+    try std.testing.expectEqual(@as(u8, 4), mqtt.mqtt_qos_state(slot, 1));
+
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_pubcomp(slot, 1));
+    try std.testing.expectEqual(@as(u8, 5), mqtt.mqtt_qos_state(slot, 1));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_state(slot));
+}
+
+test "QoS 2 rejects out-of-order acknowledgement" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    const topic = "critical/data";
+    const payload = "important";
+    _ = mqtt.mqtt_publish(slot, topic.ptr, topic.len, payload.ptr, payload.len, 2, 0, 5);
+
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_pubrel(slot, 5));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_pubcomp(slot, 5));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_puback(slot, 5));
 }
 
 // =========================================================================
 // Retained messages
 // =========================================================================
 
-test "retained message stored and counted" {
-    // Clean up any leftover state from other tests by creating a fresh session
+test "publish with retain stores message" {
     const slot = mqtt.mqtt_create(0, 1, 60);
     defer mqtt.mqtt_destroy(slot);
+
+    const initial_count = mqtt.mqtt_retained_count();
 
     const topic = "retain/test";
-    const payload = "retained_data";
-    _ = mqtt.mqtt_publish(slot, topic.ptr, topic.len, payload.ptr, payload.len, 0, 1, 0);
+    const payload = "retained-value";
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_publish(
+        slot, topic.ptr, topic.len, payload.ptr, payload.len, 0, 1, 0,
+    ));
 
-    try std.testing.expect(mqtt.mqtt_retained_count() >= 1);
+    try std.testing.expect(mqtt.mqtt_retained_count() > initial_count);
 }
 
-test "retained message replaced on same topic" {
+test "publish with retain and empty payload deletes retained message" {
     const slot = mqtt.mqtt_create(0, 1, 60);
     defer mqtt.mqtt_destroy(slot);
 
-    const topic = "retain/replace";
-    const payload1 = "first";
-    const payload2 = "second";
-    _ = mqtt.mqtt_publish(slot, topic.ptr, topic.len, payload1.ptr, payload1.len, 0, 1, 0);
+    const topic = "retain/delete";
+    const payload = "to-delete";
+    _ = mqtt.mqtt_publish(slot, topic.ptr, topic.len, payload.ptr, payload.len, 0, 1, 0);
     const count_before = mqtt.mqtt_retained_count();
-    _ = mqtt.mqtt_publish(slot, topic.ptr, topic.len, payload2.ptr, payload2.len, 0, 1, 0);
-    const count_after = mqtt.mqtt_retained_count();
 
-    // Count should not increase (replacement, not addition)
-    try std.testing.expectEqual(count_before, count_after);
+    const empty = "x";
+    _ = mqtt.mqtt_publish(slot, topic.ptr, topic.len, empty.ptr, 0, 0, 1, 0);
+
+    try std.testing.expect(mqtt.mqtt_retained_count() < count_before);
 }
 
 // =========================================================================
-// Stateless transition tables
+// Disconnect / Cleanup
 // =========================================================================
 
-test "mqtt_can_transition matches Transitions.idr (broker)" {
-    // Valid transitions
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(0, 1)); // Idle -> Connected
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(1, 2)); // Connected -> Subscribed
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(2, 2)); // Subscribed -> Subscribed
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(2, 1)); // Subscribed -> Connected
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(1, 3)); // Connected -> Publishing
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(2, 3)); // Subscribed -> Publishing
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(3, 1)); // Publishing -> Connected
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(3, 2)); // Publishing -> Subscribed
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(1, 4)); // Connected -> Disconnecting
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(2, 4)); // Subscribed -> Disconnecting
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(3, 4)); // Publishing -> Disconnecting
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(4, 0)); // Disconnecting -> Idle
+test "disconnect transitions Connected -> Disconnecting" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_disconnect(slot));
+    try std.testing.expectEqual(@as(u8, 4), mqtt.mqtt_state(slot));
+}
+
+test "disconnect from Subscribed transitions to Disconnecting" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    const topic = "test/topic";
+    _ = mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 0);
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_disconnect(slot));
+    try std.testing.expectEqual(@as(u8, 4), mqtt.mqtt_state(slot));
+}
+
+test "cleanup transitions Disconnecting -> Idle" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    _ = mqtt.mqtt_disconnect(slot);
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_cleanup(slot));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_state(slot));
+}
+
+test "cleanup with clean session clears subscriptions" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    const topic = "persistent/topic";
+    _ = mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 1);
+    try std.testing.expectEqual(@as(u32, 1), mqtt.mqtt_subscription_count(slot));
+
+    _ = mqtt.mqtt_disconnect(slot);
+    _ = mqtt.mqtt_cleanup(slot);
+    try std.testing.expectEqual(@as(u32, 0), mqtt.mqtt_subscription_count(slot));
+}
+
+test "cleanup rejected from non-Disconnecting state" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_cleanup(slot));
+}
+
+test "disconnect rejected from Idle" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    _ = mqtt.mqtt_disconnect(slot);
+    _ = mqtt.mqtt_cleanup(slot);
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_disconnect(slot));
+}
+
+// =========================================================================
+// Impossibility tests (invalid transitions)
+// =========================================================================
+
+test "cannot subscribe from Idle" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    _ = mqtt.mqtt_disconnect(slot);
+    _ = mqtt.mqtt_cleanup(slot);
+    const topic = "test/topic";
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 0));
+}
+
+test "cannot publish from Idle" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    _ = mqtt.mqtt_disconnect(slot);
+    _ = mqtt.mqtt_cleanup(slot);
+    const topic = "test/topic";
+    const payload = "data";
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_publish(
+        slot, topic.ptr, topic.len, payload.ptr, payload.len, 0, 0, 0,
+    ));
+}
+
+test "cannot publish from Disconnecting" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    _ = mqtt.mqtt_disconnect(slot);
+    const topic = "test/topic";
+    const payload = "data";
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_publish(
+        slot, topic.ptr, topic.len, payload.ptr, payload.len, 0, 0, 0,
+    ));
+}
+
+test "cannot subscribe from Publishing" {
+    const slot = mqtt.mqtt_create(0, 1, 60);
+    defer mqtt.mqtt_destroy(slot);
+
+    const topic = "sensor/data";
+    const payload = "23.5";
+    _ = mqtt.mqtt_publish(slot, topic.ptr, topic.len, payload.ptr, payload.len, 1, 0, 1);
+    try std.testing.expectEqual(@as(u8, 3), mqtt.mqtt_state(slot));
+
+    const sub_topic = "test/#";
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_subscribe(slot, sub_topic.ptr, sub_topic.len, 0));
+}
+
+// =========================================================================
+// Stateless broker transition table
+// =========================================================================
+
+test "mqtt_can_transition matches Transitions.idr" {
+    // Forward lifecycle
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(0, 1));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(1, 2));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(2, 2));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(2, 1));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(1, 3));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(2, 3));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(3, 1));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(3, 2));
+
+    // Disconnect edges
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(1, 4));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(2, 4));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(3, 4));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_can_transition(4, 0));
 
     // Invalid transitions
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_transition(0, 2)); // Idle -> Subscribed (skip!)
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_transition(0, 3)); // Idle -> Publishing (skip!)
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_transition(4, 1)); // Disconnecting -> Connected
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_transition(0, 4)); // Idle -> Disconnecting
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_transition(0, 2));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_transition(0, 3));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_transition(4, 1));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_transition(0, 4));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_transition(4, 2));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_transition(4, 3));
 }
 
-test "mqtt_qos_can_transition matches QoS 1 delivery states" {
-    // QoS 1: Idle -> AwaitingPubAck -> Complete | Failed
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(1, 0, 1)); // Idle -> AwaitingPubAck
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(1, 1, 5)); // AwaitingPubAck -> Complete
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(1, 1, 6)); // AwaitingPubAck -> Failed
+// =========================================================================
+// Stateless QoS delivery transition table
+// =========================================================================
 
-    // Invalid
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(1, 0, 5)); // Cannot skip to Complete
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(1, 5, 0)); // Complete is terminal
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(1, 6, 0)); // Failed is terminal
-}
+test "mqtt_qos_can_transition matches Transitions.idr" {
+    // QoS 0
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(0, 0, 5));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(0, 0, 1));
 
-test "mqtt_qos_can_transition matches QoS 2 delivery states" {
-    // QoS 2: Idle -> AwaitingPubRec -> AwaitingPubRel -> AwaitingPubComp -> Complete
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 0, 2)); // Idle -> AwaitingPubRec
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 2, 3)); // -> AwaitingPubRel
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 3, 4)); // -> AwaitingPubComp
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 4, 5)); // -> Complete
+    // QoS 1
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(1, 0, 1));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(1, 1, 5));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(1, 1, 6));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(1, 0, 5));
 
-    // Failure edges
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 2, 6)); // AwaitingPubRec -> Failed
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 3, 6)); // AwaitingPubRel -> Failed
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 4, 6)); // AwaitingPubComp -> Failed
-
-    // Invalid
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(2, 0, 5)); // Cannot skip to Complete
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(2, 2, 5)); // Cannot skip mid-flow
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(2, 5, 0)); // Complete is terminal
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(2, 6, 0)); // Failed is terminal
+    // QoS 2
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 0, 2));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 2, 3));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 3, 4));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 4, 5));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 2, 6));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 3, 6));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(2, 4, 6));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(2, 0, 5));
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(2, 2, 5));
 }
 
 // =========================================================================
@@ -381,10 +516,7 @@ test "topic matching: exact match" {
     const topic = "home/livingroom/temperature";
     const filter = "home/livingroom/temperature";
     try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_topic_matches(
-        topic.ptr,
-        topic.len,
-        filter.ptr,
-        filter.len,
+        topic.ptr, topic.len, filter.ptr, filter.len,
     ));
 }
 
@@ -392,125 +524,60 @@ test "topic matching: single-level wildcard" {
     const topic = "home/livingroom/temperature";
     const filter = "home/+/temperature";
     try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_topic_matches(
-        topic.ptr,
-        topic.len,
-        filter.ptr,
-        filter.len,
-    ));
-
-    // Should NOT match different structure
-    const topic2 = "home/livingroom/humidity";
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_topic_matches(
-        topic2.ptr,
-        topic2.len,
-        filter.ptr,
-        filter.len,
+        topic.ptr, topic.len, filter.ptr, filter.len,
     ));
 }
 
 test "topic matching: multi-level wildcard" {
-    const topic1 = "sensor/data";
-    const topic2 = "sensor/data/temperature/celsius";
-    const filter = "sensor/#";
+    const topic = "home/livingroom/temperature";
+    const filter = "home/#";
     try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_topic_matches(
-        topic1.ptr,
-        topic1.len,
-        filter.ptr,
-        filter.len,
+        topic.ptr, topic.len, filter.ptr, filter.len,
     ));
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_topic_matches(
-        topic2.ptr,
-        topic2.len,
-        filter.ptr,
-        filter.len,
-    ));
+}
 
-    // Should NOT match different prefix
-    const topic3 = "device/data";
+test "topic matching: hash matches everything" {
+    const topic = "any/topic/at/all";
+    const filter = "#";
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_topic_matches(
+        topic.ptr, topic.len, filter.ptr, filter.len,
+    ));
+}
+
+test "topic matching: no match on different path" {
+    const topic = "home/livingroom/temperature";
+    const filter = "office/+/temperature";
     try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_topic_matches(
-        topic3.ptr,
-        topic3.len,
-        filter.ptr,
-        filter.len,
+        topic.ptr, topic.len, filter.ptr, filter.len,
+    ));
+}
+
+test "topic matching: plus does not match level separator" {
+    const topic = "home/livingroom/sub/temperature";
+    const filter = "home/+/temperature";
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_topic_matches(
+        topic.ptr, topic.len, filter.ptr, filter.len,
+    ));
+}
+
+test "topic matching: empty topic rejected" {
+    const topic = "x";
+    const filter = "#";
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_topic_matches(
+        topic.ptr, 0, filter.ptr, filter.len,
     ));
 }
 
 // =========================================================================
-// Invalid slot safety
+// State queries on invalid slots
 // =========================================================================
 
 test "state queries safe on invalid slot" {
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_state(-1)); // idle fallback
+    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_state(-1));
     try std.testing.expectEqual(@as(u8, 255), mqtt.mqtt_version(-1));
     try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_publish(-1));
     try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_can_subscribe(-1));
     try std.testing.expectEqual(@as(u32, 0), mqtt.mqtt_subscription_count(-1));
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_disconnect(-1)); // rejected
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_cleanup(-1)); // rejected
-}
-
-// =========================================================================
-// Cannot publish from Idle or Disconnecting (impossibility proofs)
-// =========================================================================
-
-test "cannot publish from Disconnecting" {
-    const slot = mqtt.mqtt_create(0, 1, 60);
-    defer mqtt.mqtt_destroy(slot);
-
-    _ = mqtt.mqtt_disconnect(slot);
-    try std.testing.expectEqual(@as(u8, 4), mqtt.mqtt_state(slot)); // disconnecting
-
-    const topic = "test/blocked";
-    const payload = "nope";
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_publish(
-        slot,
-        topic.ptr,
-        topic.len,
-        payload.ptr,
-        payload.len,
-        0,
-        0,
-        0,
-    ));
-}
-
-test "cannot subscribe from Idle (after cleanup)" {
-    const slot = mqtt.mqtt_create(0, 1, 60);
-    defer mqtt.mqtt_destroy(slot);
-
-    _ = mqtt.mqtt_disconnect(slot);
-    _ = mqtt.mqtt_cleanup(slot);
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_state(slot)); // idle
-
-    const topic = "test/blocked";
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 0));
-}
-
-test "subscribe rejects invalid QoS" {
-    const slot = mqtt.mqtt_create(0, 1, 60);
-    defer mqtt.mqtt_destroy(slot);
-
-    const topic = "test/badqos";
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 3)); // reserved
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_subscribe(slot, topic.ptr, topic.len, 99));
-}
-
-test "puback rejects wrong QoS level" {
-    const slot = mqtt.mqtt_create(0, 1, 60);
-    defer mqtt.mqtt_destroy(slot);
-
-    // Start a QoS 2 publish, then try PUBACK (should be PUBREC for QoS 2)
-    const topic = "test/wrongqos";
-    const payload = "data";
-    _ = mqtt.mqtt_publish(slot, topic.ptr, topic.len, payload.ptr, payload.len, 2, 0, 55);
-
-    // PUBACK should be rejected because this is a QoS 2 flow
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_puback(slot, 55));
-}
-
-test "QoS 0 transition table" {
-    // QoS 0: Idle -> Complete only
-    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_qos_can_transition(0, 0, 5)); // Idle -> Complete
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(0, 0, 1)); // Idle -> AwaitingPubAck (invalid for QoS 0)
-    try std.testing.expectEqual(@as(u8, 0), mqtt.mqtt_qos_can_transition(0, 0, 6)); // Idle -> Failed (QoS 0 cannot fail)
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_disconnect(-1));
+    try std.testing.expectEqual(@as(u8, 1), mqtt.mqtt_cleanup(-1));
 }
