@@ -15,20 +15,26 @@ module Firewall.Types
 ||| Firewall rule actions applied to matching packets.
 public export
 data Action : Type where
-  Accept   : Action
-  Drop     : Action
-  Reject   : Action
-  Log      : Action
-  Redirect : Action
+  Accept     : Action
+  Drop       : Action
+  Reject     : Action
+  Log        : Action
+  Redirect   : Action
+  DNAT       : Action
+  SNAT       : Action
+  Masquerade : Action
 
 ||| Show instance for Action.
 export
 Show Action where
-  show Accept   = "ACCEPT"
-  show Drop     = "DROP"
-  show Reject   = "REJECT"
-  show Log      = "LOG"
-  show Redirect = "REDIRECT"
+  show Accept     = "ACCEPT"
+  show Drop       = "DROP"
+  show Reject     = "REJECT"
+  show Log        = "LOG"
+  show Redirect   = "REDIRECT"
+  show DNAT       = "DNAT"
+  show SNAT       = "SNAT"
+  show Masquerade = "MASQUERADE"
 
 -------------------------------------------------------------------------------
 -- Protocols
@@ -41,6 +47,9 @@ data Protocol : Type where
   UDP    : Protocol
   ICMP   : Protocol
   ICMPv6 : Protocol
+  GRE    : Protocol
+  ESP    : Protocol
+  AH     : Protocol
   Any    : Protocol
 
 ||| Show instance for Protocol.
@@ -50,25 +59,32 @@ Show Protocol where
   show UDP    = "UDP"
   show ICMP   = "ICMP"
   show ICMPv6 = "ICMPv6"
+  show GRE    = "GRE"
+  show ESP    = "ESP"
+  show AH     = "AH"
   show Any    = "ANY"
 
 -------------------------------------------------------------------------------
 -- Direction
 -------------------------------------------------------------------------------
 
-||| Traffic direction for firewall chain selection.
+||| Netfilter chain types for firewall rule organisation.
 public export
-data Direction : Type where
-  Inbound  : Direction
-  Outbound : Direction
-  Forward  : Direction
+data ChainType : Type where
+  Input       : ChainType
+  Output      : ChainType
+  Forward     : ChainType
+  PreRouting  : ChainType
+  PostRouting : ChainType
 
-||| Show instance for Direction.
+||| Show instance for ChainType.
 export
-Show Direction where
-  show Inbound  = "INBOUND"
-  show Outbound = "OUTBOUND"
-  show Forward  = "FORWARD"
+Show ChainType where
+  show Input       = "INPUT"
+  show Output      = "OUTPUT"
+  show Forward     = "FORWARD"
+  show PreRouting  = "PREROUTING"
+  show PostRouting = "POSTROUTING"
 
 -------------------------------------------------------------------------------
 -- Rule Match Criteria
@@ -78,24 +94,26 @@ Show Direction where
 ||| Each constructor represents a different field to match against.
 public export
 data RuleMatch : Type where
-  SourceAddr : RuleMatch
-  DestAddr   : RuleMatch
+  SourceIP   : RuleMatch
+  DestIP     : RuleMatch
   SourcePort : RuleMatch
   DestPort   : RuleMatch
   MatchProto : RuleMatch
   Interface  : RuleMatch
   State      : RuleMatch
+  Mark       : RuleMatch
 
 ||| Show instance for RuleMatch.
 export
 Show RuleMatch where
-  show SourceAddr = "SourceAddr"
-  show DestAddr   = "DestAddr"
+  show SourceIP   = "SourceIP"
+  show DestIP     = "DestIP"
   show SourcePort = "SourcePort"
   show DestPort   = "DestPort"
   show MatchProto = "Protocol"
   show Interface  = "Interface"
   show State      = "State"
+  show Mark       = "Mark"
 
 -------------------------------------------------------------------------------
 -- Connection States

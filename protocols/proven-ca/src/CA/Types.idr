@@ -2,8 +2,11 @@
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
 -- CA.Types : Core types for the Certificate Authority server.
--- Defines certificate types, key algorithms, certificate statuses,
--- revocation reasons, and X.509 extensions.
+--
+-- Defines certificate types, key algorithms, signature algorithms,
+-- certificate states, revocation reasons, CRL/OCSP status, and
+-- X.509 extensions.  These types are the domain model; Layout.idr
+-- maps them to fixed-width tags for the C ABI.
 
 module CA.Types
 
@@ -13,12 +16,13 @@ module CA.Types
 -- CertType : Types of X.509 certificates the CA can issue.
 ---------------------------------------------------------------------------
 
-||| Certificate purpose classifications.
+||| Certificate purpose classifications (RFC 5280 + CA practice).
 public export
 data CertType : Type where
   Root            : CertType
   Intermediate    : CertType
   EndEntity       : CertType
+  CrossSigned     : CertType
   CodeSigning     : CertType
   EmailProtection : CertType
   OCSPSigning     : CertType
@@ -28,6 +32,7 @@ Show CertType where
   show Root            = "Root"
   show Intermediate    = "Intermediate"
   show EndEntity       = "EndEntity"
+  show CrossSigned     = "CrossSigned"
   show CodeSigning     = "CodeSigning"
   show EmailProtection = "EmailProtection"
   show OCSPSigning     = "OCSPSigning"
@@ -56,20 +61,47 @@ Show KeyAlgorithm where
   show Ed448      = "Ed448"
 
 ---------------------------------------------------------------------------
--- CertStatus : Current state of a certificate in its lifecycle.
+-- SignatureAlgorithm : Algorithms used to sign certificates.
 ---------------------------------------------------------------------------
 
-||| Lifecycle status of an issued certificate.
+||| Signature algorithms for certificate and CRL signing.
 public export
-data CertStatus : Type where
-  Valid     : CertStatus
-  Revoked   : CertStatus
-  Expired   : CertStatus
-  Suspended : CertStatus
+data SignatureAlgorithm : Type where
+  SHA256WithRSA   : SignatureAlgorithm
+  SHA384WithRSA   : SignatureAlgorithm
+  SHA512WithRSA   : SignatureAlgorithm
+  SHA256WithECDSA : SignatureAlgorithm
+  SHA384WithECDSA : SignatureAlgorithm
+  PureEd25519     : SignatureAlgorithm
+  PureEd448       : SignatureAlgorithm
 
 export
-Show CertStatus where
-  show Valid     = "Valid"
+Show SignatureAlgorithm where
+  show SHA256WithRSA   = "SHA256WithRSA"
+  show SHA384WithRSA   = "SHA384WithRSA"
+  show SHA512WithRSA   = "SHA512WithRSA"
+  show SHA256WithECDSA = "SHA256WithECDSA"
+  show SHA384WithECDSA = "SHA384WithECDSA"
+  show PureEd25519     = "PureEd25519"
+  show PureEd448       = "PureEd448"
+
+---------------------------------------------------------------------------
+-- CertState : Current lifecycle state of a certificate.
+---------------------------------------------------------------------------
+
+||| Lifecycle state of a certificate managed by the CA.
+public export
+data CertState : Type where
+  Pending   : CertState
+  Active    : CertState
+  Revoked   : CertState
+  Expired   : CertState
+  Suspended : CertState
+
+export
+Show CertState where
+  show Pending   = "Pending"
+  show Active    = "Active"
   show Revoked   = "Revoked"
   show Expired   = "Expired"
   show Suspended = "Suspended"
@@ -98,6 +130,44 @@ Show RevocationReason where
   show Superseded           = "Superseded"
   show CessationOfOperation = "CessationOfOperation"
   show CertificateHold      = "CertificateHold"
+
+---------------------------------------------------------------------------
+-- CRLStatus : State of a CRL (Certificate Revocation List).
+---------------------------------------------------------------------------
+
+||| Status of a Certificate Revocation List.
+public export
+data CRLStatus : Type where
+  CRLCurrent   : CRLStatus
+  CRLExpired   : CRLStatus
+  CRLPending   : CRLStatus
+  CRLError     : CRLStatus
+
+export
+Show CRLStatus where
+  show CRLCurrent = "Current"
+  show CRLExpired = "Expired"
+  show CRLPending = "Pending"
+  show CRLError   = "Error"
+
+---------------------------------------------------------------------------
+-- OCSPStatus : Status of an OCSP responder.
+---------------------------------------------------------------------------
+
+||| OCSP (Online Certificate Status Protocol) responder status.
+public export
+data OCSPStatus : Type where
+  OCSPGood        : OCSPStatus
+  OCSPRevoked     : OCSPStatus
+  OCSPUnknown     : OCSPStatus
+  OCSPUnavailable : OCSPStatus
+
+export
+Show OCSPStatus where
+  show OCSPGood        = "Good"
+  show OCSPRevoked     = "Revoked"
+  show OCSPUnknown     = "Unknown"
+  show OCSPUnavailable = "Unavailable"
 
 ---------------------------------------------------------------------------
 -- Extension : X.509v3 certificate extensions.

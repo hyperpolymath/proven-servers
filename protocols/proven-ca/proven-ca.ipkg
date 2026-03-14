@@ -2,10 +2,10 @@
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 package proven-ca
-version = "0.1.0"
+version = "0.2.0"
 authors = "Jonathan D.A. Jewell"
 license = "PMPL-1.0-or-later"
-brief   = "Certificate Authority with X.509 lifecycle management"
+brief   = "Certificate Authority with X.509 lifecycle management and ABI-FFI bridge"
 
 sourcedir = "src"
 main = Main
@@ -13,4 +13,7 @@ executable = "proven-ca"
 
 modules = CA
         , CA.Types
+        , CAABI.Layout
+        , CAABI.Transitions
+        , CAABI.Foreign
         , Main
