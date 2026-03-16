@@ -7,7 +7,8 @@
 -- that the Zig implementation must provide.  The Zig side manages a 64-slot
 -- pool of GraphQL contexts, each tracking request lifecycle phase,
 -- operation type, error category, query parser state, field resolution,
--- and subscription management.
+-- introspection validation, and subscription management.
+-- Additionally manages a 16-slot batch pool for batch query operations.
 
 module GraphQLABI.Foreign
 
@@ -36,7 +37,7 @@ abiVersion : Bits32
 abiVersion = 1
 
 ---------------------------------------------------------------------------
--- FFI function contract (16 functions)
+-- FFI function contract (28 functions)
 ---------------------------------------------------------------------------
 
 -- +-----------------------------------------------------------------------+
@@ -101,4 +102,35 @@ abiVersion = 1
 -- +--------------------------+--------------------------------------------+
 -- | graphql_sub_can_transition | (from: u8, to: u8) -> u8 (1=yes, 0=no) |
 -- |                          | Stateless: subscription transition check.  |
+-- +--------------------------+--------------------------------------------+
+-- | graphql_introspection_query | (slot: c_int, intro_field: u8) -> u8   |
+-- |                          | Validates introspection field against      |
+-- |                          | operation type.  0=valid, 1=rejected.      |
+-- |                          | __schema/__type: Query only.               |
+-- |                          | __typename: any operation.                 |
+-- +--------------------------+--------------------------------------------+
+-- | graphql_batch_create     | (count: u8) -> c_int (batch_id)           |
+-- |                          | Creates a batch of 1..16 queries.          |
+-- +--------------------------+--------------------------------------------+
+-- | graphql_batch_set_op     | (batch_id: c_int, index: u8,              |
+-- |                          |  op_type: u8) -> u8                        |
+-- |                          | Sets operation type for batch query.       |
+-- +--------------------------+--------------------------------------------+
+-- | graphql_batch_status     | (batch_id: c_int) -> u8 (BatchStatus)     |
+-- |                          | Derived overall batch status.              |
+-- +--------------------------+--------------------------------------------+
+-- | graphql_batch_query_status | (batch_id: c_int, index: u8) -> u8      |
+-- |                          | Status of individual query in batch.       |
+-- +--------------------------+--------------------------------------------+
+-- | graphql_batch_advance    | (batch_id: c_int) -> u8 (0=ok, 1=rej)    |
+-- |                          | Advances batch execution state.            |
+-- +--------------------------+--------------------------------------------+
+-- | graphql_batch_destroy    | (batch_id: c_int) -> ()                   |
+-- |                          | Destroys batch and frees slot.             |
+-- +--------------------------+--------------------------------------------+
+-- | graphql_check_depth      | (depth: u16, max_depth: u16) -> u8        |
+-- |                          | Stateless: 0=within, 1=exceeds.           |
+-- +--------------------------+--------------------------------------------+
+-- | graphql_check_complexity | (score: u16, max: u16) -> u8              |
+-- |                          | Stateless: 0=within, 1=exceeds.           |
 -- +--------------------------+--------------------------------------------+

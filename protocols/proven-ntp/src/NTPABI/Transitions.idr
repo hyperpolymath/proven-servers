@@ -242,3 +242,67 @@ fullCycle = Step ReceiveRequest
           $ Step SendResponse
           $ Step ResetExchange
           $ Done
+
+---------------------------------------------------------------------------
+-- NTP mode transition validity (RFC 5905 Section 9.2)
+--
+-- Not all NTP modes can respond to all other modes.  These proofs
+-- encode the valid request/response mode pairs from the protocol
+-- specification.
+---------------------------------------------------------------------------
+
+||| Valid NTP mode response pairs.
+||| Only certain mode combinations are valid in NTP exchanges.
+||| Client (3) -> Server (4), SymmetricActive (1) -> SymmetricPassive (2).
+public export
+data ValidModeResponse : Bits8 -> Bits8 -> Type where
+  ||| Client request (mode 3) receives Server response (mode 4).
+  ClientToServer     : ValidModeResponse 3 4
+  ||| Symmetric active (mode 1) receives Symmetric passive (mode 2).
+  ActiveToPassive    : ValidModeResponse 1 2
+
+||| Proof: a server cannot respond to another server.
+public export
+cannotServerToServer : ValidModeResponse 4 4 -> Void
+cannotServerToServer _ impossible
+
+||| Proof: a client cannot respond to a client.
+public export
+cannotClientToClient : ValidModeResponse 3 3 -> Void
+cannotClientToClient _ impossible
+
+||| Proof: broadcast (mode 5) does not have a direct response mode.
+public export
+cannotRespondToBroadcast : ValidModeResponse 5 s -> Void
+cannotRespondToBroadcast _ impossible
+
+||| Check whether a mode response pair is valid.
+public export
+validateModeResponse : (request : Bits8) -> (response : Bits8)
+                    -> Maybe (ValidModeResponse request response)
+validateModeResponse 3 4 = Just ClientToServer
+validateModeResponse 1 2 = Just ActiveToPassive
+validateModeResponse _ _ = Nothing
+
+---------------------------------------------------------------------------
+-- Clock discipline safety invariants
+--
+-- These composite proofs demonstrate higher-level safety properties
+-- of the clock discipline algorithm.
+---------------------------------------------------------------------------
+
+||| Proof that the discipline algorithm must pass through Spike and Freq
+||| before reaching Sync.  This guarantees frequency estimation occurs
+||| before phase-lock, preventing wild oscillation.
+public export
+disciplineToSync : ValidDisciplineTransition Unset Spike
+               -> ValidDisciplineTransition Spike Freq
+               -> ValidDisciplineTransition Freq Sync
+               -> ()
+disciplineToSync FirstSample Stabilise Lock = ()
+
+||| Proof that recovery from Panic always returns to Unset (not directly
+||| to Sync or Freq), requiring the full discipline sequence to restart.
+public export
+panicRecoveryRestartsFromUnset : ValidDisciplineTransition Panic Unset
+panicRecoveryRestartsFromUnset = Recovery

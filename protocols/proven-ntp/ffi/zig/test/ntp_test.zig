@@ -638,3 +638,184 @@ test "last_error is InvalidPacket after failed transition" {
     _ = ntp.ntp_calculate(slot, 100, 0x0900_0000); // Rejected — Idle can't calculate
     try std.testing.expectEqual(@as(u8, 3), ntp.ntp_get_last_error(slot)); // InvalidPacket
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// Stratum boundedness tests (matching Layout.idr stratum proofs)
+// ═══════════════════════════════════════════════════════════════════════
+
+test "stratum 0 (Unspecified/KoD) is accepted" {
+    const slot = ntp.ntp_create(4, 4, 0);
+    try std.testing.expect(slot >= 0);
+    defer ntp.ntp_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 0), ntp.ntp_get_stratum(slot));
+}
+
+test "stratum 1 (Primary Reference) is accepted" {
+    const slot = ntp.ntp_create(4, 4, 1);
+    try std.testing.expect(slot >= 0);
+    defer ntp.ntp_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_get_stratum(slot));
+}
+
+test "stratum 15 (maximum secondary) is accepted" {
+    const slot = ntp.ntp_create(4, 4, 15);
+    try std.testing.expect(slot >= 0);
+    defer ntp.ntp_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 15), ntp.ntp_get_stratum(slot));
+}
+
+test "stratum 16 (Unsynchronised) is accepted" {
+    const slot = ntp.ntp_create(4, 4, 16);
+    try std.testing.expect(slot >= 0);
+    defer ntp.ntp_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 16), ntp.ntp_get_stratum(slot));
+}
+
+test "stratum 17 (reserved) is rejected at creation" {
+    try std.testing.expectEqual(@as(c_int, -1), ntp.ntp_create(4, 4, 17));
+}
+
+test "stratum 255 is rejected at creation" {
+    try std.testing.expectEqual(@as(c_int, -1), ntp.ntp_create(4, 4, 255));
+}
+
+test "set_stratum rejects value 255" {
+    const slot = ntp.ntp_create(4, 4, 2);
+    defer ntp.ntp_destroy(slot);
+    const result = ntp.ntp_set_stratum(slot, 255);
+    try std.testing.expectEqual(@as(u8, 5), result); // StratumTooHigh
+    try std.testing.expectEqual(@as(u8, 2), ntp.ntp_get_stratum(slot)); // Unchanged
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// NTP timestamp arithmetic edge cases
+// ═══════════════════════════════════════════════════════════════════════
+
+test "NtpTimestamp add wrapping seconds overflow" {
+    const a: ntp.NtpTimestamp = .{ .seconds = 0xFFFF_FFFF, .fraction = 0 };
+    const b: ntp.NtpTimestamp = .{ .seconds = 1, .fraction = 0 };
+    const result = ntp.NtpTimestamp.add(a, b);
+    // Wrapping arithmetic: 0xFFFFFFFF + 1 = 0 (wraps)
+    try std.testing.expectEqual(@as(u32, 0), result.seconds);
+    try std.testing.expectEqual(@as(u32, 0), result.fraction);
+}
+
+test "NtpTimestamp add max fractions overflow into seconds" {
+    const a: ntp.NtpTimestamp = .{ .seconds = 0, .fraction = 0xFFFF_FFFF };
+    const b: ntp.NtpTimestamp = .{ .seconds = 0, .fraction = 1 };
+    const result = ntp.NtpTimestamp.add(a, b);
+    try std.testing.expectEqual(@as(u32, 1), result.seconds); // carry
+    try std.testing.expectEqual(@as(u32, 0), result.fraction);
+}
+
+test "NtpTimestamp sub with fractional borrow" {
+    const a: ntp.NtpTimestamp = .{ .seconds = 10, .fraction = 100 };
+    const b: ntp.NtpTimestamp = .{ .seconds = 5, .fraction = 200 };
+    const result = ntp.NtpTimestamp.sub(a, b);
+    try std.testing.expectEqual(@as(u32, 4), result.seconds); // 10 - 5 - 1 borrow
+}
+
+test "NtpTimestamp compare greater by seconds" {
+    const a: ntp.NtpTimestamp = .{ .seconds = 20, .fraction = 0 };
+    const b: ntp.NtpTimestamp = .{ .seconds = 10, .fraction = 999 };
+    try std.testing.expectEqual(@as(i8, 1), ntp.NtpTimestamp.compare(a, b));
+}
+
+test "NtpTimestamp compare greater by fraction" {
+    const a: ntp.NtpTimestamp = .{ .seconds = 10, .fraction = 200 };
+    const b: ntp.NtpTimestamp = .{ .seconds = 10, .fraction = 100 };
+    try std.testing.expectEqual(@as(i8, 1), ntp.NtpTimestamp.compare(a, b));
+}
+
+test "NtpTimestamp fractionToMillis 500ms" {
+    // 0x8000_0000 = 2^31 => (2^31 * 1000) / 2^32 = 500ms
+    const ts: ntp.NtpTimestamp = .{ .seconds = 0, .fraction = 0x8000_0000 };
+    try std.testing.expectEqual(@as(u32, 500), ts.fractionToMillis());
+}
+
+test "NtpTimestamp fractionToMillis 0ms" {
+    const ts: ntp.NtpTimestamp = .{ .seconds = 0, .fraction = 0 };
+    try std.testing.expectEqual(@as(u32, 0), ts.fractionToMillis());
+}
+
+test "NtpTimestamp half of zero" {
+    const result = ntp.NtpTimestamp.half(ntp.NtpTimestamp.zero);
+    try std.testing.expectEqual(@as(u32, 0), result.seconds);
+    try std.testing.expectEqual(@as(u32, 0), result.fraction);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Mode-specific tests
+// ═══════════════════════════════════════════════════════════════════════
+
+test "all 8 NTP modes can be used at creation" {
+    var i: u8 = 0;
+    while (i <= 7) : (i += 1) {
+        const slot = ntp.ntp_create(4, i, 2);
+        try std.testing.expect(slot >= 0);
+        try std.testing.expectEqual(i, ntp.ntp_get_mode(slot));
+        ntp.ntp_destroy(slot);
+    }
+}
+
+test "client mode (3) server mode (4) are distinct" {
+    const client_slot = ntp.ntp_create(4, 3, 2);
+    defer ntp.ntp_destroy(client_slot);
+    const server_slot = ntp.ntp_create(4, 4, 2);
+    defer ntp.ntp_destroy(server_slot);
+    try std.testing.expectEqual(@as(u8, 3), ntp.ntp_get_mode(client_slot));
+    try std.testing.expectEqual(@as(u8, 4), ntp.ntp_get_mode(server_slot));
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Multiple concurrent contexts
+// ═══════════════════════════════════════════════════════════════════════
+
+test "multiple contexts are independent" {
+    const slot1 = ntp.ntp_create(4, 4, 1);
+    const slot2 = ntp.ntp_create(4, 3, 2);
+    defer ntp.ntp_destroy(slot1);
+    defer ntp.ntp_destroy(slot2);
+
+    try std.testing.expect(slot1 != slot2);
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_get_stratum(slot1));
+    try std.testing.expectEqual(@as(u8, 2), ntp.ntp_get_stratum(slot2));
+
+    // Advance slot1 exchange, slot2 stays idle
+    _ = ntp.ntp_receive_request(slot1, 100, 0, 100, 0x0800_0000);
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_get_exchange_state(slot1));
+    try std.testing.expectEqual(@as(u8, 0), ntp.ntp_get_exchange_state(slot2));
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// Invalid slot safety tests
+// ═══════════════════════════════════════════════════════════════════════
+
+test "all state queries are safe with negative slot" {
+    try std.testing.expectEqual(@as(u8, 0), ntp.ntp_get_exchange_state(-1));
+    try std.testing.expectEqual(@as(u8, 0), ntp.ntp_get_discipline_state(-1));
+    try std.testing.expectEqual(@as(u8, 16), ntp.ntp_get_stratum(-1));
+    try std.testing.expectEqual(@as(u8, 0), ntp.ntp_get_mode(-1));
+    try std.testing.expectEqual(@as(u8, 255), ntp.ntp_get_last_error(-1));
+    try std.testing.expectEqual(@as(u32, 0), ntp.ntp_get_exchange_count(-1));
+    try std.testing.expectEqual(@as(u8, 0), ntp.ntp_get_leap(-1));
+    try std.testing.expectEqual(@as(u8, 255), ntp.ntp_check_kiss(-1));
+}
+
+test "all mutations return invalid_slot for negative slot" {
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_receive_request(-1, 0, 0, 0, 0));
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_calculate(-1, 0, 0));
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_send_response(-1));
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_reset_exchange(-1));
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_set_leap(-1, 0));
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_set_kiss(-1, 0));
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_set_stratum(-1, 0));
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_advance_discipline(-1, 0));
+}
+
+test "offset/delay getters return invalid_slot for negative slot" {
+    var s: u32 = 0;
+    var f: u32 = 0;
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_get_offset(-1, &s, &f));
+    try std.testing.expectEqual(@as(u8, 1), ntp.ntp_get_delay(-1, &s, &f));
+}

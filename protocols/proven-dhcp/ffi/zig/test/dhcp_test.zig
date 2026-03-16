@@ -2,12 +2,34 @@
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
 // dhcp_test.zig -- Integration tests for proven-dhcp FFI.
+//
+// Covers:
+//   - ABI version check
+//   - Enum encoding seams (MessageType, OptionCode, HardwareType, DhcpState, LeaseState)
+//   - Wire code mappings (option codes, hardware types, reverse lookup)
+//   - Context lifecycle (create, destroy, invalid slots)
+//   - Full DORA lifecycle (Discover -> Offer -> Request -> Ack)
+//   - NAK path (Request -> Nak)
+//   - Parse validation (short buffers, null pointers, wrong op code, wrong xid)
+//   - State transition enforcement (cannot skip DORA steps)
+//   - Context reset with lease preservation
+//   - Lease pool operations (allocate, bind, release, decline)
+//   - Full lease lifecycle (Available through Expired and back)
+//   - Invalid lease transitions
+//   - Pool available count tracking
+//   - Stateless DORA transition table
+//   - Stateless lease transition table
+//   - State query safety on invalid slots
+//   - Relay agent information (set, query, validation)
+//   - Option TLV parsing (pad, end, standard options, edge cases)
+//   - Lease duration bounds
+//   - Multiple concurrent contexts
 
 const std = @import("std");
 const dhcp = @import("dhcp");
 
 // =========================================================================
-// ABI version
+// 1. ABI version
 // =========================================================================
 
 test "abi version matches Idris2 Foreign.abiVersion" {
@@ -15,7 +37,7 @@ test "abi version matches Idris2 Foreign.abiVersion" {
 }
 
 // =========================================================================
-// Enum encoding seams -- MessageType (8 tags)
+// 2. Enum encoding seams -- MessageType (8 tags)
 // =========================================================================
 
 test "MessageType encoding matches Layout.idr (8 tags)" {
@@ -30,7 +52,7 @@ test "MessageType encoding matches Layout.idr (8 tags)" {
 }
 
 // =========================================================================
-// Enum encoding seams -- OptionCode (8 tags)
+// 3. Enum encoding seams -- OptionCode (8 tags)
 // =========================================================================
 
 test "OptionCode encoding matches Layout.idr (8 tags)" {
@@ -45,7 +67,7 @@ test "OptionCode encoding matches Layout.idr (8 tags)" {
 }
 
 // =========================================================================
-// Enum encoding seams -- HardwareType (4 tags)
+// 4. Enum encoding seams -- HardwareType (4 tags)
 // =========================================================================
 
 test "HardwareType encoding matches Layout.idr (4 tags)" {
@@ -56,7 +78,7 @@ test "HardwareType encoding matches Layout.idr (4 tags)" {
 }
 
 // =========================================================================
-// Enum encoding seams -- DhcpState (6 tags)
+// 5. Enum encoding seams -- DhcpState (6 tags)
 // =========================================================================
 
 test "DhcpState encoding matches Transitions.idr (6 tags)" {
@@ -69,7 +91,7 @@ test "DhcpState encoding matches Transitions.idr (6 tags)" {
 }
 
 // =========================================================================
-// Enum encoding seams -- LeaseState (6 tags)
+// 6. Enum encoding seams -- LeaseState (6 tags)
 // =========================================================================
 
 test "LeaseState encoding matches Layout.idr (6 tags)" {
@@ -82,7 +104,7 @@ test "LeaseState encoding matches Layout.idr (6 tags)" {
 }
 
 // =========================================================================
-// Wire code mapping -- option codes
+// 7. Wire code mapping -- option codes
 // =========================================================================
 
 test "optionCodeToWire maps all 8 codes correctly" {
@@ -98,7 +120,7 @@ test "optionCodeToWire maps all 8 codes correctly" {
 }
 
 // =========================================================================
-// Wire code mapping -- hardware types
+// 8. Wire code mapping -- hardware types
 // =========================================================================
 
 test "hardwareTypeToWire maps all 4 types correctly" {
@@ -110,7 +132,7 @@ test "hardwareTypeToWire maps all 4 types correctly" {
 }
 
 // =========================================================================
-// Wire code mapping -- reverse option code lookup
+// 9. Wire code mapping -- reverse option code lookup
 // =========================================================================
 
 test "wireToOptionCode roundtrips with optionCodeToWire" {
@@ -126,7 +148,7 @@ test "wireToOptionCode roundtrips with optionCodeToWire" {
 }
 
 // =========================================================================
-// Lifecycle -- create and destroy
+// 10. Lifecycle -- create and destroy
 // =========================================================================
 
 test "create returns valid slot" {
@@ -136,13 +158,17 @@ test "create returns valid slot" {
     try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_state(slot)); // idle
 }
 
+// =========================================================================
+// 11. Destroy safety
+// =========================================================================
+
 test "destroy is safe with invalid slot" {
     dhcp.dhcp_destroy_context(-1);
     dhcp.dhcp_destroy_context(999);
 }
 
 // =========================================================================
-// Full DORA lifecycle
+// Helpers for building DHCP messages
 // =========================================================================
 
 /// Build a minimal DHCP DISCOVER message (240+ bytes).
@@ -197,6 +223,10 @@ fn buildRequest(xid: u32) [244]u8 {
     return buf;
 }
 
+// =========================================================================
+// 12. Full DORA lifecycle
+// =========================================================================
+
 test "full DORA lifecycle: Idle -> DiscoverReceived -> OfferSent -> RequestReceived -> AckSent" {
     const slot = dhcp.dhcp_create_context();
     defer dhcp.dhcp_destroy_context(slot);
@@ -215,7 +245,6 @@ test "full DORA lifecycle: Idle -> DiscoverReceived -> OfferSent -> RequestRecei
     try std.testing.expectEqualSlices(u8, &mac, &mac_out);
 
     // DiscoverReceived -> OfferSent
-    // Offer: 192.168.1.100, subnet 255.255.255.0, router 192.168.1.1, dns 8.8.8.8, lease 3600s
     const offered_ip: u32 = 0xC0A80164; // 192.168.1.100
     const subnet: u32 = 0xFFFFFF00;
     const router_ip: u32 = 0xC0A80101; // 192.168.1.1
@@ -243,7 +272,7 @@ test "full DORA lifecycle: Idle -> DiscoverReceived -> OfferSent -> RequestRecei
 }
 
 // =========================================================================
-// NAK path: RequestReceived -> NakSent
+// 13. NAK path
 // =========================================================================
 
 test "DORA with NAK: Idle -> Discover -> Offer -> Request -> Nak" {
@@ -267,7 +296,7 @@ test "DORA with NAK: Idle -> Discover -> Offer -> Request -> Nak" {
 }
 
 // =========================================================================
-// Parse discover rejects short/invalid buffers
+// 14. Parse discover rejects short buffer
 // =========================================================================
 
 test "parse_discover rejects short buffer" {
@@ -278,11 +307,19 @@ test "parse_discover rejects short buffer" {
     try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_state(slot)); // still idle
 }
 
+// =========================================================================
+// 15. Parse discover rejects null buffer
+// =========================================================================
+
 test "parse_discover rejects null buffer" {
     const slot = dhcp.dhcp_create_context();
     defer dhcp.dhcp_destroy_context(slot);
     try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_parse_discover(slot, null, 240));
 }
+
+// =========================================================================
+// 16. Parse discover rejects BOOTREPLY
+// =========================================================================
 
 test "parse_discover rejects BOOTREPLY (op=2)" {
     const slot = dhcp.dhcp_create_context();
@@ -293,7 +330,7 @@ test "parse_discover rejects BOOTREPLY (op=2)" {
 }
 
 // =========================================================================
-// Parse request rejects wrong xid
+// 17. Parse request rejects wrong xid
 // =========================================================================
 
 test "parse_request rejects mismatched xid" {
@@ -312,7 +349,7 @@ test "parse_request rejects mismatched xid" {
 }
 
 // =========================================================================
-// State transition enforcement
+// 18-21. State transition enforcement
 // =========================================================================
 
 test "cannot send offer from Idle" {
@@ -341,7 +378,7 @@ test "cannot parse request from Idle (skip DiscoverReceived and OfferSent)" {
 }
 
 // =========================================================================
-// Reset
+// 22. Reset
 // =========================================================================
 
 test "reset returns context to Idle preserving leases" {
@@ -371,7 +408,7 @@ test "reset returns context to Idle preserving leases" {
 }
 
 // =========================================================================
-// Lease pool operations
+// 23-26. Lease pool operations
 // =========================================================================
 
 test "pool_allocate returns lease index and transitions to Offered" {
@@ -412,6 +449,10 @@ test "pool_decline transitions Offered -> Available" {
     try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_lease_state(slot, li)); // available
 }
 
+// =========================================================================
+// 27. Full lease lifecycle
+// =========================================================================
+
 test "full lease lifecycle: Available -> Offered -> Bound -> Renewing -> Rebinding -> Expired -> Available" {
     const slot = dhcp.dhcp_create_context();
     defer dhcp.dhcp_destroy_context(slot);
@@ -437,7 +478,7 @@ test "full lease lifecycle: Available -> Offered -> Bound -> Renewing -> Rebindi
 }
 
 // =========================================================================
-// Lease pool -- invalid transitions
+// 28-31. Lease pool invalid transitions
 // =========================================================================
 
 test "pool_bind rejects non-Offered lease" {
@@ -478,6 +519,10 @@ test "pool_reclaim rejects non-Expired lease" {
     try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_pool_reclaim(slot, li));
 }
 
+// =========================================================================
+// 32. Pool available count tracking
+// =========================================================================
+
 test "pool_available_count tracks available leases" {
     const slot = dhcp.dhcp_create_context();
     defer dhcp.dhcp_destroy_context(slot);
@@ -500,7 +545,7 @@ test "pool_available_count tracks available leases" {
 }
 
 // =========================================================================
-// Stateless transition tables
+// 33. Stateless DORA transition table
 // =========================================================================
 
 test "dhcp_can_transition matches Transitions.idr" {
@@ -523,6 +568,10 @@ test "dhcp_can_transition matches Transitions.idr" {
     try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_can_transition(0, 2)); // Idle -> OfferSent (skip!)
 }
 
+// =========================================================================
+// 34. Stateless lease transition table
+// =========================================================================
+
 test "dhcp_can_lease_transition matches Transitions.idr" {
     // Forward lease sequence
     try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_can_lease_transition(0, 1)); // Available -> Offered
@@ -543,7 +592,7 @@ test "dhcp_can_lease_transition matches Transitions.idr" {
 }
 
 // =========================================================================
-// State queries on invalid slots
+// 35. State queries on invalid slots
 // =========================================================================
 
 test "state queries safe on invalid slot" {
@@ -556,7 +605,272 @@ test "state queries safe on invalid slot" {
     try std.testing.expectEqual(@as(u32, 0), dhcp.dhcp_lease_expiry(-1, 0));
 }
 
+// =========================================================================
+// 36. Client MAC on invalid slot
+// =========================================================================
+
 test "client_mac returns error on invalid slot" {
     var mac_out: [6]u8 = undefined;
     try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_client_mac(-1, &mac_out));
+}
+
+// =========================================================================
+// 37. Relay agent -- set and query
+// =========================================================================
+
+test "relay agent info: set and query giaddr/hops" {
+    const slot = dhcp.dhcp_create_context();
+    defer dhcp.dhcp_destroy_context(slot);
+
+    // Initially no relay info
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_has_relay_info(slot));
+    try std.testing.expectEqual(@as(u32, 0), dhcp.dhcp_relay_giaddr(slot));
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_relay_hops(slot));
+
+    // Set relay info: giaddr=10.0.0.1 (0x0A000001), hops=1
+    const circuit = [_]u8{ 0x00, 0x01, 0x02 }; // port identifier
+    const remote = [_]u8{ 0xAA, 0xBB, 0xCC, 0xDD }; // device identifier
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_set_relay_info(
+        slot,
+        0x0A000001,
+        1,
+        &circuit,
+        3,
+        &remote,
+        4,
+    ));
+
+    // Verify relay info is present
+    try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_has_relay_info(slot));
+    try std.testing.expectEqual(@as(u32, 0x0A000001), dhcp.dhcp_relay_giaddr(slot));
+    try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_relay_hops(slot));
+}
+
+// =========================================================================
+// 38. Relay agent -- giaddr must be non-zero
+// =========================================================================
+
+test "relay agent rejects zero giaddr" {
+    const slot = dhcp.dhcp_create_context();
+    defer dhcp.dhcp_destroy_context(slot);
+
+    try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_set_relay_info(slot, 0, 1, null, 0, null, 0));
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_has_relay_info(slot)); // not set
+}
+
+// =========================================================================
+// 39. Relay agent -- hop count limit
+// =========================================================================
+
+test "relay agent rejects excessive hops" {
+    const slot = dhcp.dhcp_create_context();
+    defer dhcp.dhcp_destroy_context(slot);
+
+    // MAX_HOPS = 16, so hops=16 should be rejected
+    try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_set_relay_info(slot, 0x0A000001, 16, null, 0, null, 0));
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_has_relay_info(slot)); // not set
+
+    // hops=15 should be accepted
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_set_relay_info(slot, 0x0A000001, 15, null, 0, null, 0));
+    try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_has_relay_info(slot));
+}
+
+// =========================================================================
+// 40. Option TLV parsing -- standard option
+// =========================================================================
+
+test "parse_option: standard TLV option (subnet mask)" {
+    // Option 1 (SubnetMask), length 4, data: 255.255.255.0
+    const buf = [_]u8{ 1, 4, 255, 255, 255, 0, 255 };
+    var code: u8 = undefined;
+    var opt_len: u8 = undefined;
+    var data_ptr: ?[*]const u8 = undefined;
+
+    const result = dhcp.dhcp_parse_option(&buf, 7, 0, &code, &opt_len, &data_ptr);
+    try std.testing.expectEqual(@as(u8, 0), result); // success
+    try std.testing.expectEqual(@as(u8, 1), code); // SubnetMask wire code
+    try std.testing.expectEqual(@as(u8, 4), opt_len);
+    try std.testing.expect(data_ptr != null);
+    const data = data_ptr.?;
+    try std.testing.expectEqual(@as(u8, 255), data[0]);
+    try std.testing.expectEqual(@as(u8, 255), data[1]);
+    try std.testing.expectEqual(@as(u8, 255), data[2]);
+    try std.testing.expectEqual(@as(u8, 0), data[3]);
+}
+
+// =========================================================================
+// 41. Option TLV parsing -- pad option
+// =========================================================================
+
+test "parse_option: pad option (code 0)" {
+    const buf = [_]u8{ 0, 53, 1, 1, 255 };
+    var code: u8 = undefined;
+    var opt_len: u8 = undefined;
+    var data_ptr: ?[*]const u8 = undefined;
+
+    const result = dhcp.dhcp_parse_option(&buf, 5, 0, &code, &opt_len, &data_ptr);
+    try std.testing.expectEqual(@as(u8, 0), result); // success (pad is not an error)
+    try std.testing.expectEqual(@as(u8, 0), code); // pad code
+    try std.testing.expectEqual(@as(u8, 0), opt_len); // no data
+}
+
+// =========================================================================
+// 42. Option TLV parsing -- end option
+// =========================================================================
+
+test "parse_option: end option (code 255)" {
+    const buf = [_]u8{255};
+    var code: u8 = undefined;
+    var opt_len: u8 = undefined;
+    var data_ptr: ?[*]const u8 = undefined;
+
+    const result = dhcp.dhcp_parse_option(&buf, 1, 0, &code, &opt_len, &data_ptr);
+    try std.testing.expectEqual(@as(u8, 1), result); // end-of-options signal
+    try std.testing.expectEqual(@as(u8, 255), code);
+}
+
+// =========================================================================
+// 43. Option TLV parsing -- null buffer
+// =========================================================================
+
+test "parse_option: null buffer returns error" {
+    var code: u8 = undefined;
+    var opt_len: u8 = undefined;
+    var data_ptr: ?[*]const u8 = undefined;
+
+    const result = dhcp.dhcp_parse_option(null, 10, 0, &code, &opt_len, &data_ptr);
+    try std.testing.expectEqual(@as(u8, 1), result);
+}
+
+// =========================================================================
+// 44. Option TLV parsing -- offset past end of buffer
+// =========================================================================
+
+test "parse_option: offset past buffer returns error" {
+    const buf = [_]u8{ 1, 4, 0, 0, 0, 0 };
+    var code: u8 = undefined;
+    var opt_len: u8 = undefined;
+    var data_ptr: ?[*]const u8 = undefined;
+
+    const result = dhcp.dhcp_parse_option(&buf, 6, 6, &code, &opt_len, &data_ptr);
+    try std.testing.expectEqual(@as(u8, 1), result);
+}
+
+// =========================================================================
+// 45. Option TLV parsing -- truncated option (length exceeds buffer)
+// =========================================================================
+
+test "parse_option: truncated option data returns error" {
+    // Option 51 (LeaseTime), claims length 4, but only 2 bytes of data follow
+    const buf = [_]u8{ 51, 4, 0, 0 };
+    var code: u8 = undefined;
+    var opt_len: u8 = undefined;
+    var data_ptr: ?[*]const u8 = undefined;
+
+    const result = dhcp.dhcp_parse_option(&buf, 4, 0, &code, &opt_len, &data_ptr);
+    try std.testing.expectEqual(@as(u8, 1), result); // error: data exceeds buffer
+}
+
+// =========================================================================
+// 46. Multiple concurrent contexts
+// =========================================================================
+
+test "multiple concurrent contexts are independent" {
+    const slot_a = dhcp.dhcp_create_context();
+    const slot_b = dhcp.dhcp_create_context();
+    defer dhcp.dhcp_destroy_context(slot_a);
+    defer dhcp.dhcp_destroy_context(slot_b);
+
+    try std.testing.expect(slot_a >= 0);
+    try std.testing.expect(slot_b >= 0);
+    try std.testing.expect(slot_a != slot_b);
+
+    // Advance slot_a through DISCOVER
+    const mac_a = [_]u8{ 0xAA, 0x00, 0x00, 0x00, 0x00, 0x01 };
+    var discover_a = buildDiscover(0x11111111, mac_a);
+    _ = dhcp.dhcp_parse_discover(slot_a, &discover_a, 244);
+
+    // slot_a is DiscoverReceived, slot_b is still Idle
+    try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_state(slot_a));
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_state(slot_b));
+
+    // Advance slot_b independently
+    const mac_b = [_]u8{ 0xBB, 0x00, 0x00, 0x00, 0x00, 0x02 };
+    var discover_b = buildDiscover(0x22222222, mac_b);
+    _ = dhcp.dhcp_parse_discover(slot_b, &discover_b, 244);
+    try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_state(slot_b));
+
+    // Verify different xids
+    try std.testing.expectEqual(@as(u32, 0x11111111), dhcp.dhcp_client_xid(slot_a));
+    try std.testing.expectEqual(@as(u32, 0x22222222), dhcp.dhcp_client_xid(slot_b));
+}
+
+// =========================================================================
+// 47. Relay agent on invalid slot
+// =========================================================================
+
+test "relay queries safe on invalid slot" {
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_has_relay_info(-1));
+    try std.testing.expectEqual(@as(u32, 0), dhcp.dhcp_relay_giaddr(-1));
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_relay_hops(-1));
+}
+
+// =========================================================================
+// 48. Lease duration constants match Idris2 Lease.idr
+// =========================================================================
+
+test "lease duration constants match Lease.idr" {
+    try std.testing.expectEqual(@as(u32, 60), dhcp.MIN_LEASE_SECS);
+    try std.testing.expectEqual(@as(u32, 31536000), dhcp.MAX_LEASE_SECS);
+    try std.testing.expectEqual(@as(u8, 16), dhcp.MAX_HOPS);
+}
+
+// =========================================================================
+// 49. Relay agent -- null circuit/remote IDs accepted
+// =========================================================================
+
+test "relay agent accepts null circuit and remote IDs" {
+    const slot = dhcp.dhcp_create_context();
+    defer dhcp.dhcp_destroy_context(slot);
+
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_set_relay_info(
+        slot,
+        0xC0A80101,
+        3,
+        null,
+        0,
+        null,
+        0,
+    ));
+    try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_has_relay_info(slot));
+    try std.testing.expectEqual(@as(u32, 0xC0A80101), dhcp.dhcp_relay_giaddr(slot));
+    try std.testing.expectEqual(@as(u8, 3), dhcp.dhcp_relay_hops(slot));
+}
+
+// =========================================================================
+// 50. Parse discover rejects wrong message type in options
+// =========================================================================
+
+test "parse_discover rejects non-DISCOVER message type" {
+    const slot = dhcp.dhcp_create_context();
+    defer dhcp.dhcp_destroy_context(slot);
+
+    // Build a packet that claims to be a REQUEST (type 3) but is sent to parse_discover
+    var buf: [244]u8 = [_]u8{0} ** 244;
+    buf[0] = 1; // BOOTREQUEST
+    buf[1] = 1; // Ethernet
+    buf[2] = 6; // hlen
+    // Magic cookie
+    buf[236] = 99;
+    buf[237] = 130;
+    buf[238] = 83;
+    buf[239] = 99;
+    // Option 53, length 1, value 3 (REQUEST, not DISCOVER)
+    buf[240] = 53;
+    buf[241] = 1;
+    buf[242] = 3;
+    buf[243] = 255;
+
+    try std.testing.expectEqual(@as(u8, 1), dhcp.dhcp_parse_discover(slot, &buf, 244));
+    try std.testing.expectEqual(@as(u8, 0), dhcp.dhcp_state(slot)); // still idle
 }

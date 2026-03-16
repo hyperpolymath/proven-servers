@@ -5,7 +5,7 @@ package proven-graphql
 version = "0.1.0"
 authors = "Jonathan D.A. Jewell"
 license = "PMPL-1.0-or-later"
-brief   = "Proven skeleton for GraphQL server"
+brief   = "Proven GraphQL server with formally verified ABI"
 
 sourcedir = "src"
 main = Main
@@ -13,6 +13,10 @@ executable = "proven-graphql"
 
 modules = GraphQL
         , GraphQL.Types
+        , GraphQL.Schema
+        , GraphQL.Query
+        , GraphQL.Introspection
+        , GraphQL.Resolver
         , GraphQLABI.Layout
         , GraphQLABI.Transitions
         , GraphQLABI.Foreign

@@ -1,7 +1,8 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
-||| Entry point for proven-graphql skeleton.
+||| Entry point for proven-graphql.
+||| Exercises all type constructors to verify consistency.
 module Main
 
 import GraphQL
@@ -12,7 +13,7 @@ import GraphQL
 covering
 main : IO ()
 main = do
-  putStrLn "proven-graphql — GraphQL server skeleton"
+  putStrLn "proven-graphql — GraphQL server with formally verified ABI"
   putStrLn $ "  Port: " ++ show graphqlPort
   putStrLn $ "  Max Query Depth: " ++ show maxQueryDepth
   putStrLn $ "  Max Query Complexity: " ++ show maxQueryComplexity
@@ -55,3 +56,23 @@ main = do
   putStrLn $ "  " ++ show ExecutionError
   putStrLn $ "  " ++ show AuthError
   putStrLn $ "  " ++ show RateLimited
+  putStrLn "Introspection Fields:"
+  putStrLn $ "  " ++ show SchemaField
+  putStrLn $ "  " ++ show TypeField
+  putStrLn $ "  " ++ show TypenameField
+  putStrLn "Batch Query Status:"
+  putStrLn $ "  " ++ show Pending
+  putStrLn $ "  " ++ show Running
+  putStrLn $ "  " ++ show Complete
+  putStrLn $ "  " ++ show BqFailed
+  putStrLn "Response Presence:"
+  putStrLn $ "  " ++ show DataOnly
+  putStrLn $ "  " ++ show ErrorsOnly
+  putStrLn $ "  " ++ show DataAndErrors
+  putStrLn "Validation Examples:"
+  putStrLn $ "  depth=5,max=15,complex=100,max=1000: "
+    ++ show (validateLimits 5 15 100 1000)
+  putStrLn $ "  depth=20,max=15,complex=100,max=1000: "
+    ++ show (validateLimits 20 15 100 1000)
+  putStrLn $ "  depth=5,max=15,complex=2000,max=1000: "
+    ++ show (validateLimits 5 15 2000 1000)

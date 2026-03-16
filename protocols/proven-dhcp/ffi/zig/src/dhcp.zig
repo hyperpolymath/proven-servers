@@ -111,6 +111,25 @@ pub fn hardwareTypeToWire(tag: u8) u8 {
     };
 }
 
+// -- Relay agent sub-option types (RFC 3046) -----------------------------------
+
+/// Relay agent sub-option types for option 82 (matching DHCP.Relay.idr).
+pub const RelaySubOption = enum(u8) {
+    circuit_id = 0,
+    remote_id = 1,
+};
+
+// -- Lease duration bounds ----------------------------------------------------
+
+/// Minimum lease duration in seconds (matching DHCP.Lease.idr).
+pub const MIN_LEASE_SECS: u32 = 60;
+
+/// Maximum lease duration in seconds (365 days, matching DHCP.Lease.idr).
+pub const MAX_LEASE_SECS: u32 = 31536000;
+
+/// Maximum hop count for relay forwarding (RFC 2131 Section 3.3).
+pub const MAX_HOPS: u8 = 16;
+
 // -- Lease entry ---------------------------------------------------------------
 
 /// A single lease entry in the IP address pool.
@@ -163,6 +182,34 @@ const empty_offer: OfferConfig = .{
     .lease_idx = 0,
 };
 
+/// Relay agent information (RFC 3046 option 82).
+const RelayInfo = struct {
+    /// Gateway IP address (giaddr) from the relay agent.
+    giaddr: u32,
+    /// Hop count (number of relay agents traversed).
+    hops: u8,
+    /// Circuit ID data (sub-option 1).
+    circuit_id: [255]u8,
+    /// Circuit ID length.
+    circuit_id_len: u8,
+    /// Remote ID data (sub-option 2).
+    remote_id: [255]u8,
+    /// Remote ID length.
+    remote_id_len: u8,
+    /// Whether relay info is present.
+    present: bool,
+};
+
+const empty_relay: RelayInfo = .{
+    .giaddr = 0,
+    .hops = 0,
+    .circuit_id = [_]u8{0} ** 255,
+    .circuit_id_len = 0,
+    .remote_id = [_]u8{0} ** 255,
+    .remote_id_len = 0,
+    .present = false,
+};
+
 /// A DHCP server processing context (one DORA cycle).
 const Context = struct {
     /// Current DORA lifecycle state.
@@ -183,6 +230,8 @@ const Context = struct {
     lease_count: u16,
     /// Current offer configuration.
     offer: OfferConfig,
+    /// Relay agent information (RFC 3046).
+    relay: RelayInfo,
 };
 
 const MAX_CONTEXTS: usize = 64;
@@ -198,6 +247,7 @@ const empty_context: Context = .{
     .leases = [_]LeaseEntry{empty_lease} ** MAX_LEASES,
     .lease_count = 0,
     .offer = empty_offer,
+    .relay = empty_relay,
 };
 
 var contexts: [MAX_CONTEXTS]Context = [_]Context{empty_context} ** MAX_CONTEXTS;
@@ -665,5 +715,132 @@ pub export fn dhcp_can_lease_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 5 and to == 0) return 1; // Expired -> Available (reclaim)
     if (from == 2 and to == 0) return 1; // Bound -> Available (release)
     if (from == 1 and to == 0) return 1; // Offered -> Available (decline)
+    return 0;
+}
+
+// -- Relay agent (RFC 3046 option 82) ------------------------------------------
+
+/// Set relay agent information on a context.
+/// The giaddr must be non-zero, and hops must be < MAX_HOPS.
+/// Circuit ID and Remote ID are optional (pass null/0 to omit).
+pub export fn dhcp_set_relay_info(
+    slot: c_int,
+    giaddr: u32,
+    hops: u8,
+    circuit_id: ?[*]const u8,
+    circuit_len: u8,
+    remote_id: ?[*]const u8,
+    remote_len: u8,
+) callconv(.c) u8 {
+    const idx = validSlot(slot) orelse return 1;
+    mutexes[idx].lock();
+    defer mutexes[idx].unlock();
+
+    // giaddr must be non-zero for relay forwarding
+    if (giaddr == 0) return 1;
+    // Enforce hop count limit
+    if (hops >= MAX_HOPS) return 1;
+
+    contexts[idx].relay.giaddr = giaddr;
+    contexts[idx].relay.hops = hops;
+    contexts[idx].relay.present = true;
+
+    // Copy circuit ID if provided
+    if (circuit_id) |cid| {
+        const clen: usize = @min(circuit_len, 255);
+        @memcpy(contexts[idx].relay.circuit_id[0..clen], cid[0..clen]);
+        contexts[idx].relay.circuit_id_len = @intCast(clen);
+    } else {
+        contexts[idx].relay.circuit_id_len = 0;
+    }
+
+    // Copy remote ID if provided
+    if (remote_id) |rid| {
+        const rlen: usize = @min(remote_len, 255);
+        @memcpy(contexts[idx].relay.remote_id[0..rlen], rid[0..rlen]);
+        contexts[idx].relay.remote_id_len = @intCast(rlen);
+    } else {
+        contexts[idx].relay.remote_id_len = 0;
+    }
+
+    return 0;
+}
+
+/// Check whether relay agent information is present on a context.
+/// Returns 1 if present, 0 if not.
+pub export fn dhcp_has_relay_info(slot: c_int) callconv(.c) u8 {
+    const idx = validSlot(slot) orelse return 0;
+    mutexes[idx].lock();
+    defer mutexes[idx].unlock();
+    return if (contexts[idx].relay.present) 1 else 0;
+}
+
+/// Get the relay agent's gateway IP address (giaddr).
+pub export fn dhcp_relay_giaddr(slot: c_int) callconv(.c) u32 {
+    const idx = validSlot(slot) orelse return 0;
+    mutexes[idx].lock();
+    defer mutexes[idx].unlock();
+    return contexts[idx].relay.giaddr;
+}
+
+/// Get the relay agent hop count.
+pub export fn dhcp_relay_hops(slot: c_int) callconv(.c) u8 {
+    const idx = validSlot(slot) orelse return 0;
+    mutexes[idx].lock();
+    defer mutexes[idx].unlock();
+    return contexts[idx].relay.hops;
+}
+
+// -- Option TLV parsing (RFC 2132) --------------------------------------------
+
+/// Parse a single DHCP option from a buffer at the given offset.
+/// Returns 0 on success, 1 on error (buffer too short or end-of-options).
+///
+/// On success:
+///   - out_code receives the option code
+///   - out_len receives the data length
+///   - out_data points to the start of the option data within buf
+///
+/// Special handling:
+///   - Code 0 (Pad): out_len = 0, out_data = null, advance by 1 byte
+///   - Code 255 (End): out_len = 0, out_data = null, returns 1 (end)
+pub export fn dhcp_parse_option(
+    buf: ?[*]const u8,
+    len: u16,
+    offset: u16,
+    out_code: ?*u8,
+    out_len: ?*u8,
+    out_data: ?*?[*]const u8,
+) callconv(.c) u8 {
+    const data = buf orelse return 1;
+    if (offset >= len) return 1;
+
+    const code = data[offset];
+
+    // End option
+    if (code == 255) {
+        if (out_code) |oc| oc.* = 255;
+        if (out_len) |ol| ol.* = 0;
+        if (out_data) |od| od.* = null;
+        return 1; // signal end-of-options
+    }
+
+    // Pad option
+    if (code == 0) {
+        if (out_code) |oc| oc.* = 0;
+        if (out_len) |ol| ol.* = 0;
+        if (out_data) |od| od.* = null;
+        return 0;
+    }
+
+    // Standard TLV option
+    if (offset + 1 >= len) return 1; // no room for length byte
+    const opt_len = data[offset + 1];
+    if (@as(u32, offset) + 2 + @as(u32, opt_len) > @as(u32, len)) return 1; // data exceeds buffer
+
+    if (out_code) |oc| oc.* = code;
+    if (out_len) |ol| ol.* = opt_len;
+    if (out_data) |od| od.* = data + offset + 2;
+
     return 0;
 }

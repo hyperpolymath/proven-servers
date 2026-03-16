@@ -15,6 +15,9 @@ module Main
 
 import DHCP
 import DHCP.Types
+import DHCP.Options
+import DHCP.Lease
+import DHCP.Relay
 
 %default total
 

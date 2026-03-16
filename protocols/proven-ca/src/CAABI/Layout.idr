@@ -300,3 +300,49 @@ extensionRoundtrip ExtKeyUsage           = Refl
 extensionRoundtrip SubjectAltName        = Refl
 extensionRoundtrip AuthorityInfoAccess   = Refl
 extensionRoundtrip CRLDistributionPoints = Refl
+
+---------------------------------------------------------------------------
+-- KeyUsageBit (9 constructors, tags 0-8)
+-- Matches RFC 5280 Section 4.2.1.3 bit numbering.
+---------------------------------------------------------------------------
+
+public export
+keyUsageBitSize : Nat
+keyUsageBitSize = 1
+
+public export
+keyUsageBitToTag : KeyUsageBit -> Bits8
+keyUsageBitToTag DigitalSignature = 0
+keyUsageBitToTag NonRepudiation   = 1
+keyUsageBitToTag KeyEncipherment  = 2
+keyUsageBitToTag DataEncipherment = 3
+keyUsageBitToTag KeyAgreement     = 4
+keyUsageBitToTag KeyCertSign      = 5
+keyUsageBitToTag CRLSign          = 6
+keyUsageBitToTag EncipherOnly     = 7
+keyUsageBitToTag DecipherOnly     = 8
+
+public export
+tagToKeyUsageBit : Bits8 -> Maybe KeyUsageBit
+tagToKeyUsageBit 0 = Just DigitalSignature
+tagToKeyUsageBit 1 = Just NonRepudiation
+tagToKeyUsageBit 2 = Just KeyEncipherment
+tagToKeyUsageBit 3 = Just DataEncipherment
+tagToKeyUsageBit 4 = Just KeyAgreement
+tagToKeyUsageBit 5 = Just KeyCertSign
+tagToKeyUsageBit 6 = Just CRLSign
+tagToKeyUsageBit 7 = Just EncipherOnly
+tagToKeyUsageBit 8 = Just DecipherOnly
+tagToKeyUsageBit _ = Nothing
+
+public export
+keyUsageBitRoundtrip : (k : KeyUsageBit) -> tagToKeyUsageBit (keyUsageBitToTag k) = Just k
+keyUsageBitRoundtrip DigitalSignature = Refl
+keyUsageBitRoundtrip NonRepudiation   = Refl
+keyUsageBitRoundtrip KeyEncipherment  = Refl
+keyUsageBitRoundtrip DataEncipherment = Refl
+keyUsageBitRoundtrip KeyAgreement     = Refl
+keyUsageBitRoundtrip KeyCertSign      = Refl
+keyUsageBitRoundtrip CRLSign          = Refl
+keyUsageBitRoundtrip EncipherOnly     = Refl
+keyUsageBitRoundtrip DecipherOnly     = Refl

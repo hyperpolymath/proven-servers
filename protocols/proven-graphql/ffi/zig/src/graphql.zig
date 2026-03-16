@@ -9,6 +9,9 @@
 //   - Subscription lifecycle management (Subscribe -> Active -> Unsubscribe)
 //   - Query parser state tracking (depth, complexity)
 //   - Field resolver counting with type/scalar kind recording
+//   - Introspection field validation (operation-type-aware)
+//   - Batch query support with per-query status tracking
+//   - Stateless depth/complexity limit checks
 //   - Thread-safe via mutex
 
 const std = @import("std");
@@ -91,6 +94,21 @@ pub const SubscriptionPhase = enum(u8) {
     active = 1,
     unsubscribe = 2,
     sub_failed = 3,
+};
+
+/// Introspection meta-fields (3 tags, 0-2).
+pub const IntrospectionField = enum(u8) {
+    schema_field = 0,
+    type_field = 1,
+    typename_field = 2,
+};
+
+/// Batch query status (4 tags, 0-3).
+pub const BatchQueryStatus = enum(u8) {
+    pending = 0,
+    running = 1,
+    complete = 2,
+    bq_failed = 3,
 };
 
 // -- GraphQL context ----------------------------------------------------------
@@ -389,4 +407,195 @@ pub export fn graphql_sub_can_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 0 and to == 3) return 1; // Subscribe -> SubFailed
     if (from == 1 and to == 3) return 1; // Active -> SubFailed
     return 0;
+}
+
+// -- Introspection ------------------------------------------------------------
+
+/// Validate an introspection query against the operation type.
+/// Matches Introspection.idr CanIntrospect rules:
+///   - __schema (0) and __type (1) only valid on Query operations
+///   - __typename (2) valid on any operation
+/// Returns 0 = valid, 1 = rejected.
+pub export fn graphql_introspection_query(slot: c_int, intro_field: u8) callconv(.c) u8 {
+    mutex.lock();
+    defer mutex.unlock();
+    const idx = validSlot(slot) orelse return 1;
+    if (intro_field > 2) return 1; // invalid introspection field tag
+
+    const op = contexts[idx].op_type;
+    return switch (intro_field) {
+        // __schema: Query only
+        0 => if (op == .query) @as(u8, 0) else @as(u8, 1),
+        // __type: Query only
+        1 => if (op == .query) @as(u8, 0) else @as(u8, 1),
+        // __typename: any operation
+        2 => 0,
+        else => 1,
+    };
+}
+
+// -- Batch query support ------------------------------------------------------
+
+const BatchEntry = struct {
+    op_type: OperationType,
+    status: BatchQueryStatus,
+};
+
+const Batch = struct {
+    entries: [MAX_BATCH_SIZE]BatchEntry,
+    count: u8,
+    active: bool,
+};
+
+const MAX_BATCH_SIZE: usize = 16;
+const MAX_BATCHES: usize = 16;
+
+var batches: [MAX_BATCHES]Batch = [_]Batch{.{
+    .entries = [_]BatchEntry{.{
+        .op_type = .query,
+        .status = .pending,
+    }} ** MAX_BATCH_SIZE,
+    .count = 0,
+    .active = false,
+}} ** MAX_BATCHES;
+
+var batch_mutex: std.Thread.Mutex = .{};
+
+fn validBatch(batch_id: c_int) ?usize {
+    if (batch_id < 0 or batch_id >= MAX_BATCHES) return null;
+    const idx: usize = @intCast(batch_id);
+    if (!batches[idx].active) return null;
+    return idx;
+}
+
+/// Create a batch of `count` queries. Returns batch_id or -1 on failure.
+/// count must be 1..16 (matching Idris2 Query.idr maxBatchSize).
+pub export fn graphql_batch_create(count: u8) callconv(.c) c_int {
+    batch_mutex.lock();
+    defer batch_mutex.unlock();
+    if (count == 0 or count > MAX_BATCH_SIZE) return -1;
+    for (&batches, 0..) |*batch, i| {
+        if (!batch.active) {
+            batch.active = true;
+            batch.count = count;
+            for (0..count) |j| {
+                batch.entries[j] = .{
+                    .op_type = .query,
+                    .status = .pending,
+                };
+            }
+            return @intCast(i);
+        }
+    }
+    return -1; // no free batch slots
+}
+
+/// Set the operation type for a query within a batch.
+/// Returns 0 on success, 1 on failure.
+pub export fn graphql_batch_set_op(batch_id: c_int, index: u8, op_type: u8) callconv(.c) u8 {
+    batch_mutex.lock();
+    defer batch_mutex.unlock();
+    const idx = validBatch(batch_id) orelse return 1;
+    if (index >= batches[idx].count) return 1;
+    if (op_type > 2) return 1;
+    batches[idx].entries[index].op_type = @enumFromInt(op_type);
+    return 0;
+}
+
+/// Get the overall batch status.
+/// Pending=0 if any pending, Running=1 if any running, Complete=2 if all complete,
+/// Failed=3 if any failed.
+pub export fn graphql_batch_status(batch_id: c_int) callconv(.c) u8 {
+    batch_mutex.lock();
+    defer batch_mutex.unlock();
+    const idx = validBatch(batch_id) orelse return 3; // failed fallback
+    const count = batches[idx].count;
+    var has_pending = false;
+    var has_running = false;
+    var has_failed = false;
+    var all_complete = true;
+
+    for (0..count) |j| {
+        const s = batches[idx].entries[j].status;
+        switch (s) {
+            .pending => {
+                has_pending = true;
+                all_complete = false;
+            },
+            .running => {
+                has_running = true;
+                all_complete = false;
+            },
+            .bq_failed => {
+                has_failed = true;
+                all_complete = false;
+            },
+            .complete => {},
+        }
+    }
+
+    if (has_failed) return 3;
+    if (all_complete) return 2;
+    if (has_running) return 1;
+    if (has_pending) return 0;
+    return 2; // empty batch is complete
+}
+
+/// Get the status of an individual query in a batch.
+pub export fn graphql_batch_query_status(batch_id: c_int, index: u8) callconv(.c) u8 {
+    batch_mutex.lock();
+    defer batch_mutex.unlock();
+    const idx = validBatch(batch_id) orelse return 3;
+    if (index >= batches[idx].count) return 3;
+    return @intFromEnum(batches[idx].entries[index].status);
+}
+
+/// Advance batch execution: moves the first Pending query to Running,
+/// or the first Running query to Complete.
+/// Returns 0 on success, 1 if no advanceable query exists.
+pub export fn graphql_batch_advance(batch_id: c_int) callconv(.c) u8 {
+    batch_mutex.lock();
+    defer batch_mutex.unlock();
+    const idx = validBatch(batch_id) orelse return 1;
+    const count = batches[idx].count;
+
+    // First, try to complete a running query
+    for (0..count) |j| {
+        if (batches[idx].entries[j].status == .running) {
+            batches[idx].entries[j].status = .complete;
+            return 0;
+        }
+    }
+    // Then, try to start a pending query
+    for (0..count) |j| {
+        if (batches[idx].entries[j].status == .pending) {
+            batches[idx].entries[j].status = .running;
+            return 0;
+        }
+    }
+    return 1; // nothing to advance
+}
+
+/// Destroy a batch, freeing the slot.
+pub export fn graphql_batch_destroy(batch_id: c_int) callconv(.c) void {
+    batch_mutex.lock();
+    defer batch_mutex.unlock();
+    if (batch_id < 0 or batch_id >= MAX_BATCHES) return;
+    batches[@intCast(batch_id)].active = false;
+}
+
+// -- Stateless depth/complexity limit checks ----------------------------------
+
+/// Check whether a query depth is within a maximum limit.
+/// Returns 0 (within bounds) or 1 (exceeds limit).
+/// Matches Idris2 Query.idr checkDepth.
+pub export fn graphql_check_depth(depth: u16, max_depth: u16) callconv(.c) u8 {
+    return if (depth <= max_depth) 0 else 1;
+}
+
+/// Check whether a query complexity score is within a maximum limit.
+/// Returns 0 (within bounds) or 1 (exceeds limit).
+/// Matches Idris2 Query.idr checkComplexity.
+pub export fn graphql_check_complexity(score: u16, max_complexity: u16) callconv(.c) u8 {
+    return if (score <= max_complexity) 0 else 1;
 }

@@ -2,6 +2,10 @@
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
 // graphql_test.zig -- Integration tests for proven-graphql FFI.
+//
+// Verifies that the Zig FFI implementation matches the Idris2 ABI
+// definitions exactly: tag encodings, transition tables, lifecycle
+// invariants, introspection rules, batch queries, and limit checks.
 
 const std = @import("std");
 const gql = @import("graphql");
@@ -73,6 +77,19 @@ test "SubscriptionPhase encoding matches Transitions.idr (4 tags)" {
     try std.testing.expectEqual(@as(u8, 1), @intFromEnum(gql.SubscriptionPhase.active));
     try std.testing.expectEqual(@as(u8, 2), @intFromEnum(gql.SubscriptionPhase.unsubscribe));
     try std.testing.expectEqual(@as(u8, 3), @intFromEnum(gql.SubscriptionPhase.sub_failed));
+}
+
+test "IntrospectionField encoding matches Introspection.idr (3 tags)" {
+    try std.testing.expectEqual(@as(u8, 0), @intFromEnum(gql.IntrospectionField.schema_field));
+    try std.testing.expectEqual(@as(u8, 1), @intFromEnum(gql.IntrospectionField.type_field));
+    try std.testing.expectEqual(@as(u8, 2), @intFromEnum(gql.IntrospectionField.typename_field));
+}
+
+test "BatchQueryStatus encoding matches Query.idr (4 tags)" {
+    try std.testing.expectEqual(@as(u8, 0), @intFromEnum(gql.BatchQueryStatus.pending));
+    try std.testing.expectEqual(@as(u8, 1), @intFromEnum(gql.BatchQueryStatus.running));
+    try std.testing.expectEqual(@as(u8, 2), @intFromEnum(gql.BatchQueryStatus.complete));
+    try std.testing.expectEqual(@as(u8, 3), @intFromEnum(gql.BatchQueryStatus.bq_failed));
 }
 
 // =========================================================================
@@ -409,4 +426,170 @@ test "error category initially unset" {
     const slot = gql.graphql_create(0);
     defer gql.graphql_destroy(slot);
     try std.testing.expectEqual(@as(u8, 255), gql.graphql_error_category(slot));
+}
+
+// =========================================================================
+// Introspection (matches Introspection.idr CanIntrospect)
+// =========================================================================
+
+test "__schema valid on Query operation" {
+    const slot = gql.graphql_create(0); // Query
+    defer gql.graphql_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_introspection_query(slot, 0)); // __schema
+}
+
+test "__type valid on Query operation" {
+    const slot = gql.graphql_create(0); // Query
+    defer gql.graphql_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_introspection_query(slot, 1)); // __type
+}
+
+test "__typename valid on any operation" {
+    const query_slot = gql.graphql_create(0);
+    defer gql.graphql_destroy(query_slot);
+    const mut_slot = gql.graphql_create(1);
+    defer gql.graphql_destroy(mut_slot);
+    const sub_slot = gql.graphql_create(2);
+    defer gql.graphql_destroy(sub_slot);
+
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_introspection_query(query_slot, 2));
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_introspection_query(mut_slot, 2));
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_introspection_query(sub_slot, 2));
+}
+
+test "__schema rejected on Mutation operation" {
+    const slot = gql.graphql_create(1); // Mutation
+    defer gql.graphql_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_introspection_query(slot, 0)); // __schema
+}
+
+test "__type rejected on Mutation operation" {
+    const slot = gql.graphql_create(1); // Mutation
+    defer gql.graphql_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_introspection_query(slot, 1)); // __type
+}
+
+test "__schema rejected on Subscription operation" {
+    const slot = gql.graphql_create(2); // Subscription
+    defer gql.graphql_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_introspection_query(slot, 0)); // __schema
+}
+
+test "__type rejected on Subscription operation" {
+    const slot = gql.graphql_create(2); // Subscription
+    defer gql.graphql_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_introspection_query(slot, 1)); // __type
+}
+
+test "introspection rejects invalid field tag" {
+    const slot = gql.graphql_create(0);
+    defer gql.graphql_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_introspection_query(slot, 99));
+}
+
+test "introspection rejects invalid slot" {
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_introspection_query(-1, 0));
+}
+
+// =========================================================================
+// Batch query support (matches Query.idr batch types)
+// =========================================================================
+
+test "batch create with valid count" {
+    const batch_id = gql.graphql_batch_create(3);
+    try std.testing.expect(batch_id >= 0);
+    defer gql.graphql_batch_destroy(batch_id);
+
+    // Initial status: all pending
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_status(batch_id)); // pending
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_query_status(batch_id, 0)); // pending
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_query_status(batch_id, 1)); // pending
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_query_status(batch_id, 2)); // pending
+}
+
+test "batch create rejects zero count" {
+    try std.testing.expectEqual(@as(c_int, -1), gql.graphql_batch_create(0));
+}
+
+test "batch create rejects count exceeding max" {
+    try std.testing.expectEqual(@as(c_int, -1), gql.graphql_batch_create(17));
+}
+
+test "batch set operation type" {
+    const batch_id = gql.graphql_batch_create(2);
+    defer gql.graphql_batch_destroy(batch_id);
+
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_set_op(batch_id, 0, 0)); // query
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_set_op(batch_id, 1, 1)); // mutation
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_batch_set_op(batch_id, 2, 0)); // out of bounds
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_batch_set_op(batch_id, 0, 99)); // invalid op
+}
+
+test "batch advance lifecycle: pending -> running -> complete" {
+    const batch_id = gql.graphql_batch_create(2);
+    defer gql.graphql_batch_destroy(batch_id);
+
+    // Start first query (pending -> running)
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_advance(batch_id));
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_batch_query_status(batch_id, 0)); // running
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_query_status(batch_id, 1)); // pending
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_batch_status(batch_id)); // running
+
+    // Complete first query (running -> complete)
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_advance(batch_id));
+    try std.testing.expectEqual(@as(u8, 2), gql.graphql_batch_query_status(batch_id, 0)); // complete
+
+    // Start second query
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_advance(batch_id));
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_batch_query_status(batch_id, 1)); // running
+
+    // Complete second query
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_batch_advance(batch_id));
+    try std.testing.expectEqual(@as(u8, 2), gql.graphql_batch_query_status(batch_id, 1)); // complete
+
+    // Batch is now complete
+    try std.testing.expectEqual(@as(u8, 2), gql.graphql_batch_status(batch_id)); // complete
+
+    // No more to advance
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_batch_advance(batch_id)); // rejected
+}
+
+test "batch destroy is safe with invalid id" {
+    gql.graphql_batch_destroy(-1);
+    gql.graphql_batch_destroy(999);
+}
+
+test "batch status returns failed fallback for invalid id" {
+    try std.testing.expectEqual(@as(u8, 3), gql.graphql_batch_status(-1)); // failed
+}
+
+test "batch query status returns failed for out-of-bounds index" {
+    const batch_id = gql.graphql_batch_create(1);
+    defer gql.graphql_batch_destroy(batch_id);
+    try std.testing.expectEqual(@as(u8, 3), gql.graphql_batch_query_status(batch_id, 5));
+}
+
+// =========================================================================
+// Depth/complexity limit checks (matches Query.idr checkDepth/checkComplexity)
+// =========================================================================
+
+test "check_depth within bounds" {
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_check_depth(5, 15));
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_check_depth(15, 15)); // boundary
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_check_depth(0, 15));
+}
+
+test "check_depth exceeds bounds" {
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_check_depth(16, 15));
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_check_depth(100, 15));
+}
+
+test "check_complexity within bounds" {
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_check_complexity(500, 1000));
+    try std.testing.expectEqual(@as(u8, 0), gql.graphql_check_complexity(1000, 1000)); // boundary
+}
+
+test "check_complexity exceeds bounds" {
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_check_complexity(1001, 1000));
+    try std.testing.expectEqual(@as(u8, 1), gql.graphql_check_complexity(5000, 1000));
 }

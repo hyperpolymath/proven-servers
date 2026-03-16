@@ -91,6 +91,20 @@ pub const Extension = enum(u8) {
 const MAX_CERTS: usize = 64;
 const INVALID_ID: c_int = -1;
 
+pub const KeyUsageBit = enum(u8) {
+    digital_signature = 0,
+    non_repudiation = 1,
+    key_encipherment = 2,
+    data_encipherment = 3,
+    key_agreement = 4,
+    key_cert_sign = 5,
+    crl_sign = 6,
+    encipher_only = 7,
+    decipher_only = 8,
+};
+
+// -- Certificate record -------------------------------------------------------
+
 const Certificate = struct {
     cert_type: CertType,
     key_algo: KeyAlgorithm,
@@ -98,6 +112,11 @@ const Certificate = struct {
     state: CertState,
     revocation_reason: u8, // 255 = not revoked
     issuer_id: c_int, // -1 = self-signed / no issuer
+    not_before: u64, // Unix epoch seconds, 0 = unset
+    not_after: u64, // Unix epoch seconds, 0 = unset
+    serial: u64, // Monotonic serial number (0 = unset)
+    path_length: i32, // -1 = unconstrained, >= 0 = max intermediates
+    key_usage: u16, // Bitmask of KeyUsageBit (bit N = tag N)
     active: bool,
 };
 
@@ -108,6 +127,11 @@ const default_cert: Certificate = .{
     .state = .pending,
     .revocation_reason = 255,
     .issuer_id = -1,
+    .not_before = 0,
+    .not_after = 0,
+    .serial = 0,
+    .path_length = -1,
+    .key_usage = 0,
     .active = false,
 };
 
@@ -118,6 +142,7 @@ const MAX_CONTEXTS: usize = 64;
 const CaContext = struct {
     certs: [MAX_CERTS]Certificate,
     cert_count: usize,
+    next_serial: u64, // Monotonic serial counter; starts at 1
     crl_status: CRLStatus,
     ocsp_status: OCSPStatus,
     context_active: bool,
@@ -126,6 +151,7 @@ const CaContext = struct {
 const default_context: CaContext = .{
     .certs = [_]Certificate{default_cert} ** MAX_CERTS,
     .cert_count = 0,
+    .next_serial = 1,
     .crl_status = .crl_pending,
     .ocsp_status = .unavailable,
     .context_active = false,
@@ -224,6 +250,7 @@ pub export fn ca_issue_cert(slot: c_int, cert_type_tag: u8, key_algo_tag: u8, si
     if (key_algo_tag > 5) return -1;
     if (sig_algo_tag > 6) return -1;
     // Find free cert slot
+    const serial = contexts[ctx_idx].next_serial;
     for (&contexts[ctx_idx].certs, 0..) |*cert, i| {
         if (!cert.active) {
             cert.* = .{
@@ -233,8 +260,14 @@ pub export fn ca_issue_cert(slot: c_int, cert_type_tag: u8, key_algo_tag: u8, si
                 .state = .pending,
                 .revocation_reason = 255,
                 .issuer_id = -1,
+                .not_before = 0,
+                .not_after = 0,
+                .serial = serial,
+                .path_length = -1,
+                .key_usage = 0,
                 .active = true,
             };
+            contexts[ctx_idx].next_serial = serial + 1;
             contexts[ctx_idx].cert_count += 1;
             return @intCast(i);
         }
@@ -306,6 +339,7 @@ pub export fn ca_renew_cert(slot: c_int, cert_id: c_int) callconv(.c) c_int {
     const old = &contexts[ctx_idx].certs[cid];
     if (old.state != .active) return -1;
     // Create new cert in Pending state with same type/algos
+    const serial = contexts[ctx_idx].next_serial;
     for (&contexts[ctx_idx].certs, 0..) |*cert, i| {
         if (!cert.active) {
             cert.* = .{
@@ -315,8 +349,14 @@ pub export fn ca_renew_cert(slot: c_int, cert_id: c_int) callconv(.c) c_int {
                 .state = .pending,
                 .revocation_reason = 255,
                 .issuer_id = old.issuer_id,
+                .not_before = 0,
+                .not_after = 0,
+                .serial = serial,
+                .path_length = old.path_length,
+                .key_usage = 0,
                 .active = true,
             };
+            contexts[ctx_idx].next_serial = serial + 1;
             contexts[ctx_idx].cert_count += 1;
             return @intCast(i);
         }
@@ -464,5 +504,157 @@ pub export fn ca_ocsp_query(slot: c_int, cert_id: c_int) callconv(.c) u8 {
         .active => 0, // good
         .revoked => 1, // revoked
         .pending, .expired, .suspended => 2, // unknown (not definitively good/revoked)
+    };
+}
+
+// -- Validity period ----------------------------------------------------------
+
+/// Set the validity period for a certificate.
+/// Enforces the well-formedness invariant: not_before < not_after.
+/// Returns 0 on success, 1 on rejection (invalid period or bad slot/cert).
+pub export fn ca_set_validity(slot: c_int, cert_id: c_int, not_before: u64, not_after: u64) callconv(.c) u8 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return 1;
+    const cid = validCert(ctx_idx, cert_id) orelse return 1;
+    // Enforce: notBefore < notAfter (matches Idris2 ValidityPeriod proof)
+    if (not_before >= not_after) return 1;
+    contexts[ctx_idx].certs[cid].not_before = not_before;
+    contexts[ctx_idx].certs[cid].not_after = not_after;
+    return 0;
+}
+
+/// Get the notBefore timestamp for a certificate.
+/// Returns 0 if the slot/cert is invalid or validity is unset.
+pub export fn ca_cert_not_before(slot: c_int, cert_id: c_int) callconv(.c) u64 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return 0;
+    const cid = validCert(ctx_idx, cert_id) orelse return 0;
+    return contexts[ctx_idx].certs[cid].not_before;
+}
+
+/// Get the notAfter timestamp for a certificate.
+/// Returns 0 if the slot/cert is invalid or validity is unset.
+pub export fn ca_cert_not_after(slot: c_int, cert_id: c_int) callconv(.c) u64 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return 0;
+    const cid = validCert(ctx_idx, cert_id) orelse return 0;
+    return contexts[ctx_idx].certs[cid].not_after;
+}
+
+// -- Serial numbers -----------------------------------------------------------
+
+/// Get the serial number of a certificate.
+/// Returns 0 if the slot/cert is invalid.
+pub export fn ca_cert_serial(slot: c_int, cert_id: c_int) callconv(.c) u64 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return 0;
+    const cid = validCert(ctx_idx, cert_id) orelse return 0;
+    return contexts[ctx_idx].certs[cid].serial;
+}
+
+/// Get the next serial number that will be assigned.
+/// Returns 0 if the slot is invalid.
+pub export fn ca_next_serial(slot: c_int) callconv(.c) u64 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return 0;
+    return contexts[ctx_idx].next_serial;
+}
+
+// -- Path length constraints --------------------------------------------------
+
+/// Set the path length constraint for a CA certificate.
+/// max_path_len = -1 means unconstrained (leaf/no BasicConstraints).
+/// max_path_len >= 0 means at most N intermediate CAs below this one.
+/// Returns 0 on success, 1 on rejection.
+pub export fn ca_set_path_length(slot: c_int, cert_id: c_int, max_path_len: i32) callconv(.c) u8 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return 1;
+    const cid = validCert(ctx_idx, cert_id) orelse return 1;
+    // Only CA types (Root, Intermediate, CrossSigned) may have path length >= 0
+    const ct = contexts[ctx_idx].certs[cid].cert_type;
+    if (max_path_len >= 0 and ct != .root and ct != .intermediate and ct != .cross_signed) return 1;
+    contexts[ctx_idx].certs[cid].path_length = max_path_len;
+    return 0;
+}
+
+/// Get the path length constraint for a certificate.
+/// Returns -1 for unconstrained or invalid.
+pub export fn ca_cert_path_length(slot: c_int, cert_id: c_int) callconv(.c) i32 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return -1;
+    const cid = validCert(ctx_idx, cert_id) orelse return -1;
+    return contexts[ctx_idx].certs[cid].path_length;
+}
+
+/// Validate that path length decreases along the issuer chain.
+/// Checks: if both cert and issuer have path length >= 0,
+/// then cert.path_length < issuer.path_length.
+/// Returns 0 if valid, 1 if invalid.
+pub export fn ca_validate_path_length(slot: c_int, cert_id: c_int) callconv(.c) u8 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return 1;
+    const cid = validCert(ctx_idx, cert_id) orelse return 1;
+    const cert = &contexts[ctx_idx].certs[cid];
+    // Self-signed / no issuer: valid by default
+    if (cert.issuer_id < 0) return 0;
+    const icid = validCert(ctx_idx, cert.issuer_id) orelse return 1;
+    const issuer = &contexts[ctx_idx].certs[icid];
+    // If issuer has no path length constraint, child is unchecked
+    if (issuer.path_length < 0) return 0;
+    // If child has no constraint, it's a leaf -- always valid
+    if (cert.path_length < 0) return 0;
+    // Both constrained: child must be strictly less
+    if (cert.path_length < issuer.path_length) return 0;
+    return 1; // violation
+}
+
+// -- Key usage ----------------------------------------------------------------
+
+/// Set the key usage bitmask for a certificate.
+/// Each bit position corresponds to a KeyUsageBit tag value.
+/// Returns 0 on success, 1 on rejection.
+pub export fn ca_set_key_usage(slot: c_int, cert_id: c_int, key_usage_bits: u16) callconv(.c) u8 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return 1;
+    const cid = validCert(ctx_idx, cert_id) orelse return 1;
+    contexts[ctx_idx].certs[cid].key_usage = key_usage_bits;
+    return 0;
+}
+
+/// Get the key usage bitmask for a certificate.
+/// Returns 0 if invalid (no usage set or bad slot/cert).
+pub export fn ca_cert_key_usage(slot: c_int, cert_id: c_int) callconv(.c) u16 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return 0;
+    const cid = validCert(ctx_idx, cert_id) orelse return 0;
+    return contexts[ctx_idx].certs[cid].key_usage;
+}
+
+/// Validate that key usage is consistent with cert type.
+/// - CA certs (Root, Intermediate, CrossSigned) MUST have keyCertSign (bit 5)
+/// - EndEntity certs MUST NOT have keyCertSign (bit 5)
+/// Returns 0 if valid, 1 if inconsistent.
+pub export fn ca_validate_key_usage(slot: c_int, cert_id: c_int) callconv(.c) u8 {
+    mutex.lock();
+    defer mutex.unlock();
+    const ctx_idx = validContext(slot) orelse return 1;
+    const cid = validCert(ctx_idx, cert_id) orelse return 1;
+    const cert = &contexts[ctx_idx].certs[cid];
+    const has_cert_sign = (cert.key_usage & (1 << 5)) != 0;
+    return switch (cert.cert_type) {
+        // CA types MUST have keyCertSign
+        .root, .intermediate, .cross_signed => if (has_cert_sign) 0 else 1,
+        // Leaf types MUST NOT have keyCertSign
+        .end_entity, .code_signing, .email_protection, .ocsp_signing => if (has_cert_sign) 1 else 0,
     };
 }

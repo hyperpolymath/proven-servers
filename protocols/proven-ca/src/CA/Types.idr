@@ -191,3 +191,89 @@ Show Extension where
   show SubjectAltName        = "SubjectAltName"
   show AuthorityInfoAccess   = "AuthorityInfoAccess"
   show CRLDistributionPoints = "CRLDistributionPoints"
+
+---------------------------------------------------------------------------
+-- ValidityPeriod : Certificate validity time window.
+---------------------------------------------------------------------------
+
+||| A certificate validity period with a proof that notBefore < notAfter.
+||| Times are Unix epoch seconds (Bits64).
+||| The proof `valid` witnesses the well-formedness invariant required
+||| by RFC 5280 Section 4.1.2.5.
+public export
+record ValidityPeriod where
+  constructor MkValidity
+  notBefore : Bits64
+  notAfter  : Bits64
+  valid     : So (notBefore < notAfter)
+
+---------------------------------------------------------------------------
+-- SerialNumber : Monotonic certificate serial counter.
+---------------------------------------------------------------------------
+
+||| A monotonic serial number counter.  The `next` field is always
+||| strictly greater than `current`, guaranteeing uniqueness when
+||| issuing certificates sequentially.
+public export
+record SerialCounter where
+  constructor MkSerialCounter
+  current : Bits64
+  next    : Bits64
+  monotonic : So (current < next)
+
+---------------------------------------------------------------------------
+-- PathLength : Path length constraint for CA certificates.
+---------------------------------------------------------------------------
+
+||| Path length constraint value.  `Nothing` means unconstrained (leaf cert).
+||| `Just n` means at most n intermediate CAs below this one.
+public export
+PathLengthConstraint : Type
+PathLengthConstraint = Maybe Nat
+
+---------------------------------------------------------------------------
+-- KeyUsageBit : Individual key usage flags (RFC 5280 Section 4.2.1.3).
+---------------------------------------------------------------------------
+
+||| Key usage bits as defined by RFC 5280.
+public export
+data KeyUsageBit : Type where
+  DigitalSignature : KeyUsageBit
+  NonRepudiation   : KeyUsageBit
+  KeyEncipherment  : KeyUsageBit
+  DataEncipherment : KeyUsageBit
+  KeyAgreement     : KeyUsageBit
+  KeyCertSign      : KeyUsageBit
+  CRLSign          : KeyUsageBit
+  EncipherOnly     : KeyUsageBit
+  DecipherOnly     : KeyUsageBit
+
+export
+Eq KeyUsageBit where
+  DigitalSignature == DigitalSignature = True
+  NonRepudiation   == NonRepudiation   = True
+  KeyEncipherment  == KeyEncipherment  = True
+  DataEncipherment == DataEncipherment = True
+  KeyAgreement     == KeyAgreement     = True
+  KeyCertSign      == KeyCertSign      = True
+  CRLSign          == CRLSign          = True
+  EncipherOnly     == EncipherOnly     = True
+  DecipherOnly     == DecipherOnly     = True
+  _                == _                = False
+
+export
+Show KeyUsageBit where
+  show DigitalSignature = "DigitalSignature"
+  show NonRepudiation   = "NonRepudiation"
+  show KeyEncipherment  = "KeyEncipherment"
+  show DataEncipherment = "DataEncipherment"
+  show KeyAgreement     = "KeyAgreement"
+  show KeyCertSign      = "KeyCertSign"
+  show CRLSign          = "CRLSign"
+  show EncipherOnly     = "EncipherOnly"
+  show DecipherOnly     = "DecipherOnly"
+
+||| A set of key usage flags represented as a list of unique bits.
+public export
+KeyUsageSet : Type
+KeyUsageSet = List KeyUsageBit

@@ -197,3 +197,113 @@ validateIssuance Intermediate EmailProtection = Just IntIssuesEmail
 validateIssuance Intermediate OCSPSigning     = Just IntIssuesOCSP
 validateIssuance CrossSigned  EndEntity       = Just CrossIssuesEndEntity
 validateIssuance _ _                          = Nothing
+
+---------------------------------------------------------------------------
+-- Validity period proofs
+---------------------------------------------------------------------------
+
+||| Certificate validity periods are well-formed: notBefore < notAfter.
+||| This is enforced by construction via the `So` proof in ValidityPeriod,
+||| but we export a decision procedure for the FFI boundary.
+public export
+validityWellFormed : (nb : Bits64) -> (na : Bits64) -> Dec (So (nb < na))
+validityWellFormed nb na with (nb < na)
+  validityWellFormed nb na | True  = Yes Oh
+  validityWellFormed nb na | False = No uninhabited
+
+---------------------------------------------------------------------------
+-- Serial number uniqueness proofs
+---------------------------------------------------------------------------
+
+||| Serial numbers are monotonically increasing.  Given a counter,
+||| the next serial is always strictly greater than the current one.
+||| Enforced by construction via SerialCounter.
+public export
+serialMonotonic : (sc : SerialCounter) -> So (sc.current < sc.next)
+serialMonotonic sc = sc.monotonic
+
+---------------------------------------------------------------------------
+-- Path length constraint proofs
+---------------------------------------------------------------------------
+
+||| Proof that a child path length is strictly less than its parent.
+||| This witnesses the RFC 5280 Section 4.2.1.9 requirement that
+||| pathLenConstraint decreases along the certificate chain.
+public export
+data PathLengthDecreases : (parent : Nat) -> (child : Nat) -> Type where
+  ||| The child path length is strictly less than the parent.
+  PLDecreases : LT child parent -> PathLengthDecreases parent child
+
+||| Validate that path length decreases along the chain.
+public export
+validatePathLengthDecrease : (parent : Nat) -> (child : Nat)
+                           -> Dec (PathLengthDecreases parent child)
+validatePathLengthDecrease parent child =
+  case isLT child parent of
+    Yes prf => Yes (PLDecreases prf)
+    No contra => No (\(PLDecreases prf) => contra prf)
+
+||| Zero path length means no further intermediates are allowed.
+public export
+zeroPathLengthBlocksIntermediate : PathLengthDecreases Z child -> Void
+zeroPathLengthBlocksIntermediate (PLDecreases prf) = absurd prf
+
+---------------------------------------------------------------------------
+-- Key usage consistency proofs
+---------------------------------------------------------------------------
+
+||| Proof that a CA certificate has the keyCertSign bit set.
+||| Required by RFC 5280 Section 4.2.1.3 for any cert that issues others.
+public export
+data HasKeyCertSign : (usage : KeyUsageSet) -> Type where
+  KCSHere  : HasKeyCertSign (KeyCertSign :: rest)
+  KCSThere : HasKeyCertSign rest -> HasKeyCertSign (x :: rest)
+
+||| Proof that a CA certificate has the cRLSign bit set.
+||| Required for CAs that issue CRLs (RFC 5280 Section 4.2.1.3).
+public export
+data HasCRLSign : (usage : KeyUsageSet) -> Type where
+  CRLHere  : HasCRLSign (CRLSign :: rest)
+  CRLThere : HasCRLSign rest -> HasCRLSign (x :: rest)
+
+||| Key usage bits required for a CA certificate (Root or Intermediate).
+||| A CA MUST have keyCertSign; it SHOULD have cRLSign.
+public export
+data ValidCAKeyUsage : (usage : KeyUsageSet) -> Type where
+  MkValidCAKeyUsage : HasKeyCertSign usage -> ValidCAKeyUsage usage
+
+||| Key usage proof: EndEntity certificates MUST NOT have keyCertSign.
+||| This is the RFC 5280 rule that leaf certs cannot sign other certs.
+public export
+data NoKeyCertSign : (usage : KeyUsageSet) -> Type where
+  NKCSNil  : NoKeyCertSign []
+  NKCSCons : Not (x = KeyCertSign) -> NoKeyCertSign rest
+           -> NoKeyCertSign (x :: rest)
+
+||| Key usage bits required for an end-entity TLS server certificate.
+||| Must have digitalSignature; must NOT have keyCertSign.
+public export
+data ValidEndEntityKeyUsage : (usage : KeyUsageSet) -> Type where
+  MkValidEndEntityKeyUsage : NoKeyCertSign usage -> ValidEndEntityKeyUsage usage
+
+---------------------------------------------------------------------------
+-- Revocation irreversibility proof
+---------------------------------------------------------------------------
+
+||| Once a certificate is revoked, it can never become valid again.
+||| This is the core safety property of certificate revocation.
+||| Already witnessed by `revokedIsTerminal` above, but re-stated
+||| in terms of the Active state specifically for clarity.
+public export
+revokedCannotBecomeActive : ValidCertTransition Revoked Active -> Void
+revokedCannotBecomeActive _ impossible
+
+||| A revoked certificate cannot be re-signed.
+public export
+revokedCannotBeReSigned : ValidCertTransition Revoked Pending -> Void
+revokedCannotBeReSigned _ impossible
+
+||| A revoked certificate cannot be suspended (already terminal).
+public export
+revokedCannotBeSuspended : ValidCertTransition Revoked Suspended -> Void
+revokedCannotBeSuspended _ impossible

@@ -45,6 +45,12 @@ allExtensions =
   , SubjectAltName, AuthorityInfoAccess, CRLDistributionPoints
   ]
 
+allKeyUsageBits : List KeyUsageBit
+allKeyUsageBits =
+  [ DigitalSignature, NonRepudiation, KeyEncipherment, DataEncipherment
+  , KeyAgreement, KeyCertSign, CRLSign, EncipherOnly, DecipherOnly
+  ]
+
 main : IO ()
 main = do
   putStrLn "proven-ca : Certificate Authority server"
@@ -59,3 +65,4 @@ main = do
   putStrLn $ "  CRLStatuses:         " ++ show allCRLStatuses
   putStrLn $ "  OCSPStatuses:        " ++ show allOCSPStatuses
   putStrLn $ "  Extensions:          " ++ show allExtensions
+  putStrLn $ "  KeyUsageBits:        " ++ show allKeyUsageBits

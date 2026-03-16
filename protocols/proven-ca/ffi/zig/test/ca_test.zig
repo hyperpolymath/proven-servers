@@ -433,3 +433,286 @@ test "queries safe on invalid cert id within valid context" {
     try std.testing.expectEqual(@as(u8, 255), ca.ca_cert_state(slot, -1));
     try std.testing.expectEqual(@as(u8, 255), ca.ca_cert_state(slot, 999));
 }
+
+// =========================================================================
+// KeyUsageBit encoding
+// =========================================================================
+
+test "KeyUsageBit encoding matches Layout.idr (9 tags)" {
+    try std.testing.expectEqual(@as(u8, 0), @intFromEnum(ca.KeyUsageBit.digital_signature));
+    try std.testing.expectEqual(@as(u8, 1), @intFromEnum(ca.KeyUsageBit.non_repudiation));
+    try std.testing.expectEqual(@as(u8, 2), @intFromEnum(ca.KeyUsageBit.key_encipherment));
+    try std.testing.expectEqual(@as(u8, 3), @intFromEnum(ca.KeyUsageBit.data_encipherment));
+    try std.testing.expectEqual(@as(u8, 4), @intFromEnum(ca.KeyUsageBit.key_agreement));
+    try std.testing.expectEqual(@as(u8, 5), @intFromEnum(ca.KeyUsageBit.key_cert_sign));
+    try std.testing.expectEqual(@as(u8, 6), @intFromEnum(ca.KeyUsageBit.crl_sign));
+    try std.testing.expectEqual(@as(u8, 7), @intFromEnum(ca.KeyUsageBit.encipher_only));
+    try std.testing.expectEqual(@as(u8, 8), @intFromEnum(ca.KeyUsageBit.decipher_only));
+}
+
+// =========================================================================
+// Validity period
+// =========================================================================
+
+test "set_validity enforces notBefore < notAfter" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cert = ca.ca_issue_cert(slot, 2, 0, 0); // EndEntity
+    // Valid: notBefore=1000, notAfter=2000
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_set_validity(slot, cert, 1000, 2000));
+    try std.testing.expectEqual(@as(u64, 1000), ca.ca_cert_not_before(slot, cert));
+    try std.testing.expectEqual(@as(u64, 2000), ca.ca_cert_not_after(slot, cert));
+}
+
+test "set_validity rejects notBefore == notAfter" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cert = ca.ca_issue_cert(slot, 2, 0, 0);
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_set_validity(slot, cert, 1000, 1000));
+}
+
+test "set_validity rejects notBefore > notAfter" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cert = ca.ca_issue_cert(slot, 2, 0, 0);
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_set_validity(slot, cert, 2000, 1000));
+}
+
+test "validity unset returns 0 for both timestamps" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cert = ca.ca_issue_cert(slot, 0, 0, 0);
+    try std.testing.expectEqual(@as(u64, 0), ca.ca_cert_not_before(slot, cert));
+    try std.testing.expectEqual(@as(u64, 0), ca.ca_cert_not_after(slot, cert));
+}
+
+test "validity queries safe on invalid slot" {
+    try std.testing.expectEqual(@as(u64, 0), ca.ca_cert_not_before(-1, 0));
+    try std.testing.expectEqual(@as(u64, 0), ca.ca_cert_not_after(-1, 0));
+}
+
+// =========================================================================
+// Serial numbers (monotonic counter)
+// =========================================================================
+
+test "serial numbers are monotonically increasing" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const c1 = ca.ca_issue_cert(slot, 0, 0, 0);
+    const c2 = ca.ca_issue_cert(slot, 1, 0, 0);
+    const c3 = ca.ca_issue_cert(slot, 2, 0, 0);
+    const s1 = ca.ca_cert_serial(slot, c1);
+    const s2 = ca.ca_cert_serial(slot, c2);
+    const s3 = ca.ca_cert_serial(slot, c3);
+    try std.testing.expect(s1 > 0);
+    try std.testing.expect(s2 > s1);
+    try std.testing.expect(s3 > s2);
+}
+
+test "next_serial is always greater than last issued serial" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const next_before = ca.ca_next_serial(slot);
+    try std.testing.expect(next_before > 0);
+    const cert = ca.ca_issue_cert(slot, 0, 0, 0);
+    const serial = ca.ca_cert_serial(slot, cert);
+    try std.testing.expectEqual(next_before, serial);
+    const next_after = ca.ca_next_serial(slot);
+    try std.testing.expect(next_after > serial);
+}
+
+test "renewed cert gets new serial" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cert = ca.ca_issue_cert(slot, 1, 2, 3);
+    _ = ca.ca_sign_cert(slot, cert);
+    const old_serial = ca.ca_cert_serial(slot, cert);
+    const new_cert = ca.ca_renew_cert(slot, cert);
+    const new_serial = ca.ca_cert_serial(slot, new_cert);
+    try std.testing.expect(new_serial > old_serial);
+}
+
+test "serial query safe on invalid slot" {
+    try std.testing.expectEqual(@as(u64, 0), ca.ca_cert_serial(-1, 0));
+    try std.testing.expectEqual(@as(u64, 0), ca.ca_next_serial(-1));
+}
+
+// =========================================================================
+// Path length constraints
+// =========================================================================
+
+test "set path length on CA cert types" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const root = ca.ca_issue_cert(slot, 0, 0, 0); // Root
+    const inter = ca.ca_issue_cert(slot, 1, 0, 0); // Intermediate
+    // Root can have path length
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_set_path_length(slot, root, 2));
+    try std.testing.expectEqual(@as(i32, 2), ca.ca_cert_path_length(slot, root));
+    // Intermediate can have path length
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_set_path_length(slot, inter, 0));
+    try std.testing.expectEqual(@as(i32, 0), ca.ca_cert_path_length(slot, inter));
+}
+
+test "set path length rejects non-CA cert types" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const ee = ca.ca_issue_cert(slot, 2, 0, 0); // EndEntity
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_set_path_length(slot, ee, 1));
+    // EndEntity can have -1 (unconstrained/leaf)
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_set_path_length(slot, ee, -1));
+}
+
+test "validate_path_length: child < parent is valid" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const root = ca.ca_issue_cert(slot, 0, 0, 0);
+    _ = ca.ca_sign_cert(slot, root);
+    _ = ca.ca_set_path_length(slot, root, 2);
+    const inter = ca.ca_issue_cert(slot, 1, 0, 0);
+    _ = ca.ca_set_issuer(slot, inter, root);
+    _ = ca.ca_set_path_length(slot, inter, 1);
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_validate_path_length(slot, inter));
+}
+
+test "validate_path_length: child >= parent is invalid" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const root = ca.ca_issue_cert(slot, 0, 0, 0);
+    _ = ca.ca_sign_cert(slot, root);
+    _ = ca.ca_set_path_length(slot, root, 1);
+    const inter = ca.ca_issue_cert(slot, 1, 0, 0);
+    _ = ca.ca_set_issuer(slot, inter, root);
+    _ = ca.ca_set_path_length(slot, inter, 1); // same as parent = violation
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_validate_path_length(slot, inter));
+}
+
+test "validate_path_length: zero blocks further intermediates" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const root = ca.ca_issue_cert(slot, 0, 0, 0);
+    _ = ca.ca_sign_cert(slot, root);
+    _ = ca.ca_set_path_length(slot, root, 0);
+    const inter = ca.ca_issue_cert(slot, 1, 0, 0);
+    _ = ca.ca_set_issuer(slot, inter, root);
+    _ = ca.ca_set_path_length(slot, inter, 0); // child=0, parent=0 => violation
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_validate_path_length(slot, inter));
+}
+
+test "validate_path_length: self-signed always valid" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const root = ca.ca_issue_cert(slot, 0, 0, 0);
+    _ = ca.ca_set_path_length(slot, root, 2);
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_validate_path_length(slot, root));
+}
+
+test "path_length defaults to -1 (unconstrained)" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cert = ca.ca_issue_cert(slot, 0, 0, 0);
+    try std.testing.expectEqual(@as(i32, -1), ca.ca_cert_path_length(slot, cert));
+}
+
+test "path_length query safe on invalid slot" {
+    try std.testing.expectEqual(@as(i32, -1), ca.ca_cert_path_length(-1, 0));
+}
+
+// =========================================================================
+// Key usage
+// =========================================================================
+
+test "set and get key usage bitmask" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cert = ca.ca_issue_cert(slot, 0, 0, 0); // Root
+    // Set keyCertSign (bit 5) + cRLSign (bit 6) = 0b01100000 = 0x60 = 96
+    const ca_bits: u16 = (1 << 5) | (1 << 6);
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_set_key_usage(slot, cert, ca_bits));
+    try std.testing.expectEqual(ca_bits, ca.ca_cert_key_usage(slot, cert));
+}
+
+test "validate_key_usage: CA cert with keyCertSign is valid" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const root = ca.ca_issue_cert(slot, 0, 0, 0); // Root
+    _ = ca.ca_set_key_usage(slot, root, (1 << 5) | (1 << 6)); // keyCertSign + cRLSign
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_validate_key_usage(slot, root));
+}
+
+test "validate_key_usage: CA cert without keyCertSign is invalid" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const root = ca.ca_issue_cert(slot, 0, 0, 0); // Root
+    _ = ca.ca_set_key_usage(slot, root, (1 << 0)); // only digitalSignature, no keyCertSign
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_validate_key_usage(slot, root));
+}
+
+test "validate_key_usage: EndEntity without keyCertSign is valid" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const ee = ca.ca_issue_cert(slot, 2, 0, 0); // EndEntity
+    _ = ca.ca_set_key_usage(slot, ee, (1 << 0) | (1 << 2)); // digitalSignature + keyEncipherment
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_validate_key_usage(slot, ee));
+}
+
+test "validate_key_usage: EndEntity with keyCertSign is invalid" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const ee = ca.ca_issue_cert(slot, 2, 0, 0); // EndEntity
+    _ = ca.ca_set_key_usage(slot, ee, (1 << 0) | (1 << 5)); // digitalSignature + keyCertSign
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_validate_key_usage(slot, ee));
+}
+
+test "validate_key_usage: Intermediate with keyCertSign is valid" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const inter = ca.ca_issue_cert(slot, 1, 0, 0); // Intermediate
+    _ = ca.ca_set_key_usage(slot, inter, (1 << 5)); // keyCertSign only
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_validate_key_usage(slot, inter));
+}
+
+test "validate_key_usage: CodeSigning without keyCertSign is valid" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cs = ca.ca_issue_cert(slot, 4, 0, 0); // CodeSigning
+    _ = ca.ca_set_key_usage(slot, cs, (1 << 0)); // digitalSignature only
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_validate_key_usage(slot, cs));
+}
+
+test "key_usage defaults to 0 (no bits set)" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cert = ca.ca_issue_cert(slot, 0, 0, 0);
+    try std.testing.expectEqual(@as(u16, 0), ca.ca_cert_key_usage(slot, cert));
+}
+
+test "key_usage query safe on invalid slot" {
+    try std.testing.expectEqual(@as(u16, 0), ca.ca_cert_key_usage(-1, 0));
+}
+
+// =========================================================================
+// Revocation irreversibility (FFI enforcement)
+// =========================================================================
+
+test "revoked cert cannot be re-signed (irreversible)" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cert = ca.ca_issue_cert(slot, 2, 0, 0);
+    _ = ca.ca_sign_cert(slot, cert);
+    _ = ca.ca_revoke_cert(slot, cert, 1);
+    // Attempt to sign again must fail
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
+    // State must remain Revoked
+    try std.testing.expectEqual(@as(u8, 2), ca.ca_cert_state(slot, cert));
+}
+
+test "double revocation is idempotent rejection" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    const cert = ca.ca_issue_cert(slot, 2, 0, 0);
+    _ = ca.ca_sign_cert(slot, cert);
+    _ = ca.ca_revoke_cert(slot, cert, 0);
+    // Second revocation attempt fails (already terminal)
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_revoke_cert(slot, cert, 0));
+}

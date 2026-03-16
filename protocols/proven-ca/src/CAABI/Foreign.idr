@@ -117,3 +117,44 @@ abiVersion = 1
 -- | ca_cert_issuer          | (slot: c_int, cert_id: c_int) -> c_int       |
 -- |                         | Returns issuer cert id.  -1 = self-signed.   |
 -- +-------------------------+-----------------------------------------------+
+-- | ca_set_validity         | (slot: c_int, cert_id: c_int,                |
+-- |                         |  not_before: u64, not_after: u64) -> u8      |
+-- |                         | Sets validity period.  Enforces               |
+-- |                         | notBefore < notAfter.  0=ok, 1=rejected.     |
+-- +-------------------------+-----------------------------------------------+
+-- | ca_cert_not_before      | (slot: c_int, cert_id: c_int) -> u64         |
+-- |                         | Returns notBefore epoch.  0 = unset.         |
+-- +-------------------------+-----------------------------------------------+
+-- | ca_cert_not_after       | (slot: c_int, cert_id: c_int) -> u64         |
+-- |                         | Returns notAfter epoch.  0 = unset.          |
+-- +-------------------------+-----------------------------------------------+
+-- | ca_cert_serial          | (slot: c_int, cert_id: c_int) -> u64         |
+-- |                         | Returns monotonic serial number.  0=invalid. |
+-- +-------------------------+-----------------------------------------------+
+-- | ca_next_serial          | (slot: c_int) -> u64                         |
+-- |                         | Returns next serial that will be assigned.   |
+-- +-------------------------+-----------------------------------------------+
+-- | ca_set_path_length      | (slot: c_int, cert_id: c_int,                |
+-- |                         |  max_path_len: i32) -> u8                    |
+-- |                         | Sets path length constraint.  -1=none.       |
+-- |                         | Only CA types may have >= 0.  0=ok, 1=fail.  |
+-- +-------------------------+-----------------------------------------------+
+-- | ca_cert_path_length     | (slot: c_int, cert_id: c_int) -> i32         |
+-- |                         | Returns path length.  -1 = unconstrained.    |
+-- +-------------------------+-----------------------------------------------+
+-- | ca_validate_path_length | (slot: c_int, cert_id: c_int) -> u8          |
+-- |                         | Validates path length decreases along chain. |
+-- |                         | 0=valid, 1=violation.                        |
+-- +-------------------------+-----------------------------------------------+
+-- | ca_set_key_usage        | (slot: c_int, cert_id: c_int,                |
+-- |                         |  key_usage_bits: u16) -> u8                  |
+-- |                         | Sets key usage bitmask.  0=ok, 1=rejected.   |
+-- +-------------------------+-----------------------------------------------+
+-- | ca_cert_key_usage       | (slot: c_int, cert_id: c_int) -> u16         |
+-- |                         | Returns key usage bitmask.  0 = none.        |
+-- +-------------------------+-----------------------------------------------+
+-- | ca_validate_key_usage   | (slot: c_int, cert_id: c_int) -> u8          |
+-- |                         | Validates key usage vs cert type.            |
+-- |                         | CA must have keyCertSign; leaf must not.     |
+-- |                         | 0=valid, 1=inconsistent.                     |
+-- +-------------------------+-----------------------------------------------+

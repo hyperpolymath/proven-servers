@@ -13,6 +13,9 @@ executable = "proven-dhcp"
 
 modules = DHCP
         , DHCP.Types
+        , DHCP.Options
+        , DHCP.Lease
+        , DHCP.Relay
         , DHCPABI.Layout
         , DHCPABI.Transitions
         , DHCPABI.Foreign

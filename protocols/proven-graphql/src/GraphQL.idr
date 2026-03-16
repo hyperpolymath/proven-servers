@@ -2,10 +2,14 @@
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
 ||| Top-level module for proven-graphql.
-||| Re-exports GraphQL.Types and provides server constants.
+||| Re-exports all GraphQL domain modules and provides server constants.
 module GraphQL
 
 import public GraphQL.Types
+import public GraphQL.Schema
+import public GraphQL.Query
+import public GraphQL.Introspection
+import public GraphQL.Resolver
 
 %default total
 

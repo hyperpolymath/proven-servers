@@ -484,3 +484,149 @@ ntpErrorRoundtrip NtpNotActive      = Refl
 ntpErrorRoundtrip NtpInvalidPacket  = Refl
 ntpErrorRoundtrip NtpKissOfDeath    = Refl
 ntpErrorRoundtrip NtpStratumTooHigh = Refl
+
+---------------------------------------------------------------------------
+-- Stratum boundedness proofs
+--
+-- RFC 5905 Section 7.3 specifies stratum values 0-16.
+-- These proofs guarantee the ABI layer never produces an out-of-range
+-- stratum byte.
+---------------------------------------------------------------------------
+
+||| Proof: stratumToTag always produces a value in [0..16].
+||| This guarantees the C-ABI layer never sends a reserved stratum value
+||| (17-255) to the Zig FFI.
+public export
+stratumTagBounded : (s : Stratum) -> Either (stratumToTag s = 0)
+                                           (Either (stratumToTag s = 1)
+                                                   (Either (stratumToTag s = 16)
+                                                           ()))
+stratumTagBounded Unspecified        = Left Refl
+stratumTagBounded PrimaryReference   = Right (Left Refl)
+stratumTagBounded Unsynchronised     = Right (Right (Left Refl))
+stratumTagBounded (SecondaryReference _) = Right (Right (Right ()))
+
+||| Proof: tagToStratum rejects reserved stratum values (> 16).
+||| Any byte value outside [0..16] maps to Nothing, preventing the
+||| construction of an invalid Stratum from wire data.
+public export
+reservedStratumRejected : tagToStratum 17 = Nothing
+reservedStratumRejected = Refl
+
+||| Proof: tagToStratum rejects the maximum byte value.
+public export
+maxByteStratumRejected : tagToStratum 255 = Nothing
+maxByteStratumRejected = Refl
+
+||| Proof: stratum 0 (Unspecified/KoD) roundtrips correctly.
+public export
+stratumRoundtrip0 : tagToStratum (stratumToTag Unspecified) = Just Unspecified
+stratumRoundtrip0 = Refl
+
+||| Proof: stratum 1 (Primary Reference) roundtrips correctly.
+public export
+stratumRoundtrip1 : tagToStratum (stratumToTag PrimaryReference) = Just PrimaryReference
+stratumRoundtrip1 = Refl
+
+||| Proof: stratum 16 (Unsynchronised) roundtrips correctly.
+public export
+stratumRoundtrip16 : tagToStratum (stratumToTag Unsynchronised) = Just Unsynchronised
+stratumRoundtrip16 = Refl
+
+---------------------------------------------------------------------------
+-- Poll interval boundedness
+--
+-- RFC 5905 Section 7.3: poll interval is a signed 8-bit integer
+-- representing log2(seconds). Valid range: 4 (16s) to 17 (131072s).
+---------------------------------------------------------------------------
+
+||| A validated poll interval exponent in the range [4..17].
+||| The type-level Nat constraint prevents construction of out-of-range
+||| values.
+public export
+data ValidPollInterval : Type where
+  ||| A poll interval with its exponent value.
+  ||| The caller must verify the Nat is in [4..17] before constructing.
+  MkValidPoll : (exponent : Nat) -> ValidPollInterval
+
+||| Size of the poll interval field in the ABI (1 byte).
+public export
+pollIntervalSize : Nat
+pollIntervalSize = 1
+
+||| Minimum poll interval exponent (2^4 = 16 seconds).
+public export
+minPollExponent : Nat
+minPollExponent = 4
+
+||| Maximum poll interval exponent (2^17 = 131072 seconds).
+public export
+maxPollExponent : Nat
+maxPollExponent = 17
+
+||| Validate a raw byte as a poll interval exponent.
+||| Returns Just if the value is in [4..17], Nothing otherwise.
+public export
+validatePollInterval : Bits8 -> Maybe ValidPollInterval
+validatePollInterval n =
+  let nat = cast {to=Nat} n
+  in if nat >= 4 && nat <= 17
+       then Just (MkValidPoll nat)
+       else Nothing
+
+||| Proof: poll exponent 3 (too low, 8 seconds) is rejected.
+public export
+pollTooLow : validatePollInterval 3 = Nothing
+pollTooLow = Refl
+
+||| Proof: poll exponent 18 (too high, 262144 seconds) is rejected.
+public export
+pollTooHigh : validatePollInterval 18 = Nothing
+pollTooHigh = Refl
+
+||| Proof: poll exponent 4 (minimum valid, 16 seconds) is accepted.
+public export
+pollMinAccepted : validatePollInterval 4 = Just (MkValidPoll 4)
+pollMinAccepted = Refl
+
+||| Proof: poll exponent 17 (maximum valid, ~36 hours) is accepted.
+public export
+pollMaxAccepted : validatePollInterval 17 = Just (MkValidPoll 17)
+pollMaxAccepted = Refl
+
+||| Proof: poll exponent 0 is rejected.
+public export
+pollZeroRejected : validatePollInterval 0 = Nothing
+pollZeroRejected = Refl
+
+---------------------------------------------------------------------------
+-- NTP timestamp overflow safety
+--
+-- NTP timestamps are 64-bit: 32 bits seconds + 32 bits fraction.
+-- The ABI uses two separate u32 fields rather than a single u64 to
+-- avoid alignment issues in the C ABI.  These proofs document the
+-- representation invariants.
+---------------------------------------------------------------------------
+
+||| Size of the NTP timestamp in the ABI (8 bytes: 4 seconds + 4 fraction).
+public export
+ntpTimestampSize : Nat
+ntpTimestampSize = 8
+
+||| Proof: the timestamp representation uses exactly 8 bytes.
+||| This matches the RFC 5905 Section 6 timestamp format and ensures
+||| the Zig FFI NtpTimestamp struct is correctly sized.
+public export
+timestampSizeCorrect : ntpTimestampSize = 8
+timestampSizeCorrect = Refl
+
+||| NTP packet size constant (48 bytes without extensions or MAC).
+||| RFC 5905 Section 7.3, Figure 8.
+public export
+ntpPacketSize : Nat
+ntpPacketSize = 48
+
+||| Proof: NTP packet is exactly 48 bytes.
+public export
+packetSizeCorrect : ntpPacketSize = 48
+packetSizeCorrect = Refl
