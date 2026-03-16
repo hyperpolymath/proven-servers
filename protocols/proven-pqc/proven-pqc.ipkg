@@ -13,4 +13,7 @@ executable = "proven-pqc"
 
 modules = PQC
         , PQC.Types
+        , PQCABI.Layout
+        , PQCABI.Transitions
+        , PQCABI.Foreign
         , Main

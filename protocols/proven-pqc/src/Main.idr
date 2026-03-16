@@ -7,10 +7,19 @@
 module Main
 
 import PQC
+import PQCABI.Layout
 
 ---------------------------------------------------------------------------
 -- Main
 ---------------------------------------------------------------------------
+
+allAlgorithms : List PQCAlgorithm
+allAlgorithms =
+  [ CRYSTALS_Kyber, CRYSTALS_Dilithium, FALCON, SPHINCS_Plus
+  , Classic_McEliece, BIKE, HQC, FrodoKEM ]
+
+allNISTLevels : List NISTLevel
+allNISTLevels = [NIST_1, NIST_2, NIST_3, NIST_4, NIST_5]
 
 allKEMAlgorithms : List KEMAlgorithm
 allKEMAlgorithms = [ML_KEM_512, ML_KEM_768, ML_KEM_1024]
@@ -30,6 +39,10 @@ main = do
   putStrLn "proven-pqc : Post-Quantum Cryptography server"
   putStrLn $ "  Default KEM: " ++ defaultKEM
   putStrLn $ "  Default Sig: " ++ defaultSig
+  putStrLn $ "  Default Hybrid Mode: " ++ show defaultHybridMode
+  putStrLn $ "  Default NIST Level:  " ++ show defaultNISTLevel
+  putStrLn $ "  PQCAlgorithms:       " ++ show allAlgorithms
+  putStrLn $ "  NISTLevels:          " ++ show allNISTLevels
   putStrLn $ "  KEMAlgorithms:       " ++ show allKEMAlgorithms
   putStrLn $ "  SignatureAlgorithms:  " ++ show allSignatureAlgorithms
   putStrLn $ "  HybridModes:         " ++ show allHybridModes

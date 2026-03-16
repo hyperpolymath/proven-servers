@@ -17,6 +17,9 @@ modules = BGP
         , BGP.Route
         , BGP.Peer
         , BGP.Config
+        , BGPABI.Layout
+        , BGPABI.Transitions
+        , BGPABI.Foreign
 
 -- depends = proven
 --         , network

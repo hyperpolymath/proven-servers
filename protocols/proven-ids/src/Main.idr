@@ -12,11 +12,14 @@ import IDS
 -- Main
 ---------------------------------------------------------------------------
 
-allDetectionModes : List DetectionMode
-allDetectionModes = [Signature, Anomaly, Hybrid]
+allAlertSeverities : List AlertSeverity
+allAlertSeverities = [Low, Medium, High, Critical]
+
+allDetectionMethods : List DetectionMethod
+allDetectionMethods = [Signature, Anomaly, Stateful, Heuristic]
 
 allActions : List Action
-allActions = [Alert, Drop, Reject, Log, Pass]
+allActions = [Alert, Drop, Log, Block, Pass]
 
 allProtocols : List Protocol
 allProtocols = [TCP, UDP, ICMP, DNS, HTTP, TLS, SSH]
@@ -28,16 +31,22 @@ allThreatLevels : List ThreatLevel
 allThreatLevels = [TLInfo, TLLow, TLMedium, TLHigh, TLCritical]
 
 allRuleMatches : List RuleMatch
-allRuleMatches = [SrcAddr, DstAddr, SrcPort, DstPort, Content, Regex, Threshold]
+allRuleMatches = [SrcAddr, DstAddr, SrcPort, DstPort, Content, Regex, Threshold, FlowBits]
+
+allMatchStatuses : List MatchStatus
+allMatchStatuses = [NoMatch, Matched, Suppressed]
 
 main : IO ()
 main = do
   putStrLn "proven-ids : Intrusion Detection/Prevention System"
   putStrLn $ "  Max rules: " ++ show maxRules
   putStrLn $ "  Max packet size: " ++ show maxPacketSize ++ " bytes"
-  putStrLn $ "  DetectionModes:  " ++ show allDetectionModes
-  putStrLn $ "  Actions:         " ++ show allActions
-  putStrLn $ "  Protocols:       " ++ show allProtocols
-  putStrLn $ "  Directions:      " ++ show allDirections
-  putStrLn $ "  ThreatLevels:    " ++ show allThreatLevels
-  putStrLn $ "  RuleMatches:     " ++ show allRuleMatches
+  putStrLn $ "  Max alert contexts: " ++ show maxAlertContexts
+  putStrLn $ "  AlertSeverities:   " ++ show allAlertSeverities
+  putStrLn $ "  DetectionMethods:  " ++ show allDetectionMethods
+  putStrLn $ "  Actions:           " ++ show allActions
+  putStrLn $ "  Protocols:         " ++ show allProtocols
+  putStrLn $ "  Directions:        " ++ show allDirections
+  putStrLn $ "  ThreatLevels:      " ++ show allThreatLevels
+  putStrLn $ "  RuleMatches:       " ++ show allRuleMatches
+  putStrLn $ "  MatchStatuses:     " ++ show allMatchStatuses

@@ -2,50 +2,68 @@
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
 -- IDS.Types : Core types for an Intrusion Detection/Prevention System.
--- Defines detection modes, response actions, protocol identifiers,
--- traffic directions, threat levels, and rule match criteria.
+--
+-- Defines alert severity levels, detection methods, response actions,
+-- network protocol identifiers, traffic directions, threat levels,
+-- rule match criteria, and rule match status.
 
 module IDS.Types
 
 %default total
 
 ---------------------------------------------------------------------------
--- DetectionMode : Engine detection strategy.
+-- AlertSeverity : Severity level assigned to an IDS alert.
+---------------------------------------------------------------------------
+
+||| Severity level assigned to a generated IDS alert.
+public export
+data AlertSeverity : Type where
+  Low      : AlertSeverity
+  Medium   : AlertSeverity
+  High     : AlertSeverity
+  Critical : AlertSeverity
+
+export
+Show AlertSeverity where
+  show Low      = "Low"
+  show Medium   = "Medium"
+  show High     = "High"
+  show Critical = "Critical"
+
+export
+Eq AlertSeverity where
+  Low      == Low      = True
+  Medium   == Medium   = True
+  High     == High     = True
+  Critical == Critical = True
+  _        == _        = False
+
+---------------------------------------------------------------------------
+-- DetectionMethod : Engine detection strategy.
 ---------------------------------------------------------------------------
 
 ||| Strategy the IDS engine uses to identify threats.
 public export
-data DetectionMode : Type where
-  Signature : DetectionMode
-  Anomaly   : DetectionMode
-  Hybrid    : DetectionMode
+data DetectionMethod : Type where
+  Signature : DetectionMethod
+  Anomaly   : DetectionMethod
+  Stateful  : DetectionMethod
+  Heuristic : DetectionMethod
 
 export
-Show DetectionMode where
+Show DetectionMethod where
   show Signature = "Signature"
   show Anomaly   = "Anomaly"
-  show Hybrid    = "Hybrid"
-
----------------------------------------------------------------------------
--- Action : Response action when a rule fires.
----------------------------------------------------------------------------
-
-||| Action taken by the IDS/IPS when a detection rule matches.
-public export
-data Action : Type where
-  Alert  : Action
-  Drop   : Action
-  Reject : Action
-  Log    : Action
-  Pass   : Action
+  show Stateful  = "Stateful"
+  show Heuristic = "Heuristic"
 
 export
-Show Action where
-  show Alert  = "Alert"
-  show Drop   = "Drop"
-  show Reject = "Reject"
-  show Log    = "Log"
-  show Pass   = "Pass"
+Eq DetectionMethod where
+  Signature == Signature = True
+  Anomaly   == Anomaly   = True
+  Stateful  == Stateful  = True
+  Heuristic == Heuristic = True
+  _         == _         = False
 
 ---------------------------------------------------------------------------
 -- Protocol : Network protocol identifiers for rule matching.
@@ -72,6 +90,47 @@ Show Protocol where
   show TLS  = "TLS"
   show SSH  = "SSH"
 
+export
+Eq Protocol where
+  TCP  == TCP  = True
+  UDP  == UDP  = True
+  ICMP == ICMP = True
+  DNS  == DNS  = True
+  HTTP == HTTP = True
+  TLS  == TLS  = True
+  SSH  == SSH  = True
+  _    == _    = False
+
+---------------------------------------------------------------------------
+-- Action : Response action when a rule fires.
+---------------------------------------------------------------------------
+
+||| Action taken by the IDS/IPS when a detection rule matches.
+public export
+data Action : Type where
+  Alert : Action
+  Drop  : Action
+  Log   : Action
+  Block : Action
+  Pass  : Action
+
+export
+Show Action where
+  show Alert = "Alert"
+  show Drop  = "Drop"
+  show Log   = "Log"
+  show Block = "Block"
+  show Pass  = "Pass"
+
+export
+Eq Action where
+  Alert == Alert = True
+  Drop  == Drop  = True
+  Log   == Log   = True
+  Block == Block = True
+  Pass  == Pass  = True
+  _     == _     = False
+
 ---------------------------------------------------------------------------
 -- Direction : Traffic direction for rule scope.
 ---------------------------------------------------------------------------
@@ -88,6 +147,13 @@ Show Direction where
   show Inbound  = "Inbound"
   show Outbound = "Outbound"
   show Both     = "Both"
+
+export
+Eq Direction where
+  Inbound  == Inbound  = True
+  Outbound == Outbound = True
+  Both     == Both     = True
+  _        == _        = False
 
 ---------------------------------------------------------------------------
 -- ThreatLevel : Severity of a detected threat.
@@ -110,6 +176,15 @@ Show ThreatLevel where
   show TLHigh     = "High"
   show TLCritical = "Critical"
 
+export
+Eq ThreatLevel where
+  TLInfo     == TLInfo     = True
+  TLLow      == TLLow      = True
+  TLMedium   == TLMedium   = True
+  TLHigh     == TLHigh     = True
+  TLCritical == TLCritical = True
+  _          == _          = False
+
 ---------------------------------------------------------------------------
 -- RuleMatch : Criteria for matching packets against rules.
 ---------------------------------------------------------------------------
@@ -124,6 +199,7 @@ data RuleMatch : Type where
   Content   : RuleMatch
   Regex     : RuleMatch
   Threshold : RuleMatch
+  FlowBits  : RuleMatch
 
 export
 Show RuleMatch where
@@ -134,3 +210,40 @@ Show RuleMatch where
   show Content   = "Content"
   show Regex     = "Regex"
   show Threshold = "Threshold"
+  show FlowBits  = "FlowBits"
+
+export
+Eq RuleMatch where
+  SrcAddr   == SrcAddr   = True
+  DstAddr   == DstAddr   = True
+  SrcPort   == SrcPort   = True
+  DstPort   == DstPort   = True
+  Content   == Content   = True
+  Regex     == Regex     = True
+  Threshold == Threshold = True
+  FlowBits  == FlowBits  = True
+  _         == _         = False
+
+---------------------------------------------------------------------------
+-- MatchStatus : Whether a rule matched or not.
+---------------------------------------------------------------------------
+
+||| Result of evaluating a detection rule against a packet.
+public export
+data MatchStatus : Type where
+  NoMatch    : MatchStatus
+  Matched    : MatchStatus
+  Suppressed : MatchStatus
+
+export
+Show MatchStatus where
+  show NoMatch    = "NoMatch"
+  show Matched    = "Matched"
+  show Suppressed = "Suppressed"
+
+export
+Eq MatchStatus where
+  NoMatch    == NoMatch    = True
+  Matched    == Matched    = True
+  Suppressed == Suppressed = True
+  _          == _          = False

@@ -23,3 +23,13 @@ defaultKEM = "ML-KEM-768"
 public export
 defaultSig : String
 defaultSig = "ML-DSA-65"
+
+||| Default hybrid mode.
+public export
+defaultHybridMode : HybridMode
+defaultHybridMode = Hybrid
+
+||| Default NIST security level.
+public export
+defaultNISTLevel : NISTLevel
+defaultNISTLevel = NIST_3

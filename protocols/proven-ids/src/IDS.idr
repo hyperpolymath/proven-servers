@@ -23,3 +23,8 @@ maxRules = 50000
 public export
 maxPacketSize : Nat
 maxPacketSize = 65535
+
+||| Maximum number of concurrent alert contexts.
+public export
+maxAlertContexts : Nat
+maxAlertContexts = 64
