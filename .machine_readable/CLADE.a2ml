@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Clade declaration — part of the gv-clade-index registry
+# See: https://github.com/hyperpolymath/gv-clade-index
+
+[identity]
+uuid = "8d19c5fb-15a7-5962-bf93-0c7c2ca2bc6d"
+primary-forge = "github"
+primary-owner = "hyperpolymath"
+canonical-name = "proven-servers"
+prefixed-name = "fv-proven-servers"
+
+[clade]
+primary = "fv"
+secondary = []
+assigned = "2026-03-16"
+rationale = ""
+
+[forges]
+github = "hyperpolymath/proven-servers"
+gitlab = "hyperpolymath/proven-servers"
+bitbucket = "hyperpolymath/proven-servers"
+
+[lineage]
+type = "standalone"
+parent = "MCP servers exposing proven library operations"
+born = "2026-03-16"
