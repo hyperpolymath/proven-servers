@@ -5,11 +5,10 @@ package proven-amqp
 version = "0.1.0"
 authors = "Jonathan D.A. Jewell"
 license = "PMPL-1.0-or-later"
-brief   = "AMQP 0-9-1 message queuing skeleton"
+brief   = "AMQP 0-9-1 message queuing that cannot crash on malformed frames"
 
 sourcedir = "src"
 main = Main
 executable = "proven-amqp"
 
-modules = AMQP
-        , AMQP.Types
+modules = AMQP, AMQP.Types, AMQP.Properties, AMQP.Exchange, AMQP.Queue, AMQP.Session, AMQP.Frame, AMQPABI.Layout, AMQPABI.Transitions, AMQPABI.Foreign
