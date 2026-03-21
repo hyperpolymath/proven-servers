@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# proven-servers-rs: Rust bindings for the proven-servers protocol ABI.
+#
+# These bindings translate the formally verified Idris2 ABI type definitions
+# into idiomatic Rust types, preserving the type safety guarantees of the
+# original definitions. Where FFI compatibility with the Zig layer is needed,
+# types use #[repr(C)] or #[repr(u8)] to ensure C-ABI-compatible layout.
+
+[package]
+name = "proven-servers-rs"
+version = "0.1.0"
+edition = "2024"
+authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
+description = "Rust bindings for proven-servers formally verified protocol ABI"
+license = "PMPL-1.0-or-later"
+repository = "https://github.com/hyperpolymath/proven-servers"
+categories = ["network-programming", "api-bindings"]
+keywords = ["proven", "protocols", "abi", "ffi"]
+
+[dependencies]
+
+[dev-dependencies]
+
+[features]
+# Enable FFI support for linking against the Zig-compiled libproven_servers.
+# When disabled (default), the crate provides only pure Rust type definitions
+# and builder patterns — no foreign function calls.
+ffi = []
