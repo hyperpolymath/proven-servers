@@ -8,12 +8,18 @@
 //// and Rust bindings in the proven-servers repository:
 ////
 //// - `proven_servers/core` -- Result codes, platform types, alignment utilities
+//// - `proven_servers/error` -- Shared error types across all protocols
 //// - `proven_servers/http` -- HTTP methods, status codes, request lifecycle
+//// - `proven_servers/dns` -- Record types, response codes, domain validation
+//// - `proven_servers/smtp` -- SMTP commands, reply codes, session state machine
+//// - `proven_servers/ftp` -- FTP session states, transfer types, commands
+//// - `proven_servers/ssh_bastion` -- SSH message types, auth, channel/bastion states
+//// - `proven_servers/mqtt` -- QoS levels, packet types, directions
 //// - `proven_servers/grpc` -- gRPC status codes, stream types, state machine
 //// - `proven_servers/graphql` -- Operation types, type kinds, directive locations
+//// - `proven_servers/tls` -- TLS versions, cipher suites, handshake state machine
+//// - `proven_servers/firewall` -- Actions, protocols, chains, connection states
 //// - `proven_servers/websocket` -- Opcodes, close codes, frame validation
-//// - `proven_servers/mqtt` -- QoS levels, packet types, directions
-//// - `proven_servers/dns` -- Record types, response codes, domain validation
 
 /// Library version string.
 pub const version = "0.1.0"

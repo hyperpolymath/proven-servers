@@ -1,0 +1,61 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- Cabal package definition for proven-servers Haskell bindings.
+-- Provides type-safe wrappers around the Zig FFI C exports for all
+-- 10 core proven-servers protocols.
+
+cabal-version:      3.0
+name:               proven-servers
+version:            0.1.0.0
+license:            PMPL-1.0-or-later
+license-file:       ../../LICENSE
+author:             Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+maintainer:         Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+copyright:          Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
+synopsis:           Haskell bindings for proven-servers formally verified protocol ABI
+description:
+  Type-safe Haskell bindings for the proven-servers project. Wraps the
+  Zig FFI C exports for 10 core protocols (HTTP, DNS, SMTP, FTP, SSH
+  Bastion, MQTT, gRPC, GraphQL, TLS, Firewall) using @foreign import
+  ccall@ declarations with safe wrapper functions returning @Either
+  ProvenError a@.
+
+  The ADT definitions mirror the Idris2 ABI enum types defined in
+  @src\/abi\/@, ensuring bit-level compatibility with the C ABI layer.
+
+category:           Network, FFI
+build-type:         Simple
+extra-doc-files:    ../../README.adoc
+
+library
+  exposed-modules:
+    ProvenServers
+    ProvenServers.Error
+    ProvenServers.FFI
+    ProvenServers.Httpd
+    ProvenServers.Dns
+    ProvenServers.Smtp
+    ProvenServers.Ftp
+    ProvenServers.SshBastion
+    ProvenServers.Mqtt
+    ProvenServers.Grpc
+    ProvenServers.Graphql
+    ProvenServers.Tls
+    ProvenServers.Firewall
+
+  hs-source-dirs:     src
+  default-language:   Haskell2010
+  build-depends:      base >= 4.14 && < 5
+  ghc-options:        -Wall -Wcompat -Widentities -Wincomplete-record-updates
+                      -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+  extra-libraries:    proven_httpd
+                    , proven_dns
+                    , proven_smtp
+                    , proven_ftp
+                    , proven_ssh_bastion
+                    , proven_mqtt
+                    , proven_grpc
+                    , proven_graphql
+                    , proven_tls
+                    , proven_firewall
