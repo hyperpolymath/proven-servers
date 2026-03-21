@@ -1,0 +1,15 @@
+; SPDX-License-Identifier: PMPL-1.0-or-later
+; Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+(library
+ (name proven_servers)
+ (public_name proven_servers)
+ (c_library_flags
+  (-lproven_httpd -lproven_dns -lproven_smtp -lproven_ftp
+   -lproven_ssh_bastion -lproven_mqtt -lproven_grpc
+   -lproven_graphql -lproven_tls -lproven_firewall))
+ (modules
+  proven_servers proven_error
+  proven_httpd proven_dns proven_smtp proven_ftp
+  proven_ssh_bastion proven_mqtt proven_grpc
+  proven_graphql proven_tls proven_firewall))

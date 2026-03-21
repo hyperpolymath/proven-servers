@@ -37,7 +37,7 @@ module ProvenServers.Httpd
 
 import Data.Word (Word8, Word32)
 import Foreign.C.Types (CInt(..), CUInt(..))
-import ProvenServers.Error (ProvenError, fromSlot, fromStatus)
+import ProvenServers.Error (ProvenError(..), fromSlot, fromStatus)
 
 -- ---------------------------------------------------------------------------
 -- ADTs matching Idris2 ABI enums
@@ -170,10 +170,7 @@ parseRequest slot = do
     0 -> Right ParseComplete
     1 -> Right ParseRejected
     2 -> Right ParseNeedMore
-    _ -> Left (ProvenServers.Error.UnknownError (fromIntegral result))
-  where
-    -- Import needed for UnknownError constructor
-    -- (already imported via ProvenServers.Error)
+    _ -> Left (UnknownError (fromIntegral result))
 
 -- | Get the HTTP method of the parsed request.
 getMethod :: CInt -> IO (Maybe Method)

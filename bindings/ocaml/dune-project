@@ -1,0 +1,28 @@
+; SPDX-License-Identifier: PMPL-1.0-or-later
+; Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+;
+; Dune project file for proven-servers OCaml bindings.
+; Provides type-safe wrappers around the Zig FFI C exports for all
+; 10 core proven-servers protocols.
+
+(lang dune 3.0)
+
+(name proven_servers)
+(version 0.1.0)
+
+(generate_opam_files true)
+
+(authors "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>")
+(maintainers "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>")
+(license PMPL-1.0-or-later)
+
+(package
+ (name proven_servers)
+ (synopsis "OCaml bindings for proven-servers formally verified protocol ABI")
+ (description
+  "Type-safe OCaml bindings for the proven-servers project. Wraps the \
+   Zig FFI C exports for 10 core protocols (HTTP, DNS, SMTP, FTP, SSH \
+   Bastion, MQTT, gRPC, GraphQL, TLS, Firewall) using external \
+   declarations with result-type wrappers.")
+ (depends
+  (ocaml (>= 4.14))))

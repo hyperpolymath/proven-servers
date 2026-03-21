@@ -51,7 +51,7 @@ module ProvenServers.SshBastion
   , canTransition
   ) where
 
-import Data.Word (Word8, Word32)
+import Data.Word (Word8, Word16, Word32)
 import Foreign.C.Types (CInt(..))
 import ProvenServers.Error (ProvenError, fromSlot, fromStatus)
 
@@ -181,9 +181,6 @@ foreign import ccall unsafe "ssh_bastion_can_transition"  c_ssh_bastion_can_tran
 foreign import ccall unsafe "ssh_bastion_audit_count"     c_ssh_bastion_audit_count     :: CInt -> IO Word32
 foreign import ccall unsafe "ssh_bastion_set_recording"   c_ssh_bastion_set_recording   :: CInt -> Word8 -> IO Word8
 foreign import ccall unsafe "ssh_bastion_is_recording"    c_ssh_bastion_is_recording    :: CInt -> IO Word8
-
--- Need Word16 import for authenticate
-import Data.Word (Word16)
 
 -- ---------------------------------------------------------------------------
 -- Safe wrappers
