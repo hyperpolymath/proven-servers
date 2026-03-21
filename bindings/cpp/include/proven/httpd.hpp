@@ -14,7 +14,6 @@
 
 #include "error.hpp"
 #include <cstdint>
-#include <cstring>
 #include <optional>
 #include <string>
 #include <string_view>

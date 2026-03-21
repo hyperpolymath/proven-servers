@@ -14,16 +14,16 @@
 #ifndef PROVEN_HPP
 #define PROVEN_HPP
 
-#include "error.hpp"
-#include "httpd.hpp"
-#include "dns.hpp"
-#include "firewall.hpp"
-#include "ftp.hpp"
-#include "graphql.hpp"
-#include "grpc.hpp"
-#include "mqtt.hpp"
-#include "smtp.hpp"
-#include "ssh.hpp"
-#include "websocket.hpp"
+#include "proven/error.hpp"
+#include "proven/httpd.hpp"
+#include "proven/dns.hpp"
+#include "proven/firewall.hpp"
+#include "proven/ftp.hpp"
+#include "proven/graphql.hpp"
+#include "proven/grpc.hpp"
+#include "proven/mqtt.hpp"
+#include "proven/smtp.hpp"
+#include "proven/ssh.hpp"
+#include "proven/websocket.hpp"
 
 #endif // PROVEN_HPP
