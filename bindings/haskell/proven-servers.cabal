@@ -2,12 +2,12 @@
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
 -- Cabal package definition for proven-servers Haskell bindings.
--- Provides type-safe wrappers around the Zig FFI C exports for all
--- 10 core proven-servers protocols.
+-- Provides type-safe Haskell types and FFI wrappers for all 98
+-- proven-servers protocols, mirroring the Idris2 ABI definitions.
 
 cabal-version:      3.0
 name:               proven-servers
-version:            0.1.0.0
+version:            0.2.0.0
 license:            PMPL-1.0-or-later
 license-file:       ../../LICENSE
 author:             Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
@@ -15,12 +15,12 @@ maintainer:         Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 copyright:          Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
 synopsis:           Haskell bindings for proven-servers formally verified protocol ABI
 description:
-  Type-safe Haskell bindings for the proven-servers project. Wraps the
-  Zig FFI C exports for 10 core protocols (HTTP, DNS, SMTP, FTP, SSH
-  Bastion, MQTT, gRPC, GraphQL, TLS, Firewall) using @foreign import
-  ccall@ declarations with safe wrapper functions returning @Either
-  ProvenError a@.
-
+  Type-safe Haskell bindings for the proven-servers project.  Covers
+  all 98 protocols defined in the Idris2 ABI.  The original 10 FFI
+  modules wrap Zig C exports via @foreign import ccall@; the remaining
+  88 protocol modules are pure type definitions with @fromTag@/@toTag@
+  functions matching ABI discriminants.
+  .
   The ADT definitions mirror the Idris2 ABI enum types defined in
   @src\/abi\/@, ensuring bit-level compatibility with the C ABI layer.
 
@@ -31,18 +31,115 @@ extra-doc-files:    ../../README.adoc
 library
   exposed-modules:
     ProvenServers
+    ProvenServers.Agentic
+    ProvenServers.Airgap
+    ProvenServers.Amqp
+    ProvenServers.Apiserver
+    ProvenServers.Appserver
+    ProvenServers.Authserver
+    ProvenServers.Backup
+    ProvenServers.Bfd
+    ProvenServers.Bgp
+    ProvenServers.Ca
+    ProvenServers.Cache
+    ProvenServers.Caldav
+    ProvenServers.Carddav
+    ProvenServers.Chat
+    ProvenServers.Coap
+    ProvenServers.Configmgmt
+    ProvenServers.Container
+    ProvenServers.Core
+    ProvenServers.Ctlog
+    ProvenServers.Dbserver
+    ProvenServers.Dds
+    ProvenServers.Deception
+    ProvenServers.Dhcp
+    ProvenServers.Diode
+    ProvenServers.Dns
+    ProvenServers.Doh
+    ProvenServers.Doq
+    ProvenServers.Dot
     ProvenServers.Error
     ProvenServers.FFI
-    ProvenServers.Httpd
-    ProvenServers.Dns
-    ProvenServers.Smtp
-    ProvenServers.Ftp
-    ProvenServers.SshBastion
-    ProvenServers.Mqtt
-    ProvenServers.Grpc
-    ProvenServers.Graphql
-    ProvenServers.Tls
+    ProvenServers.Federation
+    ProvenServers.Fileserver
     ProvenServers.Firewall
+    ProvenServers.FirewallTypes
+    ProvenServers.Ftp
+    ProvenServers.FtpTypes
+    ProvenServers.Gameserver
+    ProvenServers.Git
+    ProvenServers.Graphdb
+    ProvenServers.Graphql
+    ProvenServers.GraphqlTypes
+    ProvenServers.Grpc
+    ProvenServers.GrpcTypes
+    ProvenServers.Hardened
+    ProvenServers.Honeypot
+    ProvenServers.Http
+    ProvenServers.Httpd
+    ProvenServers.Ids
+    ProvenServers.Imap
+    ProvenServers.Irc
+    ProvenServers.Kerberos
+    ProvenServers.Kms
+    ProvenServers.Ldap
+    ProvenServers.Ldp
+    ProvenServers.Loadbalancer
+    ProvenServers.Logcollector
+    ProvenServers.Lpd
+    ProvenServers.Mcp
+    ProvenServers.Mdns
+    ProvenServers.Media
+    ProvenServers.Metrics
+    ProvenServers.Modbus
+    ProvenServers.Monitor
+    ProvenServers.Mqtt
+    ProvenServers.MqttTypes
+    ProvenServers.Nesy
+    ProvenServers.Netconf
+    ProvenServers.Neurosym
+    ProvenServers.Nfs
+    ProvenServers.Ntp
+    ProvenServers.Nts
+    ProvenServers.Objectstore
+    ProvenServers.Ocsp
+    ProvenServers.Odns
+    ProvenServers.Opcua
+    ProvenServers.Ospf
+    ProvenServers.Pop3
+    ProvenServers.Pqc
+    ProvenServers.Proxy
+    ProvenServers.Ptp
+    ProvenServers.Radius
+    ProvenServers.Rtsp
+    ProvenServers.Sandbox
+    ProvenServers.Sdn
+    ProvenServers.Semweb
+    ProvenServers.Siem
+    ProvenServers.Smb
+    ProvenServers.Smtp
+    ProvenServers.SmtpTypes
+    ProvenServers.Snmp
+    ProvenServers.Socks
+    ProvenServers.Sparql
+    ProvenServers.Ssh
+    ProvenServers.SshBastion
+    ProvenServers.Stun
+    ProvenServers.Syslog
+    ProvenServers.Tacacs
+    ProvenServers.Telnet
+    ProvenServers.Tftp
+    ProvenServers.Tls
+    ProvenServers.Triplestore
+    ProvenServers.Virt
+    ProvenServers.Voip
+    ProvenServers.Vpn
+    ProvenServers.Wasm
+    ProvenServers.Webdav
+    ProvenServers.Websocket
+    ProvenServers.Xmpp
+    ProvenServers.Zerotrust
 
   hs-source-dirs:     src
   default-language:   Haskell2010
