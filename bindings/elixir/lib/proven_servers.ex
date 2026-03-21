@@ -13,12 +13,18 @@ defmodule ProvenServers do
   ## Modules
 
     * `ProvenServers.Core` — Result codes, platform types, opaque handles
+    * `ProvenServers.Error` — Shared error types across all protocols
     * `ProvenServers.Http` — HTTP methods, status codes, content types, request lifecycle
+    * `ProvenServers.Dns` — DNS record types, response codes, domain validation
+    * `ProvenServers.Smtp` — SMTP commands, reply codes, session state machine
+    * `ProvenServers.Ftp` — FTP session states, transfer types, data modes
+    * `ProvenServers.SshBastion` — SSH message types, auth, channel/bastion states
+    * `ProvenServers.Mqtt` — MQTT QoS levels, packet types, directions
     * `ProvenServers.Grpc` — gRPC status codes, stream types, HTTP/2 stream state machine
     * `ProvenServers.Graphql` — GraphQL operation types, type kinds, directive locations
+    * `ProvenServers.Tls` — TLS versions, cipher suites, handshake state machine
+    * `ProvenServers.Firewall` — Actions, protocols, chains, connection states
     * `ProvenServers.Websocket` — WebSocket opcodes, close codes, frame validation
-    * `ProvenServers.Mqtt` — MQTT QoS levels, packet types, directions
-    * `ProvenServers.Dns` — DNS record types, response codes, domain validation
 
   ## Tag Compatibility
 
