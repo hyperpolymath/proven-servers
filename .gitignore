@@ -36,6 +36,10 @@ zig-out/
 /doc/
 *.ez
 erl_crash.dump
+*/_build/
+*/deps/
+*/.elixir_ls/
+mix.lock
 
 # Julia
 *.jl.cov
