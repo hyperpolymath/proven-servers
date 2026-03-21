@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# Dart bindings for the proven-servers formally verified protocol ABI.
+# Provides dart:ffi wrappers for 10 core protocols.
+
+name: proven_servers
+version: 0.1.0
+description: >-
+  Dart FFI bindings for the proven-servers formally verified protocol ABI.
+  Covers HTTP, DNS, SMTP, FTP, SSH, MQTT, gRPC, GraphQL, Firewall, and
+  WebSocket with type-safe wrappers matching the Idris2 ABI definitions.
+repository: https://github.com/hyperpolymath/proven-servers
+homepage: https://github.com/hyperpolymath/proven-servers
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies: {}
+
+dev_dependencies:
+  test: ^1.24.0
+  lints: ^3.0.0
