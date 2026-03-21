@@ -1,0 +1,16 @@
+{
+  "name": "proven-servers-res",
+  "version": "0.1.0",
+  "description": "ReScript bindings for proven-servers protocol ABI types",
+  "author": "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>",
+  "license": "PMPL-1.0-or-later",
+  "type": "module",
+  "scripts": {
+    "build": "rescript build",
+    "clean": "rescript clean",
+    "test": "deno test __tests__/"
+  },
+  "devDependencies": {
+    "rescript": "^11.1.0"
+  }
+}
