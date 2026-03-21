@@ -10,10 +10,10 @@
 
 [package]
 name = "proven-servers-rs"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
-description = "Rust bindings for proven-servers formally verified protocol ABI"
+description = "Rust bindings for proven-servers formally verified protocol ABI with safe FFI wrappers"
 license = "PMPL-1.0-or-later"
 repository = "https://github.com/hyperpolymath/proven-servers"
 categories = ["network-programming", "api-bindings"]
