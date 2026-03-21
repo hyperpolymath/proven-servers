@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MPL-2.0
+# (PMPL-1.0-or-later preferred; MPL-2.0 required for Gleam ecosystem)
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+name = "proven_servers"
+version = "0.1.0"
+description = "Gleam bindings for proven-servers protocol types, mirroring the Idris2 ABI definitions."
+licences = ["MPL-2.0"]
+repository = { type = "github", user = "hyperpolymath", repo = "proven-servers" }
+
+[dependencies]
+gleam_stdlib = ">= 0.44.0 and < 2.0.0"
+
+[dev-dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
