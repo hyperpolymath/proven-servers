@@ -48,6 +48,27 @@
 //! | [`syslog`]   | Syslog        | `protocols/proven-syslog/src/`          |
 //! | [`snmp`]     | SNMP          | `protocols/proven-snmp/src/`            |
 //! | [`imap`]     | IMAP          | `protocols/proven-imap/src/`            |
+//! | [`pop3`]     | POP3          | `protocols/proven-pop3/src/`            |
+//! | [`irc`]      | IRC           | `protocols/proven-irc/src/`             |
+//! | [`dhcp`]     | DHCP          | `protocols/proven-dhcp/src/`            |
+//! | [`radius`]   | RADIUS        | `protocols/proven-radius/src/`          |
+//! | [`kerberos`] | Kerberos      | `protocols/proven-kerberos/src/`        |
+//! | [`telnet`]   | Telnet        | `protocols/proven-telnet/src/`          |
+//! | [`tftp`]     | TFTP          | `protocols/proven-tftp/src/`            |
+//! | [`socks`]    | SOCKS5        | `protocols/proven-socks/src/`           |
+//! | [`vpn`]      | VPN/IPsec     | `protocols/proven-vpn/src/`             |
+//! | [`coap`]     | CoAP          | `protocols/proven-coap/src/`            |
+//! | [`rtsp`]     | RTSP          | `protocols/proven-rtsp/src/`            |
+//! | [`modbus`]   | Modbus        | `protocols/proven-modbus/src/`          |
+//! | [`bgp`]      | BGP           | `protocols/proven-bgp/src/`             |
+//! | [`ospf`]     | OSPF          | `protocols/proven-ospf/src/`            |
+//! | [`nfs`]      | NFS           | `protocols/proven-nfs/src/`             |
+//! | [`opcua`]    | OPC UA        | `protocols/proven-opcua/src/`           |
+//! | [`smb`]      | SMB2/3        | `protocols/proven-smb/src/`             |
+//! | [`tacacs`]   | TACACS+       | `protocols/proven-tacacs/src/`          |
+//! | [`voip`]     | VoIP/SIP      | `protocols/proven-voip/src/`            |
+//! | [`webdav`]   | WebDAV        | `protocols/proven-webdav/src/`          |
+//! | [`xmpp`]     | XMPP          | `protocols/proven-xmpp/src/`           |
 //!
 //! ## FFI wrappers (behind `ffi` feature)
 //!
@@ -92,6 +113,31 @@ pub mod smtp;
 pub mod snmp;
 pub mod ssh;
 pub mod syslog;
+
+// Batch 3: 15 additional protocols (v0.3.0)
+pub mod bgp;
+pub mod coap;
+pub mod dhcp;
+pub mod irc;
+pub mod kerberos;
+pub mod modbus;
+pub mod nfs;
+pub mod ospf;
+pub mod pop3;
+pub mod radius;
+pub mod rtsp;
+pub mod socks;
+pub mod telnet;
+pub mod tftp;
+pub mod vpn;
+
+// Batch 4: 6 additional protocols (v0.4.0)
+pub mod opcua;
+pub mod smb;
+pub mod tacacs;
+pub mod voip;
+pub mod webdav;
+pub mod xmpp;
 
 // =========================================================================
 // Shared error type (v0.3.0)
