@@ -1,0 +1,44 @@
+{
+  "name": "proven-servers",
+  "version": "0.1.0",
+  "description": "JavaScript/Deno bindings for proven-servers formal-verification protocol libraries",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./httpd": "./src/httpd.js",
+    "./dns": "./src/dns.js",
+    "./smtp": "./src/smtp.js",
+    "./ftp": "./src/ftp.js",
+    "./ssh_bastion": "./src/ssh_bastion.js",
+    "./mqtt": "./src/mqtt.js",
+    "./grpc": "./src/grpc.js",
+    "./graphql": "./src/graphql.js",
+    "./tls": "./src/tls.js",
+    "./firewall": "./src/firewall.js",
+    "./error": "./src/error.js",
+    "./ffi": "./src/ffi.js"
+  },
+  "author": "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>",
+  "license": "PMPL-1.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hyperpolymath/proven-servers.git"
+  },
+  "keywords": [
+    "proven",
+    "formal-verification",
+    "protocol",
+    "ffi",
+    "security",
+    "napi",
+    "wasm"
+  ],
+  "engines": {
+    "deno": ">=2.0.0",
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "src/"
+  ]
+}

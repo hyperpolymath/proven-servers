@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# Python bindings for proven-servers Zig FFI libraries.
+# Provides type-safe ctypes wrappers for all 10 core protocols.
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "proven-servers"
+version = "0.1.0"
+description = "Python bindings for proven-servers formal-verification protocol libraries"
+readme = "README.adoc"
+license = "PMPL-1.0-or-later"
+requires-python = ">=3.10"
+authors = [
+    { name = "Jonathan D.A. Jewell", email = "j.d.a.jewell@open.ac.uk" },
+]
+keywords = ["proven", "formal-verification", "protocol", "ffi", "security"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: System :: Networking",
+]
+
+[project.urls]
+Homepage = "https://github.com/hyperpolymath/proven-servers"
+Repository = "https://github.com/hyperpolymath/proven-servers"
+Issues = "https://github.com/hyperpolymath/proven-servers/issues"
+
+[tool.setuptools.packages.find]
+include = ["proven_servers*"]
