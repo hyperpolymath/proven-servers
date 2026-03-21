@@ -69,6 +69,66 @@
 //! | [`voip`]     | VoIP/SIP      | `protocols/proven-voip/src/`            |
 //! | [`webdav`]   | WebDAV        | `protocols/proven-webdav/src/`          |
 //! | [`xmpp`]     | XMPP          | `protocols/proven-xmpp/src/`           |
+//! | [`dbserver`] | Database      | `protocols/proven-dbserver/src/`       |
+//! | [`authserver`]| Auth Server  | `protocols/proven-authserver/src/`     |
+//! | [`ca`]       | PKI/CA        | `protocols/proven-ca/src/`             |
+//! | [`doh`]      | DNS-over-HTTPS| `protocols/proven-doh/src/`            |
+//! | [`doq`]      | DNS-over-QUIC | `protocols/proven-doq/src/`            |
+//! | [`dot`]      | DNS-over-TLS  | `protocols/proven-dot/src/`            |
+//! | [`nts`]      | NTS           | `protocols/proven-nts/src/`            |
+//! | [`pqc`]      | PQC           | `protocols/proven-pqc/src/`            |
+//! | [`firewall`] | Firewall      | `protocols/proven-firewall/src/`       |
+//! | [`proxy`]    | Proxy         | `protocols/proven-proxy/src/`          |
+//! | [`loadbalancer`]| Load Balancer| `protocols/proven-loadbalancer/src/` |
+//! | [`graphdb`]  | Graph DB      | `protocols/proven-graphdb/src/`        |
+//! | [`objectstore`]| Object Store| `protocols/proven-objectstore/src/`    |
+//! | [`kms`]      | KMS           | `protocols/proven-kms/src/`            |
+//! | [`ids`]      | IDS           | `protocols/proven-ids/src/`            |
+//! | [`siem`]     | SIEM          | `protocols/proven-siem/src/`           |
+//! | [`stun`]     | STUN/TURN     | `protocols/proven-stun/src/`           |
+//! | [`agentic`]  | Agentic AI    | `protocols/proven-agentic/src/`        |
+//! | [`airgap`]   | Air Gap       | `protocols/proven-airgap/src/`         |
+//! | [`apiserver`]| API Server    | `protocols/proven-apiserver/src/`      |
+//! | [`appserver`]| App Server    | `protocols/proven-appserver/src/`      |
+//! | [`backup`]   | Backup        | `protocols/proven-backup/src/`         |
+//! | [`bfd`]      | BFD           | `protocols/proven-bfd/src/`            |
+//! | [`caldav`]   | CalDAV        | `protocols/proven-caldav/src/`         |
+//! | [`carddav`]  | CardDAV       | `protocols/proven-carddav/src/`        |
+//! | [`chat`]     | Chat          | `protocols/proven-chat/src/`           |
+//! | [`configmgmt`]| Config Mgmt | `protocols/proven-configmgmt/src/`     |
+//! | [`container`]| Container     | `protocols/proven-container/src/`      |
+//! | [`ctlog`]    | CT Log        | `protocols/proven-ctlog/src/`          |
+//! | [`dds`]      | DDS           | `protocols/proven-dds/src/`            |
+//! | [`deception`]| Deception     | `protocols/proven-deception/src/`      |
+//! | [`diode`]    | Data Diode    | `protocols/proven-diode/src/`          |
+//! | [`federation`]| Federation   | `protocols/proven-federation/src/`     |
+//! | [`fileserver`]| File Server  | `protocols/proven-fileserver/src/`     |
+//! | [`gameserver`]| Game Server  | `protocols/proven-gameserver/src/`     |
+//! | [`git`]      | Git           | `protocols/proven-git/src/`            |
+//! | [`hardened`] | Hardened      | `protocols/proven-hardened/src/`       |
+//! | [`honeypot`] | Honeypot      | `protocols/proven-honeypot/src/`       |
+//! | [`ldp`]      | LDP           | `protocols/proven-ldp/src/`            |
+//! | [`logcollector`]| Log Collector| `protocols/proven-logcollector/src/` |
+//! | [`lpd`]      | LPD           | `protocols/proven-lpd/src/`            |
+//! | [`mcp`]      | MCP           | `protocols/proven-mcp/src/`            |
+//! | [`mdns`]     | mDNS          | `protocols/proven-mdns/src/`           |
+//! | [`media`]    | Media         | `protocols/proven-media/src/`          |
+//! | [`metrics`]  | Metrics       | `protocols/proven-metrics/src/`        |
+//! | [`monitor`]  | Monitor       | `protocols/proven-monitor/src/`        |
+//! | [`nesy`]     | NeSy          | `protocols/proven-nesy/src/`           |
+//! | [`netconf`]  | NETCONF       | `protocols/proven-netconf/src/`        |
+//! | [`neurosym`] | Neurosym      | `protocols/proven-neurosym/src/`       |
+//! | [`ocsp`]     | OCSP          | `protocols/proven-ocsp/src/`           |
+//! | [`odns`]     | ODNS          | `protocols/proven-odns/src/`           |
+//! | [`ptp`]      | PTP           | `protocols/proven-ptp/src/`            |
+//! | [`sandbox`]  | Sandbox       | `protocols/proven-sandbox/src/`        |
+//! | [`sdn`]      | SDN           | `protocols/proven-sdn/src/`            |
+//! | [`semweb`]   | Semantic Web  | `protocols/proven-semweb/src/`         |
+//! | [`sparql`]   | SPARQL        | `protocols/proven-sparql/src/`         |
+//! | [`triplestore`]| Triplestore | `protocols/proven-triplestore/src/`    |
+//! | [`virt`]     | Virt          | `protocols/proven-virt/src/`           |
+//! | [`wasm`]     | WASM          | `protocols/proven-wasm/src/`           |
+//! | [`zerotrust`]| Zero Trust    | `protocols/proven-zerotrust/src/`      |
 //!
 //! ## FFI wrappers (behind `ffi` feature)
 //!
@@ -138,6 +198,70 @@ pub mod tacacs;
 pub mod voip;
 pub mod webdav;
 pub mod xmpp;
+
+// Batch 5: Database, auth, transport, security (v0.5.0)
+pub mod dbserver;
+pub mod authserver;
+pub mod ca;
+pub mod doh;
+pub mod doq;
+pub mod dot;
+pub mod nts;
+pub mod pqc;
+pub mod firewall;
+pub mod proxy;
+pub mod loadbalancer;
+pub mod graphdb;
+pub mod objectstore;
+pub mod kms;
+pub mod ids;
+pub mod siem;
+pub mod stun;
+
+// Batch 6: Application and infrastructure (v0.5.0)
+pub mod agentic;
+pub mod airgap;
+pub mod apiserver;
+pub mod appserver;
+pub mod backup;
+pub mod bfd;
+pub mod caldav;
+pub mod carddav;
+pub mod chat;
+pub mod configmgmt;
+pub mod container;
+pub mod ctlog;
+pub mod dds;
+pub mod deception;
+pub mod diode;
+pub mod federation;
+pub mod fileserver;
+pub mod gameserver;
+pub mod git;
+pub mod hardened;
+pub mod honeypot;
+pub mod ldp;
+pub mod logcollector;
+pub mod lpd;
+pub mod mcp;
+pub mod mdns;
+pub mod media;
+pub mod metrics;
+pub mod monitor;
+pub mod nesy;
+pub mod netconf;
+pub mod neurosym;
+pub mod ocsp;
+pub mod odns;
+pub mod ptp;
+pub mod sandbox;
+pub mod sdn;
+pub mod semweb;
+pub mod sparql;
+pub mod triplestore;
+pub mod virt;
+pub mod wasm;
+pub mod zerotrust;
 
 // =========================================================================
 // Shared error type (v0.3.0)
