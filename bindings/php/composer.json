@@ -1,0 +1,35 @@
+{
+    "name": "hyperpolymath/proven-servers",
+    "description": "PHP bindings for proven-servers formally verified protocol libraries",
+    "type": "library",
+    "license": "PMPL-1.0-or-later",
+    "authors": [
+        {
+            "name": "Jonathan D.A. Jewell",
+            "email": "j.d.a.jewell@open.ac.uk",
+            "homepage": "https://github.com/hyperpolymath"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "ext-ffi": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ProvenServers\\": "src/"
+        }
+    },
+    "homepage": "https://github.com/hyperpolymath/proven-servers",
+    "support": {
+        "issues": "https://github.com/hyperpolymath/proven-servers/issues",
+        "source": "https://github.com/hyperpolymath/proven-servers"
+    },
+    "keywords": [
+        "ffi",
+        "formally-verified",
+        "protocol",
+        "security",
+        "idris2",
+        "zig"
+    ]
+}
