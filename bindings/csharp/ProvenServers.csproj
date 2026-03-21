@@ -1,0 +1,36 @@
+<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> -->
+<!--
+    .NET 8.0 project file for proven-servers C# bindings.
+
+    Provides P/Invoke wrappers around the proven-servers Zig FFI shared library
+    for all 10 core protocols: HTTP, DNS, Firewall, FTP, GraphQL, gRPC,
+    MQTT, SMTP, SSH Bastion, and the core library lifecycle.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>ProvenServers</RootNamespace>
+    <AssemblyName>ProvenServers</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Package metadata -->
+    <PackageId>ProvenServers</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Jonathan D.A. Jewell</Authors>
+    <Company>hyperpolymath</Company>
+    <Description>
+      C# bindings for the proven-servers formally verified protocol
+      implementations. Uses P/Invoke to call into the Zig FFI shared library
+      whose ABI is defined in Idris2.
+    </Description>
+    <PackageLicenseExpression>LicenseRef-PMPL-1.0-or-later</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/hyperpolymath/proven-servers</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+</Project>
