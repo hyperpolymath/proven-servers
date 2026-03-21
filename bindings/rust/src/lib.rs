@@ -21,6 +21,16 @@
 //! | [`websocket`]| WebSocket     | `protocols/proven-ws/src/`              |
 //! | [`mqtt`]     | MQTT 3.1.1+   | `protocols/proven-mqtt/src/`            |
 //! | [`dns`]      | DNS           | `protocols/proven-dns/src/`             |
+//! | [`ssh`]      | SSH Bastion   | `protocols/proven-ssh-bastion/src/`     |
+//! | [`amqp`]     | AMQP 0-9-1    | `protocols/proven-amqp/src/`            |
+//! | [`ldap`]     | LDAP          | `protocols/proven-ldap/src/`            |
+//! | [`smtp`]     | SMTP          | `protocols/proven-smtp/src/`            |
+//! | [`ftp`]      | FTP           | `protocols/proven-ftp/src/`             |
+//! | [`cache`]    | Redis/Memcache| `protocols/proven-cache/src/`           |
+//! | [`ntp`]      | NTP           | `protocols/proven-ntp/src/`             |
+//! | [`syslog`]   | Syslog        | `protocols/proven-syslog/src/`          |
+//! | [`snmp`]     | SNMP          | `protocols/proven-snmp/src/`            |
+//! | [`imap`]     | IMAP          | `protocols/proven-imap/src/`            |
 //!
 //! ## FFI
 //!
@@ -35,3 +45,15 @@ pub mod grpc;
 pub mod http;
 pub mod mqtt;
 pub mod websocket;
+
+// Batch 2: 10 additional protocols (v0.2.0)
+pub mod amqp;
+pub mod cache;
+pub mod ftp;
+pub mod imap;
+pub mod ldap;
+pub mod ntp;
+pub mod smtp;
+pub mod snmp;
+pub mod ssh;
+pub mod syslog;
