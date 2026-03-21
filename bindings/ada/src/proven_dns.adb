@@ -1,0 +1,29 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- (PMPL-1.0-or-later preferred; MPL-2.0 required for GNAT ecosystem)
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- Implementation of safe wrappers for the proven-dns Ada bindings.
+
+package body Proven_Dns is
+
+   function Safe_Create_Context return Proven_Error.Slot_Id is
+   begin
+      return Proven_Error.Check_Slot (Create_Context);
+   end Safe_Create_Context;
+
+   procedure Safe_Destroy_Context (Slot : Proven_Error.Slot_Id) is
+   begin
+      Destroy_Context (int (Slot));
+   end Safe_Destroy_Context;
+
+   procedure Safe_Begin_Lookup (Slot : Proven_Error.Slot_Id) is
+   begin
+      Proven_Error.Check_Status (Begin_Lookup (int (Slot)));
+   end Safe_Begin_Lookup;
+
+   procedure Safe_Begin_Response (Slot : Proven_Error.Slot_Id) is
+   begin
+      Proven_Error.Check_Status (Begin_Response (int (Slot)));
+   end Safe_Begin_Response;
+
+end Proven_Dns;
