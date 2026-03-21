@@ -3,23 +3,28 @@
 //
 // SMTP protocol types for the proven-servers ABI.
 //
-// Mirrors the Idris2 modules:
-// - SMTP.Command           -- SMTP commands (RFC 5321 Section 4.1)
-// - SMTP.Reply             -- reply codes and categories (RFC 5321 Section 4.2)
-// - SMTPABI.Layout         -- C-ABI tag values for all types
-// - SMTPABI.Transitions    -- session state machine with impossibility proofs
-//
-// All tag values match smtpCommandTagToTag, replyCodeToTag, etc. in
-// SMTPABI.Layout exactly.
+// Mirrors the Idris2 module SmtpABI.Types.
+// All tag values match the Idris2 ABI tag definitions exactly.
 
 // ===========================================================================
-// SMTP Command Tag (SMTPABI.Layout.SmtpCommandTag, tags 0-11)
+// Constants
 // ===========================================================================
 
-/// SMTP command verbs as a flat enum for ABI transport.
-/// String parameters (domain, path) are carried separately.
-/// Matches SmtpCommandTag in SMTPABI.Layout.
-type commandTag =
+/// Standard SMTP submission port.
+let smtpPort = 25
+
+/// SMTP submission port (RFC 6409).
+let submissionPort = 587
+
+/// SMTPS (implicit TLS) port.
+let smtpsPort = 465
+
+// ===========================================================================
+// SmtpCommand (tags 0-11)
+// ===========================================================================
+
+/// Standard SMTP submission port.
+type smtpCommand =
   | @as(0) Helo
   | @as(1) Ehlo
   | @as(2) MailFrom
@@ -33,8 +38,8 @@ type commandTag =
   | @as(10) Starttls
   | @as(11) Auth
 
-/// Decode from C-ABI tag value.
-let commandTagFromTag = (tag: int): option<commandTag> =>
+/// Decode from the C-ABI tag value.
+let smtpCommandFromTag = (tag: int): option<smtpCommand> =>
   switch tag {
   | 0 => Some(Helo)
   | 1 => Some(Ehlo)
@@ -51,9 +56,9 @@ let commandTagFromTag = (tag: int): option<commandTag> =>
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let commandTagToTag = (cmd: commandTag): int =>
-  switch cmd {
+/// Encode to the C-ABI tag value.
+let smtpCommandToTag = (v: smtpCommand): int =>
+  switch v {
   | Helo => 0
   | Ehlo => 1
   | MailFrom => 2
@@ -68,52 +73,25 @@ let commandTagToTag = (cmd: commandTag): int =>
   | Auth => 11
   }
 
-/// SMTP verb keyword string.
-let commandTagVerb = (cmd: commandTag): string =>
-  switch cmd {
-  | Helo => "HELO"
-  | Ehlo => "EHLO"
-  | MailFrom => "MAIL"
-  | RcptTo => "RCPT"
-  | Data => "DATA"
-  | Quit => "QUIT"
-  | Rset => "RSET"
-  | Noop => "NOOP"
-  | Vrfy => "VRFY"
-  | Expn => "EXPN"
-  | Starttls => "STARTTLS"
-  | Auth => "AUTH"
-  }
-
-/// Whether the command requires an active session (post-HELO/EHLO).
-/// Matches requiresSession in SMTP.Command.
-let commandTagRequiresSession = (cmd: commandTag): bool =>
-  switch cmd {
-  | Helo | Ehlo | Quit | Noop | Rset => false
-  | MailFrom | RcptTo | Data | Vrfy | Expn | Starttls | Auth => true
-  }
-
-/// Whether the command resets the mail transaction state.
-/// Matches resetsTransaction in SMTP.Command.
-let commandTagResetsTransaction = (cmd: commandTag): bool =>
-  switch cmd {
-  | Rset | Helo | Ehlo => true
+/// Whether this command is part of the mail transaction envelope.
+let smtpCommandIsEnvelope = (v: smtpCommand): bool =>
+  switch v {
+  | MailFrom | RcptTo | Data => true
   | _ => false
   }
 
 // ===========================================================================
-// Reply Category (SMTPABI.Layout, tags 0-3)
+// ReplyCategory (tags 0-3)
 // ===========================================================================
 
-/// SMTP reply code categories based on the first digit (RFC 5321 Section 4.2.1).
-/// Matches ReplyCategory in SMTP.Reply.
+/// Decode from an ABI tag value.
 type replyCategory =
   | @as(0) Positive
   | @as(1) Intermediate
   | @as(2) TransientNegative
   | @as(3) PermanentNegative
 
-/// Decode from C-ABI tag value.
+/// Decode from the C-ABI tag value.
 let replyCategoryFromTag = (tag: int): option<replyCategory> =>
   switch tag {
   | 0 => Some(Positive)
@@ -123,30 +101,34 @@ let replyCategoryFromTag = (tag: int): option<replyCategory> =>
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let replyCategoryToTag = (cat: replyCategory): int =>
-  switch cat {
+/// Encode to the C-ABI tag value.
+let replyCategoryToTag = (v: replyCategory): int =>
+  switch v {
   | Positive => 0
   | Intermediate => 1
   | TransientNegative => 2
   | PermanentNegative => 3
   }
 
-/// Display name.
-let replyCategoryAsStr = (cat: replyCategory): string =>
-  switch cat {
-  | Positive => "Positive"
-  | Intermediate => "Intermediate"
-  | TransientNegative => "TransientNegative"
-  | PermanentNegative => "PermanentNegative"
+/// Whether this category indicates success.
+let replyCategoryIsSuccess = (v: replyCategory): bool =>
+  switch v {
+  | Positive => true
+  | _ => false
+  }
+
+/// Whether this category indicates an error.
+let replyCategoryIsError = (v: replyCategory): bool =>
+  switch v {
+  | TransientNegative | PermanentNegative => true
+  | _ => false
   }
 
 // ===========================================================================
-// Reply Code (SMTPABI.Layout.ReplyCode, tags 0-16)
+// ReplyCode (tags 0-16)
 // ===========================================================================
 
-/// Standard SMTP reply codes (RFC 5321 Section 4.2).
-/// Matches ReplyCode in SMTP.Reply.
+/// Decode from an ABI tag value.
 type replyCode =
   | @as(0) ServiceReady
   | @as(1) ServiceClosing
@@ -159,14 +141,14 @@ type replyCode =
   | @as(8) InsufficientStorage
   | @as(9) SyntaxError
   | @as(10) ParamSyntaxError
-  | @as(11) SmtpNotImplemented
+  | @as(11) NotImplemented
   | @as(12) BadSequence
   | @as(13) ParamNotImplemented
   | @as(14) MailboxUnavailable
   | @as(15) MailboxNameInvalid
   | @as(16) TransactionFailed
 
-/// Decode from C-ABI tag value.
+/// Decode from the C-ABI tag value.
 let replyCodeFromTag = (tag: int): option<replyCode> =>
   switch tag {
   | 0 => Some(ServiceReady)
@@ -180,7 +162,7 @@ let replyCodeFromTag = (tag: int): option<replyCode> =>
   | 8 => Some(InsufficientStorage)
   | 9 => Some(SyntaxError)
   | 10 => Some(ParamSyntaxError)
-  | 11 => Some(SmtpNotImplemented)
+  | 11 => Some(NotImplemented)
   | 12 => Some(BadSequence)
   | 13 => Some(ParamNotImplemented)
   | 14 => Some(MailboxUnavailable)
@@ -189,9 +171,9 @@ let replyCodeFromTag = (tag: int): option<replyCode> =>
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let replyCodeToTag = (code: replyCode): int =>
-  switch code {
+/// Encode to the C-ABI tag value.
+let replyCodeToTag = (v: replyCode): int =>
+  switch v {
   | ServiceReady => 0
   | ServiceClosing => 1
   | ActionOk => 2
@@ -203,7 +185,7 @@ let replyCodeToTag = (code: replyCode): int =>
   | InsufficientStorage => 8
   | SyntaxError => 9
   | ParamSyntaxError => 10
-  | SmtpNotImplemented => 11
+  | NotImplemented => 11
   | BadSequence => 12
   | ParamNotImplemented => 13
   | MailboxUnavailable => 14
@@ -211,91 +193,18 @@ let replyCodeToTag = (code: replyCode): int =>
   | TransactionFailed => 16
   }
 
-/// The numeric SMTP reply code (e.g. 220, 250, 550).
-/// Matches replyToCode in SMTP.Reply.
-let replyNumericCode = (code: replyCode): int =>
-  switch code {
-  | ServiceReady => 220
-  | ServiceClosing => 221
-  | ActionOk => 250
-  | WillForward => 251
-  | StartMailInput => 354
-  | ServiceUnavailable => 421
-  | MailboxBusy => 450
-  | LocalError => 451
-  | InsufficientStorage => 452
-  | SyntaxError => 500
-  | ParamSyntaxError => 501
-  | SmtpNotImplemented => 502
-  | BadSequence => 503
-  | ParamNotImplemented => 504
-  | MailboxUnavailable => 550
-  | MailboxNameInvalid => 553
-  | TransactionFailed => 554
-  }
-
-/// Default message text for each reply code.
-/// Matches defaultMessage in SMTP.Reply.
-let replyDefaultMessage = (code: replyCode): string =>
-  switch code {
-  | ServiceReady => "Service ready"
-  | ServiceClosing => "Service closing transmission channel"
-  | ActionOk => "OK"
-  | WillForward => "User not local; will forward"
-  | StartMailInput => "Start mail input; end with <CRLF>.<CRLF>"
-  | ServiceUnavailable => "Service not available"
-  | MailboxBusy => "Mailbox busy"
-  | LocalError => "Local error in processing"
-  | InsufficientStorage => "Insufficient system storage"
-  | SyntaxError => "Syntax error, command unrecognised"
-  | ParamSyntaxError => "Syntax error in parameters"
-  | SmtpNotImplemented => "Command not implemented"
-  | BadSequence => "Bad sequence of commands"
-  | ParamNotImplemented => "Command parameter not implemented"
-  | MailboxUnavailable => "Mailbox unavailable"
-  | MailboxNameInvalid => "Mailbox name not allowed"
-  | TransactionFailed => "Transaction failed"
-  }
-
-/// Categorise a reply code.
-/// Matches categorise in SMTP.Reply.
-let replyCategory = (code: replyCode): replyCategory => {
-  let tag = replyCodeToTag(code)
-  if tag <= 3 {
-    Positive
-  } else if tag == 4 {
-    Intermediate
-  } else if tag <= 8 {
-    TransientNegative
-  } else {
-    PermanentNegative
-  }
-}
-
-/// Whether the reply indicates success (2xx).
-let replyIsPositive = (code: replyCode): bool => replyCategory(code) == Positive
-
-/// Whether the reply indicates a permanent error (5xx).
-let replyIsPermanentError = (code: replyCode): bool =>
-  replyCategory(code) == PermanentNegative
-
-/// Whether the reply indicates a transient error (4xx, worth retrying).
-let replyIsTransientError = (code: replyCode): bool =>
-  replyCategory(code) == TransientNegative
-
 // ===========================================================================
-// Auth Mechanism (SMTPABI.Layout.AuthMechTag, tags 0-3)
+// AuthMechanism (tags 0-3)
 // ===========================================================================
 
-/// SMTP AUTH mechanisms.
-/// Matches AuthMechTag in SMTPABI.Layout.
+/// Decode from an ABI tag value.
 type authMechanism =
   | @as(0) Plain
   | @as(1) Login
   | @as(2) CramMd5
   | @as(3) Xoauth2
 
-/// Decode from C-ABI tag value.
+/// Decode from the C-ABI tag value.
 let authMechanismFromTag = (tag: int): option<authMechanism> =>
   switch tag {
   | 0 => Some(Plain)
@@ -305,206 +214,109 @@ let authMechanismFromTag = (tag: int): option<authMechanism> =>
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let authMechanismToTag = (mech: authMechanism): int =>
-  switch mech {
+/// Encode to the C-ABI tag value.
+let authMechanismToTag = (v: authMechanism): int =>
+  switch v {
   | Plain => 0
   | Login => 1
   | CramMd5 => 2
   | Xoauth2 => 3
   }
 
-/// ESMTP AUTH mechanism name string.
-let authMechanismAsStr = (mech: authMechanism): string =>
-  switch mech {
-  | Plain => "PLAIN"
-  | Login => "LOGIN"
-  | CramMd5 => "CRAM-MD5"
-  | Xoauth2 => "XOAUTH2"
+/// (requires TLS for security).
+let authMechanismRequiresTls = (v: authMechanism): bool =>
+  switch v {
+  | Plain | Login => true
+  | _ => false
   }
 
 // ===========================================================================
-// SMTP Extension (SMTPABI.Layout.SmtpExtension, tags 0-6)
+// SmtpExtension (tags 0-6)
 // ===========================================================================
 
-/// SMTP service extensions advertised in EHLO response.
-/// Matches SmtpExtension in SMTPABI.Layout.
+/// Decode from an ABI tag value.
 type smtpExtension =
-  | @as(0) ExtSize
-  | @as(1) ExtPipelining
-  | @as(2) Ext8BitMime
-  | @as(3) ExtStarttls
-  | @as(4) ExtAuth
-  | @as(5) ExtDsn
-  | @as(6) ExtChunking
+  | @as(0) Size
+  | @as(1) Pipelining
+  | @as(2) EightBitMime
+  | @as(3) Starttls
+  | @as(4) Auth
+  | @as(5) Dsn
+  | @as(6) Chunking
 
-/// Decode from C-ABI tag value.
+/// Decode from the C-ABI tag value.
 let smtpExtensionFromTag = (tag: int): option<smtpExtension> =>
   switch tag {
-  | 0 => Some(ExtSize)
-  | 1 => Some(ExtPipelining)
-  | 2 => Some(Ext8BitMime)
-  | 3 => Some(ExtStarttls)
-  | 4 => Some(ExtAuth)
-  | 5 => Some(ExtDsn)
-  | 6 => Some(ExtChunking)
+  | 0 => Some(Size)
+  | 1 => Some(Pipelining)
+  | 2 => Some(EightBitMime)
+  | 3 => Some(Starttls)
+  | 4 => Some(Auth)
+  | 5 => Some(Dsn)
+  | 6 => Some(Chunking)
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let smtpExtensionToTag = (ext: smtpExtension): int =>
-  switch ext {
-  | ExtSize => 0
-  | ExtPipelining => 1
-  | Ext8BitMime => 2
-  | ExtStarttls => 3
-  | ExtAuth => 4
-  | ExtDsn => 5
-  | ExtChunking => 6
-  }
-
-/// ESMTP keyword string.
-let smtpExtensionKeyword = (ext: smtpExtension): string =>
-  switch ext {
-  | ExtSize => "SIZE"
-  | ExtPipelining => "PIPELINING"
-  | Ext8BitMime => "8BITMIME"
-  | ExtStarttls => "STARTTLS"
-  | ExtAuth => "AUTH"
-  | ExtDsn => "DSN"
-  | ExtChunking => "CHUNKING"
+/// Encode to the C-ABI tag value.
+let smtpExtensionToTag = (v: smtpExtension): int =>
+  switch v {
+  | Size => 0
+  | Pipelining => 1
+  | EightBitMime => 2
+  | Starttls => 3
+  | Auth => 4
+  | Dsn => 5
+  | Chunking => 6
   }
 
 // ===========================================================================
-// Session State (SMTPABI.Layout.SmtpSessionState, tags 0-8)
+// SmtpSessionState (tags 0-8)
 // ===========================================================================
 
-/// Extended SMTP session states for the ABI lifecycle.
-/// Matches SmtpSessionState in SMTPABI.Layout.
-type sessionState =
+/// Decode from an ABI tag value.
+type smtpSessionState =
   | @as(0) Connected
   | @as(1) Greeted
   | @as(2) AuthStarted
   | @as(3) Authenticated
-  | @as(4) SmtpMailFrom
-  | @as(5) SmtpRcptTo
-  | @as(6) SmtpData
+  | @as(4) MailFrom
+  | @as(5) RcptTo
+  | @as(6) Data
   | @as(7) MessageReceived
-  | @as(8) SmtpQuit
+  | @as(8) Quit
 
-/// Decode from C-ABI tag value.
-let sessionStateFromTag = (tag: int): option<sessionState> =>
+/// Decode from the C-ABI tag value.
+let smtpSessionStateFromTag = (tag: int): option<smtpSessionState> =>
   switch tag {
   | 0 => Some(Connected)
   | 1 => Some(Greeted)
   | 2 => Some(AuthStarted)
   | 3 => Some(Authenticated)
-  | 4 => Some(SmtpMailFrom)
-  | 5 => Some(SmtpRcptTo)
-  | 6 => Some(SmtpData)
+  | 4 => Some(MailFrom)
+  | 5 => Some(RcptTo)
+  | 6 => Some(Data)
   | 7 => Some(MessageReceived)
-  | 8 => Some(SmtpQuit)
+  | 8 => Some(Quit)
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let sessionStateToTag = (s: sessionState): int =>
-  switch s {
+/// Encode to the C-ABI tag value.
+let smtpSessionStateToTag = (v: smtpSessionState): int =>
+  switch v {
   | Connected => 0
   | Greeted => 1
   | AuthStarted => 2
   | Authenticated => 3
-  | SmtpMailFrom => 4
-  | SmtpRcptTo => 5
-  | SmtpData => 6
+  | MailFrom => 4
+  | RcptTo => 5
+  | Data => 6
   | MessageReceived => 7
-  | SmtpQuit => 8
+  | Quit => 8
   }
 
-/// Whether this is a terminal state (Quit).
-let sessionStateIsTerminal = (s: sessionState): bool =>
-  switch s {
-  | SmtpQuit => true
+/// Validate whether a state transition is allowed.
+let smtpSessionStateCanTransitionTo = (from: smtpSessionState, to: smtpSessionState): bool =>
+  switch (from, to) {
   | _ => false
   }
 
-// ===========================================================================
-// Session Transition (SMTPABI.Transitions)
-// ===========================================================================
-
-/// Named SMTP session lifecycle transitions.
-/// Each variant corresponds to a constructor of ValidSmtpTransition
-/// in SMTPABI.Transitions.
-type sessionTransition =
-  | Greet
-  | StartAuth
-  | AuthSuccess
-  | AuthFailure
-  | AuthMailFrom
-  | RelayMailFrom
-  | AddRecipient
-  | AddMoreRecipients
-  | BeginData
-  | FinishData
-  | ResetToGreeted
-  | ResetToAuth
-  | ResetFromMailFrom
-  | ResetFromRcptTo
-  | QuitFromConnected
-  | QuitFromGreeted
-  | QuitFromAuth
-  | QuitFromMailFrom
-  | QuitFromRcptTo
-  | QuitFromMsgRecv
-
-/// Validate whether an SMTP session state transition is legal.
-/// Mirrors validateSmtpTransition in SMTPABI.Transitions.
-let validateSessionTransition = (
-  from: sessionState,
-  to: sessionState,
-): option<sessionTransition> =>
-  switch (from, to) {
-  | (Connected, Greeted) => Some(Greet)
-  | (Greeted, AuthStarted) => Some(StartAuth)
-  | (AuthStarted, Authenticated) => Some(AuthSuccess)
-  | (AuthStarted, Greeted) => Some(AuthFailure)
-  | (Authenticated, SmtpMailFrom) => Some(AuthMailFrom)
-  | (Greeted, SmtpMailFrom) => Some(RelayMailFrom)
-  | (SmtpMailFrom, SmtpRcptTo) => Some(AddRecipient)
-  | (SmtpRcptTo, SmtpRcptTo) => Some(AddMoreRecipients)
-  | (SmtpRcptTo, SmtpData) => Some(BeginData)
-  | (SmtpData, MessageReceived) => Some(FinishData)
-  | (MessageReceived, Greeted) => Some(ResetToGreeted)
-  | (MessageReceived, Authenticated) => Some(ResetToAuth)
-  | (SmtpMailFrom, Greeted) => Some(ResetFromMailFrom)
-  | (SmtpRcptTo, Greeted) => Some(ResetFromRcptTo)
-  | (Connected, SmtpQuit) => Some(QuitFromConnected)
-  | (Greeted, SmtpQuit) => Some(QuitFromGreeted)
-  | (Authenticated, SmtpQuit) => Some(QuitFromAuth)
-  | (SmtpMailFrom, SmtpQuit) => Some(QuitFromMailFrom)
-  | (SmtpRcptTo, SmtpQuit) => Some(QuitFromRcptTo)
-  | (MessageReceived, SmtpQuit) => Some(QuitFromMsgRecv)
-  | _ => None
-  }
-
-// ===========================================================================
-// Constants
-// ===========================================================================
-
-/// Standard SMTP port (RFC 5321).
-let smtpPort = 25
-
-/// SMTP submission port (RFC 6409).
-let submissionPort = 587
-
-/// SMTPS (implicit TLS) port.
-let smtpsPort = 465
-
-/// Maximum command line length in bytes (RFC 5321 Section 4.5.3.1.4).
-let maxCommandLineLength = 512
-
-/// Maximum reply line length in bytes (RFC 5321 Section 4.5.3.1.5).
-let maxReplyLineLength = 512
-
-/// Maximum text line length in bytes (RFC 5321 Section 4.5.3.1.6).
-let maxTextLineLength = 998

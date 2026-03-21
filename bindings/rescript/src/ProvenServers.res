@@ -93,24 +93,27 @@ let lastError = (): option<string> => Js.Nullable.toOption(nativeLastError())
 
 /// All protocol identifiers known to this binding layer.
 /// This list matches the 98 protocol directories under protocols/.
-/// The first 10 have full ReScript bindings; the rest follow the same
-/// pattern and can be generated mechanically.
+/// All 98 protocols have full ReScript bindings.
 let allProtocols: array<ProvenError.protocol> = [
-  Httpd,
-  Dns,
-  Smtp,
-  Ftp,
-  SshBastion,
-  Mqtt,
-  Grpc,
-  Graphql,
-  Tls,
-  Firewall,
-  Websocket,
+  // Batch 1: Core protocols
+  Httpd, Dns, Smtp, Ftp, SshBastion, Mqtt, Grpc, Graphql, Tls, Firewall, Websocket,
+  // Batch 2: Additional protocols
+  Amqp, Cache, Imap, Ldap, Ntp, Snmp, Syslog,
+  // Batch 3: Extended protocols
+  Bgp, Coap, Dhcp, Irc, Kerberos, Modbus, Nfs, Ospf, Pop3, Radius, Rtsp, Socks, Telnet, Tftp, Vpn,
+  // Batch 4: More protocols
+  Opcua, Smb, Tacacs, Voip, Webdav, Xmpp,
+  // Batch 5: Database, auth, transport, security
+  Dbserver, Authserver, Ca, Doh, Doq, Dot, Nts, Pqc, Proxy, Loadbalancer, Graphdb, Objectstore, Kms, Ids, Siem, Stun,
+  // Batch 6: Application and infrastructure
+  Agentic, Airgap, Apiserver, Appserver, Backup, Bfd, Caldav, Carddav, Chat, Configmgmt, Container,
+  Ctlog, Dds, Deception, Diode, Federation, Fileserver, Gameserver, Git, Hardened, Honeypot,
+  Ldp, Logcollector, Lpd, Mcp, Mdns, Media, Metrics, Monitor, Nesy, Netconf, Neurosym,
+  Ocsp, Odns, Ptp, Sandbox, Sdn, Semweb, Sparql, Triplestore, Virt, Wasm, Zerotrust,
 ]
 
 /// Number of protocols with full ReScript bindings.
-let boundProtocolCount = 11
+let boundProtocolCount = 98
 
 /// Total number of protocols in the proven-servers suite.
 let totalProtocolCount = 98

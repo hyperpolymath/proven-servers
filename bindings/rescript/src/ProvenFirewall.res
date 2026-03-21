@@ -1,22 +1,16 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
-// Firewall protocol types for the proven-servers ABI.
+// Firewall types for the proven-servers ABI.
 //
-// Mirrors the Idris2 modules:
-// - Firewall.Types        -- actions, protocols, chain types, match criteria,
-//                            connection states
-// - FirewallABI.Layout    -- C-ABI tag values for all types
-// - FirewallABI.Transitions -- rule evaluation state machine
-//
-// All tag values match the Layout encoders in FirewallABI.Layout exactly.
+// Mirrors the Idris2 module FirewallABI.Types.
+// All tag values match the Idris2 ABI tag definitions exactly.
 
 // ===========================================================================
-// Action (FirewallABI.Layout.Action, tags 0-7)
+// Action (tags 0-7)
 // ===========================================================================
 
-/// Firewall rule actions applied to matching packets.
-/// Matches Action in Firewall.Types.
+/// Firewall rule actions.
 type action =
   | @as(0) Accept
   | @as(1) Drop
@@ -27,7 +21,7 @@ type action =
   | @as(6) Snat
   | @as(7) Masquerade
 
-/// Decode from C-ABI tag value.
+/// Decode from the C-ABI tag value.
 let actionFromTag = (tag: int): option<action> =>
   switch tag {
   | 0 => Some(Accept)
@@ -41,9 +35,9 @@ let actionFromTag = (tag: int): option<action> =>
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let actionToTag = (a: action): int =>
-  switch a {
+/// Encode to the C-ABI tag value.
+let actionToTag = (v: action): int =>
+  switch v {
   | Accept => 0
   | Drop => 1
   | Reject => 2
@@ -54,41 +48,18 @@ let actionToTag = (a: action): int =>
   | Masquerade => 7
   }
 
-/// iptables/nftables action string.
-/// Matches Show instance in Firewall.Types.
-let actionAsStr = (a: action): string =>
-  switch a {
-  | Accept => "ACCEPT"
-  | Drop => "DROP"
-  | Reject => "REJECT"
-  | Log => "LOG"
-  | Redirect => "REDIRECT"
-  | Dnat => "DNAT"
-  | Snat => "SNAT"
-  | Masquerade => "MASQUERADE"
-  }
-
-/// Whether this action terminates rule processing (vs continuing).
-/// LOG does not terminate; the packet continues through remaining rules.
-let actionIsTerminating = (a: action): bool =>
-  switch a {
-  | Log => false
-  | Accept | Drop | Reject | Redirect | Dnat | Snat | Masquerade => true
-  }
-
-/// Whether this action performs network address translation.
-let actionIsNat = (a: action): bool =>
-  switch a {
-  | Dnat | Snat | Masquerade | Redirect => true
-  | Accept | Drop | Reject | Log => false
+/// Whether this action allows traffic.
+let actionIsPermissive = (v: action): bool =>
+  switch v {
+  | Accept | Redirect | Dnat | Snat | Masquerade => true
+  | _ => false
   }
 
 // ===========================================================================
-// Protocol (FirewallABI.Layout.Protocol, tags 0-7)
+// Protocol (tags 0-7)
 // ===========================================================================
 
-/// IP protocols for firewall rule matching.
-/// Matches Protocol in Firewall.Types.
+/// Decode from an ABI tag value.
 type protocol =
   | @as(0) Tcp
   | @as(1) Udp
@@ -99,7 +70,7 @@ type protocol =
   | @as(6) Ah
   | @as(7) Any
 
-/// Decode from C-ABI tag value.
+/// Decode from the C-ABI tag value.
 let protocolFromTag = (tag: int): option<protocol> =>
   switch tag {
   | 0 => Some(Tcp)
@@ -113,9 +84,9 @@ let protocolFromTag = (tag: int): option<protocol> =>
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let protocolToTag = (p: protocol): int =>
-  switch p {
+/// Encode to the C-ABI tag value.
+let protocolToTag = (v: protocol): int =>
+  switch v {
   | Tcp => 0
   | Udp => 1
   | Icmp => 2
@@ -126,46 +97,11 @@ let protocolToTag = (p: protocol): int =>
   | Any => 7
   }
 
-/// Protocol name string.
-/// Matches Show instance in Firewall.Types.
-let protocolAsStr = (p: protocol): string =>
-  switch p {
-  | Tcp => "TCP"
-  | Udp => "UDP"
-  | Icmp => "ICMP"
-  | Icmpv6 => "ICMPv6"
-  | Gre => "GRE"
-  | Esp => "ESP"
-  | Ah => "AH"
-  | Any => "ANY"
-  }
-
-/// IANA protocol number.
-let protocolNumber = (p: protocol): int =>
-  switch p {
-  | Tcp => 6
-  | Udp => 17
-  | Icmp => 1
-  | Icmpv6 => 58
-  | Gre => 47
-  | Esp => 50
-  | Ah => 51
-  | Any => 0
-  }
-
-/// Whether this protocol supports port-based matching.
-let protocolHasPorts = (p: protocol): bool =>
-  switch p {
-  | Tcp | Udp => true
-  | Icmp | Icmpv6 | Gre | Esp | Ah | Any => false
-  }
-
 // ===========================================================================
-// Chain Type (FirewallABI.Layout.ChainType, tags 0-4)
+// ChainType (tags 0-4)
 // ===========================================================================
 
-/// Netfilter chain types for firewall rule organisation.
-/// Matches ChainType in Firewall.Types.
+/// Decode from an ABI tag value.
 type chainType =
   | @as(0) Input
   | @as(1) Output
@@ -173,7 +109,7 @@ type chainType =
   | @as(3) PreRouting
   | @as(4) PostRouting
 
-/// Decode from C-ABI tag value.
+/// Decode from the C-ABI tag value.
 let chainTypeFromTag = (tag: int): option<chainType> =>
   switch tag {
   | 0 => Some(Input)
@@ -184,9 +120,9 @@ let chainTypeFromTag = (tag: int): option<chainType> =>
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let chainTypeToTag = (ct: chainType): int =>
-  switch ct {
+/// Encode to the C-ABI tag value.
+let chainTypeToTag = (v: chainType): int =>
+  switch v {
   | Input => 0
   | Output => 1
   | Forward => 2
@@ -194,32 +130,12 @@ let chainTypeToTag = (ct: chainType): int =>
   | PostRouting => 4
   }
 
-/// Chain name string.
-/// Matches Show instance in Firewall.Types.
-let chainTypeAsStr = (ct: chainType): string =>
-  switch ct {
-  | Input => "INPUT"
-  | Output => "OUTPUT"
-  | Forward => "FORWARD"
-  | PreRouting => "PREROUTING"
-  | PostRouting => "POSTROUTING"
-  }
-
-/// Whether NAT actions are valid in this chain.
-/// DNAT: PREROUTING only.  SNAT/MASQUERADE: POSTROUTING only.
-let chainTypeSupportsNat = (ct: chainType): bool =>
-  switch ct {
-  | PreRouting | PostRouting => true
-  | Input | Output | Forward => false
-  }
-
 // ===========================================================================
-// Rule Match (FirewallABI.Layout.RuleMatch, tags 0-7)
+// RuleMatchType (tags 0-7)
 // ===========================================================================
 
-/// Match criteria for firewall rules.
-/// Matches RuleMatch in Firewall.Types.
-type ruleMatch =
+/// Decode from an ABI tag value.
+type ruleMatchType =
   | @as(0) SourceIp
   | @as(1) DestIp
   | @as(2) SourcePort
@@ -229,8 +145,8 @@ type ruleMatch =
   | @as(6) State
   | @as(7) Mark
 
-/// Decode from C-ABI tag value.
-let ruleMatchFromTag = (tag: int): option<ruleMatch> =>
+/// Decode from the C-ABI tag value.
+let ruleMatchTypeFromTag = (tag: int): option<ruleMatchType> =>
   switch tag {
   | 0 => Some(SourceIp)
   | 1 => Some(DestIp)
@@ -243,9 +159,9 @@ let ruleMatchFromTag = (tag: int): option<ruleMatch> =>
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let ruleMatchToTag = (rm: ruleMatch): int =>
-  switch rm {
+/// Encode to the C-ABI tag value.
+let ruleMatchTypeToTag = (v: ruleMatchType): int =>
+  switch v {
   | SourceIp => 0
   | DestIp => 1
   | SourcePort => 2
@@ -256,33 +172,18 @@ let ruleMatchToTag = (rm: ruleMatch): int =>
   | Mark => 7
   }
 
-/// Match criteria name string.
-/// Matches Show instance in Firewall.Types.
-let ruleMatchAsStr = (rm: ruleMatch): string =>
-  switch rm {
-  | SourceIp => "SourceIP"
-  | DestIp => "DestIP"
-  | SourcePort => "SourcePort"
-  | DestPort => "DestPort"
-  | MatchProto => "Protocol"
-  | Interface => "Interface"
-  | State => "State"
-  | Mark => "Mark"
-  }
-
 // ===========================================================================
-// Connection State (FirewallABI.Layout.ConnState, tags 0-3)
+// ConnState (tags 0-3)
 // ===========================================================================
 
-/// Connection tracking states for stateful firewall inspection.
-/// Matches ConnState in Firewall.Types.
+/// Decode from an ABI tag value.
 type connState =
   | @as(0) New
   | @as(1) Established
   | @as(2) Related
   | @as(3) Invalid
 
-/// Decode from C-ABI tag value.
+/// Decode from the C-ABI tag value.
 let connStateFromTag = (tag: int): option<connState> =>
   switch tag {
   | 0 => Some(New)
@@ -292,28 +193,12 @@ let connStateFromTag = (tag: int): option<connState> =>
   | _ => None
   }
 
-/// Encode to C-ABI tag value.
-let connStateToTag = (s: connState): int =>
-  switch s {
+/// Encode to the C-ABI tag value.
+let connStateToTag = (v: connState): int =>
+  switch v {
   | New => 0
   | Established => 1
   | Related => 2
   | Invalid => 3
   }
 
-/// Connection state name string.
-/// Matches Show instance in Firewall.Types.
-let connStateAsStr = (s: connState): string =>
-  switch s {
-  | New => "NEW"
-  | Established => "ESTABLISHED"
-  | Related => "RELATED"
-  | Invalid => "INVALID"
-  }
-
-/// Whether this state represents an active, valid connection.
-let connStateIsActive = (s: connState): bool =>
-  switch s {
-  | Established | Related => true
-  | New | Invalid => false
-  }

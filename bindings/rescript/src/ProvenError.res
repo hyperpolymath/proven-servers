@@ -19,7 +19,9 @@
 
 /// Identifies the protocol that produced an error.
 /// Used to tag errors originating from cross-protocol calls.
+/// Covers all 98 protocols in the proven-servers suite.
 type protocol =
+  // Batch 1: Core protocols (v0.1.0)
   | Httpd
   | Dns
   | Smtp
@@ -31,6 +33,99 @@ type protocol =
   | Tls
   | Firewall
   | Websocket
+  // Batch 2: Additional protocols (v0.2.0)
+  | Amqp
+  | Cache
+  | Imap
+  | Ldap
+  | Ntp
+  | Snmp
+  | Syslog
+  // Batch 3: Extended protocols (v0.3.0)
+  | Bgp
+  | Coap
+  | Dhcp
+  | Irc
+  | Kerberos
+  | Modbus
+  | Nfs
+  | Ospf
+  | Pop3
+  | Radius
+  | Rtsp
+  | Socks
+  | Telnet
+  | Tftp
+  | Vpn
+  // Batch 4: More protocols (v0.4.0)
+  | Opcua
+  | Smb
+  | Tacacs
+  | Voip
+  | Webdav
+  | Xmpp
+  // Batch 5: Database, auth, transport, security (v0.5.0)
+  | Dbserver
+  | Authserver
+  | Ca
+  | Doh
+  | Doq
+  | Dot
+  | Nts
+  | Pqc
+  | Proxy
+  | Loadbalancer
+  | Graphdb
+  | Objectstore
+  | Kms
+  | Ids
+  | Siem
+  | Stun
+  // Batch 6: Application and infrastructure (v0.5.0)
+  | Agentic
+  | Airgap
+  | Apiserver
+  | Appserver
+  | Backup
+  | Bfd
+  | Caldav
+  | Carddav
+  | Chat
+  | Configmgmt
+  | Container
+  | Ctlog
+  | Dds
+  | Deception
+  | Diode
+  | Federation
+  | Fileserver
+  | Gameserver
+  | Git
+  | Hardened
+  | Honeypot
+  | Ldp
+  | Logcollector
+  | Lpd
+  | Mcp
+  | Mdns
+  | Media
+  | Metrics
+  | Monitor
+  | Nesy
+  | Netconf
+  | Neurosym
+  | Ocsp
+  | Odns
+  | Ptp
+  | Sandbox
+  | Sdn
+  | Semweb
+  | Sparql
+  | Triplestore
+  | Virt
+  | Wasm
+  | Zerotrust
+  // Catch-all for unknown protocols
   | Other(string)
 
 /// Human-readable protocol name.
@@ -47,6 +142,93 @@ let protocolAsStr = (p: protocol): string =>
   | Tls => "tls"
   | Firewall => "firewall"
   | Websocket => "websocket"
+  | Amqp => "amqp"
+  | Cache => "cache"
+  | Imap => "imap"
+  | Ldap => "ldap"
+  | Ntp => "ntp"
+  | Snmp => "snmp"
+  | Syslog => "syslog"
+  | Bgp => "bgp"
+  | Coap => "coap"
+  | Dhcp => "dhcp"
+  | Irc => "irc"
+  | Kerberos => "kerberos"
+  | Modbus => "modbus"
+  | Nfs => "nfs"
+  | Ospf => "ospf"
+  | Pop3 => "pop3"
+  | Radius => "radius"
+  | Rtsp => "rtsp"
+  | Socks => "socks"
+  | Telnet => "telnet"
+  | Tftp => "tftp"
+  | Vpn => "vpn"
+  | Opcua => "opcua"
+  | Smb => "smb"
+  | Tacacs => "tacacs"
+  | Voip => "voip"
+  | Webdav => "webdav"
+  | Xmpp => "xmpp"
+  | Dbserver => "dbserver"
+  | Authserver => "authserver"
+  | Ca => "ca"
+  | Doh => "doh"
+  | Doq => "doq"
+  | Dot => "dot"
+  | Nts => "nts"
+  | Pqc => "pqc"
+  | Proxy => "proxy"
+  | Loadbalancer => "loadbalancer"
+  | Graphdb => "graphdb"
+  | Objectstore => "objectstore"
+  | Kms => "kms"
+  | Ids => "ids"
+  | Siem => "siem"
+  | Stun => "stun"
+  | Agentic => "agentic"
+  | Airgap => "airgap"
+  | Apiserver => "apiserver"
+  | Appserver => "appserver"
+  | Backup => "backup"
+  | Bfd => "bfd"
+  | Caldav => "caldav"
+  | Carddav => "carddav"
+  | Chat => "chat"
+  | Configmgmt => "configmgmt"
+  | Container => "container"
+  | Ctlog => "ctlog"
+  | Dds => "dds"
+  | Deception => "deception"
+  | Diode => "diode"
+  | Federation => "federation"
+  | Fileserver => "fileserver"
+  | Gameserver => "gameserver"
+  | Git => "git"
+  | Hardened => "hardened"
+  | Honeypot => "honeypot"
+  | Ldp => "ldp"
+  | Logcollector => "logcollector"
+  | Lpd => "lpd"
+  | Mcp => "mcp"
+  | Mdns => "mdns"
+  | Media => "media"
+  | Metrics => "metrics"
+  | Monitor => "monitor"
+  | Nesy => "nesy"
+  | Netconf => "netconf"
+  | Neurosym => "neurosym"
+  | Ocsp => "ocsp"
+  | Odns => "odns"
+  | Ptp => "ptp"
+  | Sandbox => "sandbox"
+  | Sdn => "sdn"
+  | Semweb => "semweb"
+  | Sparql => "sparql"
+  | Triplestore => "triplestore"
+  | Virt => "virt"
+  | Wasm => "wasm"
+  | Zerotrust => "zerotrust"
   | Other(name) => name
   }
 
