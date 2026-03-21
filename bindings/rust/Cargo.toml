@@ -22,6 +22,11 @@ keywords = ["proven", "protocols", "abi", "ffi"]
 [dependencies]
 
 [dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "protocols"
+harness = false
 
 [features]
 # Enable FFI support for linking against the Zig-compiled libproven_servers.
