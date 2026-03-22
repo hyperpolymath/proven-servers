@@ -101,20 +101,20 @@ function destroy_context(slot::SlotId)::Nothing
 end
 
 """
-    get_state(slot::SlotId) -> SemwebErrorCode
+    get_state(slot::SlotId) -> RdfFormat
 
 Get the current Semweb lifecycle state.
 """
-function get_state(slot::SlotId)::SemwebErrorCode
-    SemwebErrorCode(ccall((:semweb_state, LIB), UInt8, (Cint,), slot))
+function get_state(slot::SlotId)::RdfFormat
+    RdfFormat(ccall((:semweb_state, LIB), UInt8, (Cint,), slot))
 end
 
 """
-    can_transition(from::SemwebErrorCode, to::SemwebErrorCode) -> Bool
+    can_transition(from::RdfFormat, to::RdfFormat) -> Bool
 
 Check whether a Semweb state transition is valid.
 """
-function can_transition(from::SemwebErrorCode, to::SemwebErrorCode)::Bool
+function can_transition(from::RdfFormat, to::RdfFormat)::Bool
     ccall((:semweb_can_transition, LIB), UInt8,
           (UInt8, UInt8), UInt8(from), UInt8(to)) == 0x01
 end

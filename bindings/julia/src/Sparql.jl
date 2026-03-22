@@ -90,20 +90,20 @@ function destroy_context(slot::SlotId)::Nothing
 end
 
 """
-    get_state(slot::SlotId) -> SparqlErrorType
+    get_state(slot::SlotId) -> SparqlQueryType
 
 Get the current Sparql lifecycle state.
 """
-function get_state(slot::SlotId)::SparqlErrorType
-    SparqlErrorType(ccall((:sparql_state, LIB), UInt8, (Cint,), slot))
+function get_state(slot::SlotId)::SparqlQueryType
+    SparqlQueryType(ccall((:sparql_state, LIB), UInt8, (Cint,), slot))
 end
 
 """
-    can_transition(from::SparqlErrorType, to::SparqlErrorType) -> Bool
+    can_transition(from::SparqlQueryType, to::SparqlQueryType) -> Bool
 
 Check whether a Sparql state transition is valid.
 """
-function can_transition(from::SparqlErrorType, to::SparqlErrorType)::Bool
+function can_transition(from::SparqlQueryType, to::SparqlQueryType)::Bool
     ccall((:sparql_can_transition, LIB), UInt8,
           (UInt8, UInt8), UInt8(from), UInt8(to)) == 0x01
 end

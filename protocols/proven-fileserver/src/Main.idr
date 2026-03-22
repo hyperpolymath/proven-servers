@@ -32,7 +32,7 @@ main = do
   putStrLn $ "  " ++ show Create
   putStrLn $ "  " ++ show Delete
   putStrLn $ "  " ++ show Rename
-  putStrLn $ "  " ++ show List
+  putStrLn $ "  " ++ show Fileserver.Types.List
   putStrLn $ "  " ++ show Stat
   putStrLn $ "  " ++ show Lock
   putStrLn $ "  " ++ show Unlock

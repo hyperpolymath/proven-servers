@@ -1,0 +1,58 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- Triplestore protocol types for proven-servers.
+
+local M = {}
+
+--- Statement matching the Idris2 ABI tags.
+M.Statement = {
+    TRIPLE = 0,
+    QUAD = 1,
+}
+
+--- IndexOrder matching the Idris2 ABI tags.
+M.IndexOrder = {
+    SPO = 0,
+    POS = 1,
+    OSP = 2,
+    GSPO = 3,
+    GPOS = 4,
+    GOSP = 5,
+}
+
+--- StorageBackend matching the Idris2 ABI tags.
+M.StorageBackend = {
+    IN_MEMORY = 0,
+    B_TREE = 1,
+    LSM = 2,
+    PERSISTENT = 3,
+}
+
+--- ImportFormat matching the Idris2 ABI tags.
+M.ImportFormat = {
+    N_TRIPLES = 0,
+    TURTLE = 1,
+    RDF_XML = 2,
+    JSON_LD = 3,
+    N_QUADS = 4,
+    TRIG = 5,
+}
+
+--- TransactionIsolation matching the Idris2 ABI tags.
+M.TransactionIsolation = {
+    READ_COMMITTED = 0,
+    SERIALIZABLE = 1,
+    SNAPSHOT = 2,
+}
+
+--- StoreState matching the Idris2 ABI tags.
+M.StoreState = {
+    IDLE = 0,
+    READY = 1,
+    IN_TRANSACTION = 2,
+    IMPORTING = 3,
+    CLOSING = 4,
+}
+
+return M

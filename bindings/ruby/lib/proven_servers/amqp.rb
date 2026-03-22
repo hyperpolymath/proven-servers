@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# AMQP protocol types for proven-servers.
+
+# frozen_string_literal: true
+
+module ProvenServers
+  # AMQP protocol types for proven-servers.
+  module Amqp
+    # FrameType matching the Idris2 ABI tags.
+    module FrameType
+      METHOD = 0
+      HEADER = 1
+      BODY = 2
+      HEARTBEAT = 3
+    end
+
+    # MethodClass matching the Idris2 ABI tags.
+    module MethodClass
+      CONNECTION = 0
+      CHANNEL = 1
+      EXCHANGE = 2
+      QUEUE = 3
+      BASIC = 4
+      TX = 5
+      CONFIRM = 6
+    end
+
+    # ExchangeType matching the Idris2 ABI tags.
+    module ExchangeType
+      DIRECT = 0
+      FANOUT = 1
+      TOPIC = 2
+      HEADERS = 3
+    end
+
+    # DeliveryMode matching the Idris2 ABI tags.
+    module DeliveryMode
+      NON_PERSISTENT = 0
+      PERSISTENT = 1
+    end
+
+    # ErrorSeverity matching the Idris2 ABI tags.
+    module ErrorSeverity
+      CHANNEL_LEVEL = 0
+      CONNECTION_LEVEL = 1
+    end
+
+    # ConnectionState matching the Idris2 ABI tags.
+    module ConnectionState
+      CONNECTION_STATE_IDLE = 0
+      NEGOTIATING = 1
+      TUNING_OK = 2
+      OPEN = 3
+      CLOSING = 4
+    end
+
+    # ChannelState matching the Idris2 ABI tags.
+    module ChannelState
+      CLOSED = 0
+      OPENING = 1
+      CH_OPEN = 2
+      CH_CLOSING = 3
+    end
+
+    # BrokerState matching the Idris2 ABI tags.
+    module BrokerState
+      BROKER_STATE_IDLE = 0
+      CONNECTED = 1
+      CHANNEL_OPEN = 2
+      CONSUMING = 3
+      PUBLISHING = 4
+      DISCONNECTING = 5
+    end
+
+  end
+end

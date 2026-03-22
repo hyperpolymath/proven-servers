@@ -79,20 +79,20 @@ function destroy_context(slot::SlotId)::Nothing
 end
 
 """
-    get_state(slot::SlotId) -> WasmMutability
+    get_state(slot::SlotId) -> ValType
 
 Get the current Wasm lifecycle state.
 """
-function get_state(slot::SlotId)::WasmMutability
-    WasmMutability(ccall((:wasm_state, LIB), UInt8, (Cint,), slot))
+function get_state(slot::SlotId)::ValType
+    ValType(ccall((:wasm_state, LIB), UInt8, (Cint,), slot))
 end
 
 """
-    can_transition(from::WasmMutability, to::WasmMutability) -> Bool
+    can_transition(from::ValType, to::ValType) -> Bool
 
 Check whether a Wasm state transition is valid.
 """
-function can_transition(from::WasmMutability, to::WasmMutability)::Bool
+function can_transition(from::ValType, to::ValType)::Bool
     ccall((:wasm_can_transition, LIB), UInt8,
           (UInt8, UInt8), UInt8(from), UInt8(to)) == 0x01
 end

@@ -91,20 +91,20 @@ function destroy_context(slot::SlotId)::Nothing
 end
 
 """
-    get_state(slot::SlotId) -> ProxyError
+    get_state(slot::SlotId) -> ProxyMode
 
 Get the current Proxy lifecycle state.
 """
-function get_state(slot::SlotId)::ProxyError
-    ProxyError(ccall((:proxy_state, LIB), UInt8, (Cint,), slot))
+function get_state(slot::SlotId)::ProxyMode
+    ProxyMode(ccall((:proxy_state, LIB), UInt8, (Cint,), slot))
 end
 
 """
-    can_transition(from::ProxyError, to::ProxyError) -> Bool
+    can_transition(from::ProxyMode, to::ProxyMode) -> Bool
 
 Check whether a Proxy state transition is valid.
 """
-function can_transition(from::ProxyError, to::ProxyError)::Bool
+function can_transition(from::ProxyMode, to::ProxyMode)::Bool
     ccall((:proxy_can_transition, LIB), UInt8,
           (UInt8, UInt8), UInt8(from), UInt8(to)) == 0x01
 end

@@ -114,20 +114,20 @@ function destroy_context(slot::SlotId)::Nothing
 end
 
 """
-    get_state(slot::SlotId) -> StreamError
+    get_state(slot::SlotId) -> StanzaType
 
 Get the current Xmpp lifecycle state.
 """
-function get_state(slot::SlotId)::StreamError
-    StreamError(ccall((:xmpp_state, LIB), UInt8, (Cint,), slot))
+function get_state(slot::SlotId)::StanzaType
+    StanzaType(ccall((:xmpp_state, LIB), UInt8, (Cint,), slot))
 end
 
 """
-    can_transition(from::StreamError, to::StreamError) -> Bool
+    can_transition(from::StanzaType, to::StanzaType) -> Bool
 
 Check whether a Xmpp state transition is valid.
 """
-function can_transition(from::StreamError, to::StreamError)::Bool
+function can_transition(from::StanzaType, to::StanzaType)::Bool
     ccall((:xmpp_can_transition, LIB), UInt8,
           (UInt8, UInt8), UInt8(from), UInt8(to)) == 0x01
 end

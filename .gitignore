@@ -107,3 +107,7 @@ ai-cli-crash-capture/
 sync_report*.txt
 bindings/elixir/_build/
 bindings/elixir/deps/
+
+# Build artifacts
+build/
+ttc/

@@ -1,0 +1,52 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- CT Log protocol types for proven-servers.
+
+local M = {}
+
+--- LogEntryType matching the Idris2 ABI tags.
+M.LogEntryType = {
+    X509_ENTRY = 0,
+    PRECERT_ENTRY = 1,
+}
+
+--- SignatureType matching the Idris2 ABI tags.
+M.SignatureType = {
+    CERTIFICATE_TIMESTAMP = 0,
+    TREE_HASH = 1,
+}
+
+--- MerkleLeafType matching the Idris2 ABI tags.
+M.MerkleLeafType = {
+    TIMESTAMPED_ENTRY = 0,
+}
+
+--- SubmissionStatus matching the Idris2 ABI tags.
+M.SubmissionStatus = {
+    ACCEPTED = 0,
+    DUPLICATE = 1,
+    RATE_LIMITED = 2,
+    REJECTED = 3,
+    INVALID_CHAIN = 4,
+    UNKNOWN_ANCHOR = 5,
+}
+
+--- VerificationResult matching the Idris2 ABI tags.
+M.VerificationResult = {
+    VALID_PROOF = 0,
+    INVALID_PROOF = 1,
+    INCONSISTENT_TREE = 2,
+    STALE_STH = 3,
+}
+
+--- ServerState matching the Idris2 ABI tags.
+M.ServerState = {
+    IDLE = 0,
+    ACTIVE = 1,
+    MERGING = 2,
+    SIGNING = 3,
+    SHUTDOWN = 4,
+}
+
+return M

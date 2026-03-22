@@ -110,20 +110,20 @@ function destroy_context(slot::SlotId)::Nothing
 end
 
 """
-    get_state(slot::SlotId) -> ZtAuthFactor
+    get_state(slot::SlotId) -> AccessDecision
 
 Get the current Zerotrust lifecycle state.
 """
-function get_state(slot::SlotId)::ZtAuthFactor
-    ZtAuthFactor(ccall((:zerotrust_state, LIB), UInt8, (Cint,), slot))
+function get_state(slot::SlotId)::AccessDecision
+    AccessDecision(ccall((:zerotrust_state, LIB), UInt8, (Cint,), slot))
 end
 
 """
-    can_transition(from::ZtAuthFactor, to::ZtAuthFactor) -> Bool
+    can_transition(from::AccessDecision, to::AccessDecision) -> Bool
 
 Check whether a Zerotrust state transition is valid.
 """
-function can_transition(from::ZtAuthFactor, to::ZtAuthFactor)::Bool
+function can_transition(from::AccessDecision, to::AccessDecision)::Bool
     ccall((:zerotrust_can_transition, LIB), UInt8,
           (UInt8, UInt8), UInt8(from), UInt8(to)) == 0x01
 end
