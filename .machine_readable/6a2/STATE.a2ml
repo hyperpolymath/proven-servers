@@ -6,13 +6,13 @@
 [metadata]
 project = "proven-servers"
 version = "0.3.0"
-last-updated = "2026-03-16"
+last-updated = "2026-03-22"
 status = "active"
 
 [project-context]
 name = "proven-servers"
 purpose = "Catalog of 108 formally verified server components (94 protocol skeletons, 8 core primitives, 6 connector interfaces) in Idris2 with dependent types. ABI defined in Idris2, FFI implemented in Zig, callable from any language via C ABI."
-completion-percentage = 42
+completion-percentage = 60
 
 [position]
 phase = "implementation"
@@ -26,7 +26,7 @@ milestones = [
   { name = "Phase 1: Connector ABI-FFI (Idris2 + C headers + Zig + tests)", completion = 100 },
   { name = "Phase 2: Core primitive ABI-FFI", completion = 0 },
   { name = "Phase 3: Protocol ABI-FFI (high-priority: dns, httpd, tls, smtp)", completion = 0 },
-  { name = "Phase 4: Language bindings (Rust, ReScript, Gleam, Elixir)", completion = 0 },
+  { name = "Phase 4: Language bindings (Rust, ReScript, Gleam, Elixir)", completion = 50 },
   { name = "Phase 5: CI/CD (Idris2 type-checking, Zig builds, cross-platform)", completion = 0 },
   { name = "Phase 6: PanLL VAB panel integration", completion = 0 },
 ]
@@ -41,7 +41,8 @@ issues = [
 actions = [
   "Continue ABI-FFI for remaining core primitives",
   "Add Idris2 type-checking to CI workflow",
-  "Begin language bindings for Rust (highest demand)",
+  "Begin Gleam + Elixir bindings (BEAM NIF/port infrastructure)",
+  "Begin Haskell + OCaml bindings (C FFI to Zig)",
   "Update ABI-FFI-README.md with concrete proven-servers examples",
 ]
 
