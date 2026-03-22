@@ -4,75 +4,87 @@
 (** CalDAV (RFC 4791) protocol bindings for proven-servers.
 
     Wraps the C-ABI functions from
-    [protocols/proven-caldav/ffi/zig/src/caldav.zig]. Provides OCaml variant
-    types matching the Idris2 ABI enums for component types, calendar methods,
-    schedule statuses, calendar errors, and server states. *)
+    [protocols/proven-caldav/ffi/zig/src/caldav.zig]. *)
 
-(** iCalendar component types matching [ComponentType] in caldav.zig. *)
-type component_type = Vevent | Vtodo | Vjournal | Vfreebusy
+(** ComponentType matching [ComponentType] in caldav.zig. *)
+type component_type =
+  | Vevent  (** VEVENT (tag 0). *)
+  | Vtodo  (** VTODO (tag 1). *)
+  | Vjournal  (** VJOURNAL (tag 2). *)
+  | Vfreebusy  (** VFREEBUSY (tag 3). *)
 
-(** CalDAV methods matching [CalMethod] in caldav.zig. *)
-type cal_method = Get | Put | Delete | Propfind | Proppatch | Report | Mkcalendar
-
-(** Schedule participation statuses matching [ScheduleStatus] in caldav.zig. *)
-type schedule_status = Needs_action | Accepted | Declined | Tentative | Delegated
-
-(** CalDAV error conditions matching [CalError] in caldav.zig. *)
-type cal_error =
-  | Valid_calendar_data | No_resource_type_change
-  | Supported_component_mismatch | Max_resource_size | Uid_conflict
-  | Precondition_failed
-
-(** Server lifecycle states matching [ServerState] in caldav.zig. *)
-type server_state = Idle | Bound | Serving | Scheduling | Shutdown
-
-(** Convert a [component_type] to its ABI tag value. *)
 let component_type_to_tag = function
   | Vevent -> 0 | Vtodo -> 1 | Vjournal -> 2 | Vfreebusy -> 3
 
-(** Decode a [component_type] from its ABI tag value. *)
 let component_type_of_tag = function
   | 0 -> Some Vevent | 1 -> Some Vtodo | 2 -> Some Vjournal
   | 3 -> Some Vfreebusy | _ -> None
 
-(** Convert a [cal_method] to its ABI tag value. *)
+(** CalMethod matching [CalMethod] in caldav.zig. *)
+type cal_method =
+  | Get  (** GET (tag 0). *)
+  | Put  (** PUT (tag 1). *)
+  | Delete  (** DELETE (tag 2). *)
+  | Propfind  (** PROPFIND (tag 3). *)
+  | Proppatch  (** PROPPATCH (tag 4). *)
+  | Report  (** REPORT (tag 5). *)
+  | Mkcalendar  (** MKCALENDAR (tag 6). *)
+
 let cal_method_to_tag = function
   | Get -> 0 | Put -> 1 | Delete -> 2 | Propfind -> 3 | Proppatch -> 4
   | Report -> 5 | Mkcalendar -> 6
 
-(** Decode a [cal_method] from its ABI tag value. *)
 let cal_method_of_tag = function
   | 0 -> Some Get | 1 -> Some Put | 2 -> Some Delete | 3 -> Some Propfind
   | 4 -> Some Proppatch | 5 -> Some Report | 6 -> Some Mkcalendar
   | _ -> None
 
-(** Convert a [schedule_status] to its ABI tag value. *)
+(** ScheduleStatus matching [ScheduleStatus] in caldav.zig. *)
+type schedule_status =
+  | NeedsAction  (** NeedsAction (tag 0). *)
+  | Accepted  (** Accepted (tag 1). *)
+  | Declined  (** Declined (tag 2). *)
+  | Tentative  (** Tentative (tag 3). *)
+  | Delegated  (** Delegated (tag 4). *)
+
 let schedule_status_to_tag = function
-  | Needs_action -> 0 | Accepted -> 1 | Declined -> 2 | Tentative -> 3
+  | NeedsAction -> 0 | Accepted -> 1 | Declined -> 2 | Tentative -> 3
   | Delegated -> 4
 
-(** Decode a [schedule_status] from its ABI tag value. *)
 let schedule_status_of_tag = function
-  | 0 -> Some Needs_action | 1 -> Some Accepted | 2 -> Some Declined
+  | 0 -> Some NeedsAction | 1 -> Some Accepted | 2 -> Some Declined
   | 3 -> Some Tentative | 4 -> Some Delegated | _ -> None
 
-(** Convert a [cal_error] to its ABI tag value. *)
+(** CalError matching [CalError] in caldav.zig. *)
+type cal_error =
+  | ValidCalendarData  (** ValidCalendarData (tag 0). *)
+  | NoResourceTypeChange  (** NoResourceTypeChange (tag 1). *)
+  | SupportedComponentMismatch  (** SupportedComponentMismatch (tag 2). *)
+  | MaxResourceSize  (** MaxResourceSize (tag 3). *)
+  | UidConflict  (** UidConflict (tag 4). *)
+  | PreconditionFailed  (** PreconditionFailed (tag 5). *)
+
 let cal_error_to_tag = function
-  | Valid_calendar_data -> 0 | No_resource_type_change -> 1
-  | Supported_component_mismatch -> 2 | Max_resource_size -> 3
-  | Uid_conflict -> 4 | Precondition_failed -> 5
+  | ValidCalendarData -> 0 | NoResourceTypeChange -> 1
+  | SupportedComponentMismatch -> 2 | MaxResourceSize -> 3
+  | UidConflict -> 4 | PreconditionFailed -> 5
 
-(** Decode a [cal_error] from its ABI tag value. *)
 let cal_error_of_tag = function
-  | 0 -> Some Valid_calendar_data | 1 -> Some No_resource_type_change
-  | 2 -> Some Supported_component_mismatch | 3 -> Some Max_resource_size
-  | 4 -> Some Uid_conflict | 5 -> Some Precondition_failed | _ -> None
+  | 0 -> Some ValidCalendarData | 1 -> Some NoResourceTypeChange
+  | 2 -> Some SupportedComponentMismatch | 3 -> Some MaxResourceSize
+  | 4 -> Some UidConflict | 5 -> Some PreconditionFailed | _ -> None
 
-(** Convert a [server_state] to its ABI tag value. *)
+(** ServerState matching [ServerState] in caldav.zig. *)
+type server_state =
+  | Idle  (** Idle (tag 0). *)
+  | Bound  (** Bound (tag 1). *)
+  | Serving  (** Serving (tag 2). *)
+  | Scheduling  (** Scheduling (tag 3). *)
+  | Shutdown  (** Shutdown (tag 4). *)
+
 let server_state_to_tag = function
   | Idle -> 0 | Bound -> 1 | Serving -> 2 | Scheduling -> 3 | Shutdown -> 4
 
-(** Decode a [server_state] from its ABI tag value. *)
 let server_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some Bound | 2 -> Some Serving
   | 3 -> Some Scheduling | 4 -> Some Shutdown | _ -> None
@@ -82,20 +94,18 @@ let server_state_of_tag = function
 external c_caldav_abi_version : unit -> int = "caldav_abi_version"
 external c_caldav_create_context : unit -> int = "caldav_create_context"
 external c_caldav_destroy_context : int -> unit = "caldav_destroy_context"
+external c_caldav_state : int -> int = "caldav_state"
 external c_caldav_can_transition : int -> int -> int = "caldav_can_transition"
 
 (* --- Safe wrappers --- *)
 
-(** Return the ABI version of the linked [libproven_caldav]. *)
 let abi_version () = c_caldav_abi_version ()
 
-(** Create a new CalDAV context. *)
-let create_context () =
-  Proven_error.from_slot (c_caldav_create_context ())
+let create_context () = Proven_error.from_slot (c_caldav_create_context ())
 
-(** Destroy a CalDAV context, releasing its slot. *)
 let destroy_context slot = c_caldav_destroy_context slot
 
-(** Stateless query: check whether a server state transition is valid. *)
+let get_state slot = server_state_of_tag (c_caldav_state slot)
+
 let can_transition ~from ~to_ =
   c_caldav_can_transition (server_state_to_tag from) (server_state_to_tag to_) = 1

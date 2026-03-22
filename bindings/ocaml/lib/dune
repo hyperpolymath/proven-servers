@@ -5,11 +5,55 @@
  (name proven_servers)
  (public_name proven_servers)
  (c_library_flags
-  (-lproven_httpd -lproven_dns -lproven_smtp -lproven_ftp
-   -lproven_ssh_bastion -lproven_mqtt -lproven_grpc
-   -lproven_graphql -lproven_tls -lproven_firewall))
+  (-lproven_agentic -lproven_airgap -lproven_amqp -lproven_apiserver
+   -lproven_appserver -lproven_authserver -lproven_backup -lproven_bfd
+   -lproven_bgp -lproven_ca -lproven_cache -lproven_caldav
+   -lproven_carddav -lproven_chat -lproven_coap -lproven_configmgmt
+   -lproven_container -lproven_ctlog -lproven_dbserver -lproven_dds
+   -lproven_deception -lproven_dhcp -lproven_diode -lproven_dns
+   -lproven_doh -lproven_doq -lproven_dot -lproven_federation
+   -lproven_fileserver -lproven_firewall -lproven_ftp -lproven_gameserver
+   -lproven_git -lproven_graphdb -lproven_graphql -lproven_grpc
+   -lproven_hardened -lproven_honeypot -lproven_http -lproven_httpd
+   -lproven_ids -lproven_imap -lproven_irc -lproven_kerberos
+   -lproven_kms -lproven_ldap -lproven_ldp -lproven_loadbalancer
+   -lproven_logcollector -lproven_lpd -lproven_mcp -lproven_mdns
+   -lproven_media -lproven_metrics -lproven_modbus -lproven_monitor
+   -lproven_mqtt -lproven_nesy -lproven_netconf -lproven_neurosym
+   -lproven_nfs -lproven_ntp -lproven_nts -lproven_objectstore
+   -lproven_ocsp -lproven_odns -lproven_opcua -lproven_ospf
+   -lproven_pop3 -lproven_pqc -lproven_proxy -lproven_ptp
+   -lproven_radius -lproven_rtsp -lproven_sandbox -lproven_sdn
+   -lproven_semweb -lproven_siem -lproven_smb -lproven_smtp
+   -lproven_snmp -lproven_socks -lproven_sparql -lproven_ssh
+   -lproven_ssh_bastion -lproven_stun -lproven_syslog -lproven_tacacs
+   -lproven_telnet -lproven_tftp -lproven_tls -lproven_triplestore
+   -lproven_virt -lproven_voip -lproven_vpn -lproven_wasm
+   -lproven_webdav -lproven_websocket -lproven_xmpp -lproven_zerotrust))
  (modules
   proven_servers proven_error
-  proven_httpd proven_dns proven_smtp proven_ftp
-  proven_ssh_bastion proven_mqtt proven_grpc
-  proven_graphql proven_tls proven_firewall))
+  proven_agentic proven_airgap proven_amqp proven_apiserver
+  proven_appserver proven_authserver proven_backup proven_bfd
+  proven_bgp proven_ca proven_cache proven_caldav
+  proven_carddav proven_chat proven_coap proven_configmgmt
+  proven_container proven_ctlog proven_dbserver proven_dds
+  proven_deception proven_dhcp proven_diode proven_dns
+  proven_doh proven_doq proven_dot proven_federation
+  proven_fileserver proven_firewall proven_ftp proven_gameserver
+  proven_git proven_graphdb proven_graphql proven_grpc
+  proven_hardened proven_honeypot proven_http proven_httpd
+  proven_ids proven_imap proven_irc proven_kerberos
+  proven_kms proven_ldap proven_ldp proven_loadbalancer
+  proven_logcollector proven_lpd proven_mcp proven_mdns
+  proven_media proven_metrics proven_modbus proven_monitor
+  proven_mqtt proven_nesy proven_netconf proven_neurosym
+  proven_nfs proven_ntp proven_nts proven_objectstore
+  proven_ocsp proven_odns proven_opcua proven_ospf
+  proven_pop3 proven_pqc proven_proxy proven_ptp
+  proven_radius proven_rtsp proven_sandbox proven_sdn
+  proven_semweb proven_siem proven_smb proven_smtp
+  proven_snmp proven_socks proven_sparql proven_ssh
+  proven_ssh_bastion proven_stun proven_syslog proven_tacacs
+  proven_telnet proven_tftp proven_tls proven_triplestore
+  proven_virt proven_voip proven_vpn proven_wasm
+  proven_webdav proven_websocket proven_xmpp proven_zerotrust))

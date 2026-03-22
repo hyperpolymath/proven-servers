@@ -4,71 +4,83 @@
 (** CoAP (Constrained Application Protocol) bindings for proven-servers.
 
     Wraps the C-ABI functions from
-    [protocols/proven-coap/ffi/zig/src/coap.zig]. Provides OCaml variant
-    types matching the Idris2 ABI enums for CoAP methods, message types,
-    content formats, response classes, and session states. *)
+    [protocols/proven-coap/ffi/zig/src/coap.zig]. *)
 
-(** CoAP methods matching [Method] in coap.zig. *)
-type method_ = Get | Post | Put | Delete
+(** Method matching [Method] in coap.zig. *)
+type method_ =
+  | Get  (** GET (tag 0). *)
+  | Post  (** POST (tag 1). *)
+  | Put  (** PUT (tag 2). *)
+  | Delete  (** DELETE (tag 3). *)
 
-(** CoAP message types matching [MessageType] in coap.zig. *)
-type message_type = Confirmable | Non_confirmable | Acknowledgement | Reset
-
-(** Content formats matching [ContentFormat] in coap.zig. *)
-type content_format =
-  | Text_plain | Link_format | Xml | Octet_stream | Exi | Json | Cbor
-
-(** Response classes matching [ResponseClass] in coap.zig. *)
-type response_class = Success | Client_error | Server_error | Signaling | Empty
-
-(** Session lifecycle states matching [SessionState] in coap.zig. *)
-type session_state = Idle | Bound | Serving | Observing | Shutdown
-
-(** Convert a [method_] to its ABI tag value. *)
 let method_to_tag = function
   | Get -> 0 | Post -> 1 | Put -> 2 | Delete -> 3
 
-(** Decode a [method_] from its ABI tag value. *)
 let method_of_tag = function
   | 0 -> Some Get | 1 -> Some Post | 2 -> Some Put | 3 -> Some Delete
   | _ -> None
 
-(** Convert a [message_type] to its ABI tag value. *)
+(** MessageType matching [MessageType] in coap.zig. *)
+type message_type =
+  | Confirmable  (** CON (tag 0). *)
+  | NonConfirmable  (** NON (tag 1). *)
+  | Acknowledgement  (** ACK (tag 2). *)
+  | Reset  (** RST (tag 3). *)
+
 let message_type_to_tag = function
-  | Confirmable -> 0 | Non_confirmable -> 1 | Acknowledgement -> 2
+  | Confirmable -> 0 | NonConfirmable -> 1 | Acknowledgement -> 2
   | Reset -> 3
 
-(** Decode a [message_type] from its ABI tag value. *)
 let message_type_of_tag = function
-  | 0 -> Some Confirmable | 1 -> Some Non_confirmable
+  | 0 -> Some Confirmable | 1 -> Some NonConfirmable
   | 2 -> Some Acknowledgement | 3 -> Some Reset | _ -> None
 
-(** Convert a [content_format] to its ABI tag value. *)
+(** ContentFormat matching [ContentFormat] in coap.zig. *)
+type content_format =
+  | TextPlain  (** text/plain (tag 0). *)
+  | LinkFormat  (** application/link-format (tag 1). *)
+  | Xml  (** application/xml (tag 2). *)
+  | OctetStream  (** application/octet-stream (tag 3). *)
+  | Exi  (** application/exi (tag 4). *)
+  | Json  (** application/json (tag 5). *)
+  | Cbor  (** application/cbor (tag 6). *)
+
 let content_format_to_tag = function
-  | Text_plain -> 0 | Link_format -> 1 | Xml -> 2 | Octet_stream -> 3
+  | TextPlain -> 0 | LinkFormat -> 1 | Xml -> 2 | OctetStream -> 3
   | Exi -> 4 | Json -> 5 | Cbor -> 6
 
-(** Decode a [content_format] from its ABI tag value. *)
 let content_format_of_tag = function
-  | 0 -> Some Text_plain | 1 -> Some Link_format | 2 -> Some Xml
-  | 3 -> Some Octet_stream | 4 -> Some Exi | 5 -> Some Json
+  | 0 -> Some TextPlain | 1 -> Some LinkFormat | 2 -> Some Xml
+  | 3 -> Some OctetStream | 4 -> Some Exi | 5 -> Some Json
   | 6 -> Some Cbor | _ -> None
 
-(** Convert a [response_class] to its ABI tag value. *)
+(** ResponseClass matching [ResponseClass] in coap.zig. *)
+type response_class =
+  | Success  (** 2.xx Success (tag 0). *)
+  | ClientError  (** 4.xx Client Error (tag 1). *)
+  | ServerError  (** 5.xx Server Error (tag 2). *)
+  | Signaling  (** 7.xx Signaling (tag 3). *)
+  | Empty  (** Empty (tag 4). *)
+
 let response_class_to_tag = function
-  | Success -> 0 | Client_error -> 1 | Server_error -> 2 | Signaling -> 3
+  | Success -> 0 | ClientError -> 1 | ServerError -> 2 | Signaling -> 3
   | Empty -> 4
 
-(** Decode a [response_class] from its ABI tag value. *)
 let response_class_of_tag = function
-  | 0 -> Some Success | 1 -> Some Client_error | 2 -> Some Server_error
+  | 0 -> Some Success | 1 -> Some ClientError | 2 -> Some ServerError
   | 3 -> Some Signaling | 4 -> Some Empty | _ -> None
 
-(** Convert a [session_state] to its ABI tag value. *)
+(** SessionState matching [SessionState] in coap.zig. *)
+type session_state =
+  | Idle  (** Idle (tag 0). *)
+  | Bound  (** Bound (tag 1). *)
+  | Serving  (** Serving (tag 2). *)
+  | Observing  (** Observing (tag 3). *)
+  | Shutdown  (** Shutdown (tag 4). *)
+
 let session_state_to_tag = function
   | Idle -> 0 | Bound -> 1 | Serving -> 2 | Observing -> 3 | Shutdown -> 4
 
-(** Decode a [session_state] from its ABI tag value. *)
 let session_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some Bound | 2 -> Some Serving
   | 3 -> Some Observing | 4 -> Some Shutdown | _ -> None
@@ -78,20 +90,18 @@ let session_state_of_tag = function
 external c_coap_abi_version : unit -> int = "coap_abi_version"
 external c_coap_create_context : unit -> int = "coap_create_context"
 external c_coap_destroy_context : int -> unit = "coap_destroy_context"
+external c_coap_state : int -> int = "coap_state"
 external c_coap_can_transition : int -> int -> int = "coap_can_transition"
 
 (* --- Safe wrappers --- *)
 
-(** Return the ABI version of the linked [libproven_coap]. *)
 let abi_version () = c_coap_abi_version ()
 
-(** Create a new CoAP context. *)
-let create_context () =
-  Proven_error.from_slot (c_coap_create_context ())
+let create_context () = Proven_error.from_slot (c_coap_create_context ())
 
-(** Destroy a CoAP context, releasing its slot. *)
 let destroy_context slot = c_coap_destroy_context slot
 
-(** Stateless query: check whether a session state transition is valid. *)
+let get_state slot = session_state_of_tag (c_coap_state slot)
+
 let can_transition ~from ~to_ =
   c_coap_can_transition (session_state_to_tag from) (session_state_to_tag to_) = 1
