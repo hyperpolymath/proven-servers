@@ -1,0 +1,19 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Idris2 package manifest for proven-typed-frame-router
+
+package proven-typed-frame-router
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Formally verified typed frame-level router with zero-copy splice"
+
+sourcedir = "src"
+
+modules = TypedFrameRouter
+        , TypedFrameRouter.Types
+        , TypedFrameRouterABI
+        , TypedFrameRouterABI.Layout
+        , TypedFrameRouterABI.Transitions
+        , TypedFrameRouterABI.Foreign
+        , TypedFrameRouterABI.Proofs
+
+depends = base

@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
-// groove_proxy.zig — Zig FFI implementation of the Groove frame-level proxy.
+// typed_frame_router.zig — Zig FFI implementation of the Typed Frame Router.
 //
-// Accepts IPv4 TCP connections and transparently splices them to an IPv6
-// target endpoint. On Linux, uses splice(2) for zero-copy in-kernel
-// transfer. On other platforms, falls back to a 4KB userspace buffer.
+// General-purpose frame-level proxy that accepts connections on one protocol
+// family and transparently splices them to another. The primary use case is
+// IPv4→IPv6 translation (Groove Proxy), but the architecture supports any
+// frame translation: FibreChannel, iSCSI, InfiniBand, BLE, raw frames.
+//
+// On Linux, uses splice(2) for zero-copy in-kernel transfer.
+// On other platforms, falls back to a 4KB userspace buffer.
 //
 // This implements the C-compatible interface declared in Foreign.idr.
 // Every function here matches a %foreign declaration in the Idris2 ABI.
@@ -175,8 +179,8 @@ threadlocal var error_len: usize = 0;
 var global_server: ?ProxyServer = null;
 
 /// Start the proxy server.
-/// C signature: ProxyHandle groove_proxy_start(const char*, uint16_t, const char*, uint16_t)
-export fn groove_proxy_start(
+/// C signature: ProxyHandle typed_frame_router_start(const char*, uint16_t, const char*, uint16_t)
+export fn typed_frame_router_start(
     ipv4_addr: [*:0]const u8,
     ipv4_port: u16,
     ipv6_addr: [*:0]const u8,
@@ -203,8 +207,8 @@ export fn groove_proxy_start(
 }
 
 /// Stop the proxy server.
-/// C signature: void groove_proxy_stop(ProxyHandle)
-export fn groove_proxy_stop(_: i64) callconv(.C) void {
+/// C signature: void typed_frame_router_stop(ProxyHandle)
+export fn typed_frame_router_stop(_: i64) callconv(.C) void {
     if (global_server) |*server| {
         server.deinit();
         if (server.accept_thread) |t| t.join();
@@ -213,8 +217,8 @@ export fn groove_proxy_stop(_: i64) callconv(.C) void {
 }
 
 /// Get proxy statistics as JSON.
-/// C signature: const char* groove_proxy_stats(ProxyHandle)
-export fn groove_proxy_stats(_: i64) callconv(.C) [*:0]const u8 {
+/// C signature: const char* typed_frame_router_stats(ProxyHandle)
+export fn typed_frame_router_stats(_: i64) callconv(.C) [*:0]const u8 {
     // Return a static JSON string with current stats
     // In production this would be dynamically formatted
     if (global_server) |server| {
@@ -225,14 +229,14 @@ export fn groove_proxy_stats(_: i64) callconv(.C) [*:0]const u8 {
 }
 
 /// Check if splice(2) is available.
-/// C signature: uint8_t groove_proxy_has_splice(void)
-export fn groove_proxy_has_splice() callconv(.C) u8 {
+/// C signature: uint8_t typed_frame_router_has_splice(void)
+export fn typed_frame_router_has_splice() callconv(.C) u8 {
     return if (detectSplice()) 1 else 0;
 }
 
 /// Get active connection count.
-/// C signature: uint32_t groove_proxy_active_count(ProxyHandle)
-export fn groove_proxy_active_count(_: i64) callconv(.C) u32 {
+/// C signature: uint32_t typed_frame_router_active_count(ProxyHandle)
+export fn typed_frame_router_active_count(_: i64) callconv(.C) u32 {
     if (global_server) |server| {
         return server.active_count.load(.acquire);
     }

@@ -1,15 +1,15 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- GrooveProxyABI.Transitions: State machine proofs for proxy connections.
+-- TypedFrameRouterABI.Transitions: State machine proofs for routed connections.
 --
 -- The ValidTransition GADT defines exactly which state transitions are
 -- allowed. Impossibility proofs guarantee that invalid transitions
 -- (e.g. splicing before connecting) cannot be expressed.
 
-module GrooveProxyABI.Transitions
+module TypedFrameRouterABI.Transitions
 
-import GrooveProxy.Types
+import TypedFrameRouter.Types
 
 %default total
 
@@ -17,7 +17,7 @@ import GrooveProxy.Types
 -- Impossibility proofs: invalid transitions are uninhabited
 ---------------------------------------------------------------------------
 
-||| You cannot splice without first connecting to IPv6.
+||| You cannot splice without first connecting to the destination.
 public export
 cannotSpliceFromIdle : ValidTransition Idle Splicing -> Void
 cannotSpliceFromIdle _ impossible
@@ -46,11 +46,11 @@ cannotDrainFromIdle _ impossible
 -- Decidability: for any two states, we can decide if a transition exists
 ---------------------------------------------------------------------------
 
-||| Decide whether a valid transition exists between two proxy states.
+||| Decide whether a valid transition exists between two router states.
 public export
-decideTransition : (from : ProxyState) -> (to : ProxyState) -> Dec (ValidTransition from to)
-decideTransition Idle Accepted       = Yes AcceptIPv4
-decideTransition Accepted Connected  = Yes ConnectIPv6
+decideTransition : (from : RouterState) -> (to : RouterState) -> Dec (ValidTransition from to)
+decideTransition Idle Accepted       = Yes AcceptSource
+decideTransition Accepted Connected  = Yes ConnectDest
 decideTransition Accepted Closed     = Yes DirectClose
 decideTransition Connected Splicing  = Yes BeginSplice
 decideTransition Splicing Draining   = Yes HalfClose
@@ -87,9 +87,9 @@ decideTransition Closed _            = No cannotReopenClosed
 ---------------------------------------------------------------------------
 
 ||| From any non-Closed state, there exists a path to Closed.
-||| This proves the proxy never gets stuck — every connection terminates.
+||| This proves the router never gets stuck — every connection terminates.
 public export
-data PathToClosed : ProxyState -> Type where
+data PathToClosed : RouterState -> Type where
   AlreadyClosed : PathToClosed Closed
   FromDraining  : PathToClosed Draining
   FromSplicing  : PathToClosed Splicing
@@ -99,7 +99,7 @@ data PathToClosed : ProxyState -> Type where
 
 ||| Every state has a path to Closed.
 public export
-pathExists : (s : ProxyState) -> PathToClosed s
+pathExists : (s : RouterState) -> PathToClosed s
 pathExists Idle      = FromIdle
 pathExists Accepted  = FromAccepted
 pathExists Connected = FromConnected
