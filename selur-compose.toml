@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# Stapeln selur-compose.toml — Proven Servers
+# Idris2 ABI + Zig FFI formally verified server library
+
+[project]
+name = "proven-servers"
+
+[services.app]
+build = { context = ".", dockerfile = "Containerfile" }
+restart = "unless-stopped"
+networks = ["default"]
+
+healthcheck = { test = "/usr/local/bin/proven_servers --version || exit 1", interval = "30s", timeout = "5s", start_period = "5s", retries = 3 }
+
+[services.app.labels]
+"org.opencontainers.image.title" = "Proven Servers"
+"org.opencontainers.image.description" = "Formally verified server library (Idris2 ABI + Zig FFI)"
+
+[networks.default]
+driver = "bridge"
