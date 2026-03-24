@@ -1,45 +1,50 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | KMS protocol types for proven-servers.
+-- | Key Management Service types for the proven-servers ABI.
 --
--- Key Management Service types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Kms
-  ( -- * ADT types matching Idris2 ABI
-      ObjectType(..)
-    , Operation(..)
-    , KeyState(..)
-    , KmsAlgorithm(..)
-    , objectTypeToTag
-    , objectTypeFromTag
-    , operationToTag
-    , operationFromTag
-    , keyStateToTag
-    , keyStateFromTag
-    , kmsAlgorithmToTag
-    , kmsAlgorithmFromTag
+  (
+    kmsPort
+  , ObjectType(..)
+  , objectTypeToTag
+  , objectTypeFromTag
+  , Operation(..)
+  , operationToTag
+  , operationFromTag
+  , isCryptoOp
+  , isLifecycleOp
+  , KeyState(..)
+  , keyStateToTag
+  , keyStateFromTag
+  , isUsable
+  , KmsAlgorithm(..)
+  , kmsAlgorithmToTag
+  , kmsAlgorithmFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard KMIP port.
+kmsPort :: Word16
+kmsPort = 5696
 
 -- ---------------------------------------------------------------------------
 -- ObjectType
 -- ---------------------------------------------------------------------------
 
--- | ObjectType type matching the Idris2 ABI.
+-- | Standard KMIP port.
 --
 -- Tags 0-5 (6 constructors).
 data ObjectType
-  = SymmetricKey  -- ^ Tag 0.
-  | PublicKey  -- ^ Tag 1.
-  | PrivateKey  -- ^ Tag 2.
-  | SecretData  -- ^ Tag 3.
-  | Certificate  -- ^ Tag 4.
-  | OpaqueData  -- ^ Tag 5.
+  = SymmetricKey  -- ^ SymmetricKey (tag 0).
+  | PublicKey  -- ^ PublicKey (tag 1).
+  | PrivateKey  -- ^ PrivateKey (tag 2).
+  | SecretData  -- ^ SecretData (tag 3).
+  | Certificate  -- ^ Certificate (tag 4).
+  | OpaqueData  -- ^ OpaqueData (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ObjectType' to its ABI tag value.
@@ -56,25 +61,25 @@ objectTypeFromTag n
 -- Operation
 -- ---------------------------------------------------------------------------
 
--- | Operation type matching the Idris2 ABI.
+-- | KMS operations.
 --
 -- Tags 0-14 (15 constructors).
 data Operation
-  = Create  -- ^ Tag 0.
-  | Get  -- ^ Tag 1.
-  | Activate  -- ^ Tag 2.
-  | Revoke  -- ^ Tag 3.
-  | Destroy  -- ^ Tag 4.
-  | Locate  -- ^ Tag 5.
-  | Register  -- ^ Tag 6.
-  | Rekey  -- ^ Tag 7.
-  | Encrypt  -- ^ Tag 8.
-  | Decrypt  -- ^ Tag 9.
-  | Sign  -- ^ Tag 10.
-  | Verify  -- ^ Tag 11.
-  | Wrap  -- ^ Tag 12.
-  | Unwrap  -- ^ Tag 13.
-  | Mac  -- ^ Tag 14.
+  = Create  -- ^ Create (tag 0).
+  | Get  -- ^ Get (tag 1).
+  | Activate  -- ^ Activate (tag 2).
+  | Revoke  -- ^ Revoke (tag 3).
+  | Destroy  -- ^ Destroy (tag 4).
+  | Locate  -- ^ Locate (tag 5).
+  | Register  -- ^ Register (tag 6).
+  | Rekey  -- ^ Rekey (tag 7).
+  | Encrypt  -- ^ Encrypt (tag 8).
+  | Decrypt  -- ^ Decrypt (tag 9).
+  | Sign  -- ^ Sign (tag 10).
+  | Verify  -- ^ Verify (tag 11).
+  | Wrap  -- ^ Wrap (tag 12).
+  | Unwrap  -- ^ Unwrap (tag 13).
+  | Mac  -- ^ MAC (tag 14).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Operation' to its ABI tag value.
@@ -87,20 +92,40 @@ operationFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Operation)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this is a cryptographic operation.
+isCryptoOp :: Operation -> Bool
+isCryptoOp Encrypt = True
+isCryptoOp Decrypt = True
+isCryptoOp Sign = True
+isCryptoOp Verify = True
+isCryptoOp Wrap = True
+isCryptoOp Unwrap = True
+isCryptoOp Mac = True
+isCryptoOp _ = False
+
+-- | Whether this is a key lifecycle operation.
+isLifecycleOp :: Operation -> Bool
+isLifecycleOp Create = True
+isLifecycleOp Activate = True
+isLifecycleOp Revoke = True
+isLifecycleOp Destroy = True
+isLifecycleOp Rekey = True
+isLifecycleOp _ = False
+
 -- ---------------------------------------------------------------------------
 -- KeyState
 -- ---------------------------------------------------------------------------
 
--- | KeyState type matching the Idris2 ABI.
+-- | Key lifecycle states (KMIP).
 --
 -- Tags 0-5 (6 constructors).
 data KeyState
-  = PreActive  -- ^ Tag 0.
-  | Active  -- ^ Tag 1.
-  | Deactivated  -- ^ Tag 2.
-  | Compromised  -- ^ Tag 3.
-  | Destroyed  -- ^ Tag 4.
-  | DestroyedCompromised  -- ^ Tag 5.
+  = PreActive  -- ^ PreActive (tag 0).
+  | Active  -- ^ Active (tag 1).
+  | Deactivated  -- ^ Deactivated (tag 2).
+  | Compromised  -- ^ Compromised (tag 3).
+  | Destroyed  -- ^ Destroyed (tag 4).
+  | DestroyedCompromised  -- ^ DestroyedCompromised (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'KeyState' to its ABI tag value.
@@ -113,23 +138,28 @@ keyStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: KeyState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether the key can be used for cryptographic operations.
+isUsable :: KeyState -> Bool
+isUsable Active = True
+isUsable _ = False
+
 -- ---------------------------------------------------------------------------
 -- KmsAlgorithm
 -- ---------------------------------------------------------------------------
 
--- | KmsAlgorithm type matching the Idris2 ABI.
+-- | Cryptographic algorithms.
 --
 -- Tags 0-8 (9 constructors).
 data KmsAlgorithm
-  = Aes128  -- ^ Tag 0.
-  | Aes256  -- ^ Tag 1.
-  | Rsa2048  -- ^ Tag 2.
-  | Rsa4096  -- ^ Tag 3.
-  | EcdsaP256  -- ^ Tag 4.
-  | EcdsaP384  -- ^ Tag 5.
-  | Ed25519  -- ^ Tag 6.
-  | Chacha20Poly1305  -- ^ Tag 7.
-  | HmacSha256  -- ^ Tag 8.
+  = Aes128  -- ^ AES-128 (tag 0).
+  | Aes256  -- ^ AES-256 (tag 1).
+  | Rsa2048  -- ^ RSA-2048 (tag 2).
+  | Rsa4096  -- ^ RSA-4096 (tag 3).
+  | EcdsaP256  -- ^ ECDSA P-256 (tag 4).
+  | EcdsaP384  -- ^ ECDSA P-384 (tag 5).
+  | Ed25519  -- ^ Ed25519 (tag 6).
+  | Chacha20Poly1305  -- ^ Chacha20Poly1305 (tag 7).
+  | HmacSha256  -- ^ HMAC-SHA256 (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'KmsAlgorithm' to its ABI tag value.

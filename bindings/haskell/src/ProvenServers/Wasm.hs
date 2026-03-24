@@ -1,24 +1,23 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | WASM protocol types for proven-servers.
+-- | WASM Runtime types for the proven-servers ABI.
 --
--- WebAssembly runtime types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Wasm
-  ( -- * ADT types matching Idris2 ABI
-      ValType(..)
-    , ExternKind(..)
-    , Mutability(..)
-    , valTypeToTag
-    , valTypeFromTag
-    , externKindToTag
-    , externKindFromTag
-    , mutabilityToTag
-    , mutabilityFromTag
+  (
+    ValType(..)
+  , valTypeToTag
+  , valTypeFromTag
+  , isNumeric
+  , isReference
+  , ExternKind(..)
+  , externKindToTag
+  , externKindFromTag
+  , Mutability(..)
+  , mutabilityToTag
+  , mutabilityFromTag
   ) where
 
 import Data.Word (Word8)
@@ -27,17 +26,17 @@ import Data.Word (Word8)
 -- ValType
 -- ---------------------------------------------------------------------------
 
--- | ValType type matching the Idris2 ABI.
+-- | WebAssembly value types.
 --
 -- Tags 0-6 (7 constructors).
 data ValType
-  = I32  -- ^ Tag 0.
-  | I64  -- ^ Tag 1.
-  | F32  -- ^ Tag 2.
-  | F64  -- ^ Tag 3.
-  | V128  -- ^ Tag 4.
-  | FuncRef  -- ^ Tag 5.
-  | ExternRef  -- ^ Tag 6.
+  = I32  -- ^ I32 (tag 0).
+  | I64  -- ^ I64 (tag 1).
+  | F32  -- ^ F32 (tag 2).
+  | F64  -- ^ F64 (tag 3).
+  | V128  -- ^ V128 (tag 4).
+  | FuncRef  -- ^ FuncRef (tag 5).
+  | ExternRef  -- ^ ExternRef (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ValType' to its ABI tag value.
@@ -50,18 +49,32 @@ valTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: ValType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this is a numeric type.
+isNumeric :: ValType -> Bool
+isNumeric I32 = True
+isNumeric I64 = True
+isNumeric F32 = True
+isNumeric F64 = True
+isNumeric _ = False
+
+-- | Whether this is a reference type.
+isReference :: ValType -> Bool
+isReference FuncRef = True
+isReference ExternRef = True
+isReference _ = False
+
 -- ---------------------------------------------------------------------------
 -- ExternKind
 -- ---------------------------------------------------------------------------
 
--- | ExternKind type matching the Idris2 ABI.
+-- | WebAssembly external kinds.
 --
 -- Tags 0-3 (4 constructors).
 data ExternKind
-  = FuncExtern  -- ^ Tag 0.
-  | TableExtern  -- ^ Tag 1.
-  | MemExtern  -- ^ Tag 2.
-  | GlobalExtern  -- ^ Tag 3.
+  = FuncExtern  -- ^ Function (tag 0).
+  | TableExtern  -- ^ Table (tag 1).
+  | MemExtern  -- ^ Memory (tag 2).
+  | GlobalExtern  -- ^ Global (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ExternKind' to its ABI tag value.
@@ -78,12 +91,12 @@ externKindFromTag n
 -- Mutability
 -- ---------------------------------------------------------------------------
 
--- | Mutability type matching the Idris2 ABI.
+-- | WebAssembly global mutability.
 --
 -- Tags 0-1 (2 constructors).
 data Mutability
-  = Immutable  -- ^ Tag 0.
-  | Mutable  -- ^ Tag 1.
+  = Immutable  -- ^ Immutable (tag 0).
+  | Mutable  -- ^ Mutable (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Mutability' to its ABI tag value.

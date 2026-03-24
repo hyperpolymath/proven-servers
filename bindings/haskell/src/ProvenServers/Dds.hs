@@ -1,47 +1,49 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | DDS protocol types for proven-servers.
+-- | DDS types for the proven-servers ABI.
 --
--- DDS (Data Distribution Service) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Dds
-  ( -- * ADT types matching Idris2 ABI
-      ReliabilityKind(..)
-    , DurabilityKind(..)
-    , HistoryKind(..)
-    , OwnershipKind(..)
-    , EntityType(..)
-    , ParticipantState(..)
-    , reliabilityKindToTag
-    , reliabilityKindFromTag
-    , durabilityKindToTag
-    , durabilityKindFromTag
-    , historyKindToTag
-    , historyKindFromTag
-    , ownershipKindToTag
-    , ownershipKindFromTag
-    , entityTypeToTag
-    , entityTypeFromTag
-    , participantStateToTag
-    , participantStateFromTag
+  (
+    ddsDiscoveryPort
+  , ReliabilityKind(..)
+  , reliabilityKindToTag
+  , reliabilityKindFromTag
+  , DurabilityKind(..)
+  , durabilityKindToTag
+  , durabilityKindFromTag
+  , HistoryKind(..)
+  , historyKindToTag
+  , historyKindFromTag
+  , OwnershipKind(..)
+  , ownershipKindToTag
+  , ownershipKindFromTag
+  , EntityType(..)
+  , entityTypeToTag
+  , entityTypeFromTag
+  , ParticipantState(..)
+  , participantStateToTag
+  , participantStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard DDS discovery port.
+ddsDiscoveryPort :: Word16
+ddsDiscoveryPort = 7400
 
 -- ---------------------------------------------------------------------------
 -- ReliabilityKind
 -- ---------------------------------------------------------------------------
 
--- | ReliabilityKind type matching the Idris2 ABI.
+-- | Standard DDS discovery port.
 --
 -- Tags 0-1 (2 constructors).
 data ReliabilityKind
-  = BestEffort  -- ^ Tag 0.
-  | Reliable  -- ^ Tag 1.
+  = BestEffort  -- ^ BestEffort (tag 0).
+  | Reliable  -- ^ Reliable (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ReliabilityKind' to its ABI tag value.
@@ -58,13 +60,13 @@ reliabilityKindFromTag n
 -- DurabilityKind
 -- ---------------------------------------------------------------------------
 
--- | DurabilityKind type matching the Idris2 ABI.
+-- | DDS durability QoS.
 --
--- Tags 1-3 (3 constructors).
+-- Tags 0-3 (3 constructors).
 data DurabilityKind
-  = TransientLocal  -- ^ Tag 1.
-  | Transient  -- ^ Tag 2.
-  | Persistent  -- ^ Tag 3.
+  = TransientLocal  -- ^ Transient-local durability (tag 1).
+  | Transient  -- ^ Transient durability (tag 2).
+  | Persistent  -- ^ Persistent durability (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DurabilityKind' to its ABI tag value.
@@ -81,12 +83,12 @@ durabilityKindFromTag n
 -- HistoryKind
 -- ---------------------------------------------------------------------------
 
--- | HistoryKind type matching the Idris2 ABI.
+-- | DDS history QoS.
 --
 -- Tags 0-1 (2 constructors).
 data HistoryKind
-  = KeepLast  -- ^ Tag 0.
-  | KeepAll  -- ^ Tag 1.
+  = KeepLast  -- ^ KeepLast (tag 0).
+  | KeepAll  -- ^ KeepAll (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HistoryKind' to its ABI tag value.
@@ -103,12 +105,12 @@ historyKindFromTag n
 -- OwnershipKind
 -- ---------------------------------------------------------------------------
 
--- | OwnershipKind type matching the Idris2 ABI.
+-- | DDS ownership QoS.
 --
 -- Tags 0-1 (2 constructors).
 data OwnershipKind
-  = Shared  -- ^ Tag 0.
-  | Exclusive  -- ^ Tag 1.
+  = Shared  -- ^ Shared (tag 0).
+  | Exclusive  -- ^ Exclusive (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'OwnershipKind' to its ABI tag value.
@@ -125,16 +127,16 @@ ownershipKindFromTag n
 -- EntityType
 -- ---------------------------------------------------------------------------
 
--- | EntityType type matching the Idris2 ABI.
+-- | DDS entity types.
 --
 -- Tags 0-5 (6 constructors).
 data EntityType
-  = Participant  -- ^ Tag 0.
-  | Publisher  -- ^ Tag 1.
-  | Subscriber  -- ^ Tag 2.
-  | Topic  -- ^ Tag 3.
-  | DataWriter  -- ^ Tag 4.
-  | DataReader  -- ^ Tag 5.
+  = Participant  -- ^ Participant (tag 0).
+  | Publisher  -- ^ Publisher (tag 1).
+  | Subscriber  -- ^ Subscriber (tag 2).
+  | Topic  -- ^ Topic (tag 3).
+  | DataWriter  -- ^ DataWriter (tag 4).
+  | DataReader  -- ^ DataReader (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'EntityType' to its ABI tag value.
@@ -151,15 +153,15 @@ entityTypeFromTag n
 -- ParticipantState
 -- ---------------------------------------------------------------------------
 
--- | ParticipantState type matching the Idris2 ABI.
+-- | DDS participant states.
 --
 -- Tags 0-4 (5 constructors).
 data ParticipantState
-  = Idle  -- ^ Tag 0.
-  | Joined  -- ^ Tag 1.
-  | Publishing  -- ^ Tag 2.
-  | Subscribing  -- ^ Tag 3.
-  | Leaving  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Joined  -- ^ Joined (tag 1).
+  | Publishing  -- ^ Publishing (tag 2).
+  | Subscribing  -- ^ Subscribing (tag 3).
+  | Leaving  -- ^ Leaving (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ParticipantState' to its ABI tag value.

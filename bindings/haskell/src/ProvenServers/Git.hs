@@ -1,48 +1,50 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Git protocol types for proven-servers.
+-- | Git Server types for the proven-servers ABI.
 --
--- Git smart protocol types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Git
-  ( -- * ADT types matching Idris2 ABI
-      Command(..)
-    , PacketType(..)
-    , RefType(..)
-    , Capability(..)
-    , HookResult(..)
-    , ServerState(..)
-    , commandToTag
-    , commandFromTag
-    , packetTypeToTag
-    , packetTypeFromTag
-    , refTypeToTag
-    , refTypeFromTag
-    , capabilityToTag
-    , capabilityFromTag
-    , hookResultToTag
-    , hookResultFromTag
-    , serverStateToTag
-    , serverStateFromTag
+  (
+    gitPort
+  , Command(..)
+  , commandToTag
+  , commandFromTag
+  , PacketType(..)
+  , packetTypeToTag
+  , packetTypeFromTag
+  , RefType(..)
+  , refTypeToTag
+  , refTypeFromTag
+  , Capability(..)
+  , capabilityToTag
+  , capabilityFromTag
+  , HookResult(..)
+  , hookResultToTag
+  , hookResultFromTag
+  , ServerState(..)
+  , serverStateToTag
+  , serverStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard Git daemon port.
+gitPort :: Word16
+gitPort = 9418
 
 -- ---------------------------------------------------------------------------
 -- Command
 -- ---------------------------------------------------------------------------
 
--- | Command type matching the Idris2 ABI.
+-- | Standard Git daemon port.
 --
 -- Tags 0-2 (3 constructors).
 data Command
-  = UploadPack  -- ^ Tag 0.
-  | ReceivePack  -- ^ Tag 1.
-  | UploadArchive  -- ^ Tag 2.
+  = UploadPack  -- ^ git-upload-pack (tag 0).
+  | ReceivePack  -- ^ git-receive-pack (tag 1).
+  | UploadArchive  -- ^ git-upload-archive (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Command' to its ABI tag value.
@@ -59,18 +61,18 @@ commandFromTag n
 -- PacketType
 -- ---------------------------------------------------------------------------
 
--- | PacketType type matching the Idris2 ABI.
+-- | Git protocol packet types.
 --
 -- Tags 0-7 (8 constructors).
 data PacketType
-  = Flush  -- ^ Tag 0.
-  | Delimiter  -- ^ Tag 1.
-  | ResponseEnd  -- ^ Tag 2.
-  | Data  -- ^ Tag 3.
-  | PktError  -- ^ Tag 4.
-  | SidebandData  -- ^ Tag 5.
-  | SidebandProgress  -- ^ Tag 6.
-  | SidebandError  -- ^ Tag 7.
+  = Flush  -- ^ Flush (tag 0).
+  | Delimiter  -- ^ Delimiter (tag 1).
+  | ResponseEnd  -- ^ ResponseEnd (tag 2).
+  | Data  -- ^ Data (tag 3).
+  | PktError  -- ^ Error packet (tag 4).
+  | SidebandData  -- ^ SidebandData (tag 5).
+  | SidebandProgress  -- ^ SidebandProgress (tag 6).
+  | SidebandError  -- ^ SidebandError (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PacketType' to its ABI tag value.
@@ -87,15 +89,15 @@ packetTypeFromTag n
 -- RefType
 -- ---------------------------------------------------------------------------
 
--- | RefType type matching the Idris2 ABI.
+-- | Git reference types.
 --
 -- Tags 0-4 (5 constructors).
 data RefType
-  = Branch  -- ^ Tag 0.
-  | Tag  -- ^ Tag 1.
-  | Head  -- ^ Tag 2.
-  | Remote  -- ^ Tag 3.
-  | GitNote  -- ^ Tag 4.
+  = Branch  -- ^ Branch (tag 0).
+  | Tag  -- ^ Tag (tag 1).
+  | Head  -- ^ Head (tag 2).
+  | Remote  -- ^ Remote (tag 3).
+  | GitNote  -- ^ Note (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RefType' to its ABI tag value.
@@ -112,19 +114,19 @@ refTypeFromTag n
 -- Capability
 -- ---------------------------------------------------------------------------
 
--- | Capability type matching the Idris2 ABI.
+-- | Git protocol capabilities.
 --
 -- Tags 0-8 (9 constructors).
 data Capability
-  = MultiAck  -- ^ Tag 0.
-  | ThinPack  -- ^ Tag 1.
-  | SideBand64k  -- ^ Tag 2.
-  | OfsDelta  -- ^ Tag 3.
-  | Shallow  -- ^ Tag 4.
-  | DeepenSince  -- ^ Tag 5.
-  | DeepenNot  -- ^ Tag 6.
-  | FilterSpec  -- ^ Tag 7.
-  | ObjectFormat  -- ^ Tag 8.
+  = MultiAck  -- ^ MultiAck (tag 0).
+  | ThinPack  -- ^ ThinPack (tag 1).
+  | SideBand64k  -- ^ SideBand64k (tag 2).
+  | OfsDelta  -- ^ OFS-delta (tag 3).
+  | Shallow  -- ^ Shallow (tag 4).
+  | DeepenSince  -- ^ DeepenSince (tag 5).
+  | DeepenNot  -- ^ DeepenNot (tag 6).
+  | FilterSpec  -- ^ FilterSpec (tag 7).
+  | ObjectFormat  -- ^ ObjectFormat (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Capability' to its ABI tag value.
@@ -141,12 +143,12 @@ capabilityFromTag n
 -- HookResult
 -- ---------------------------------------------------------------------------
 
--- | HookResult type matching the Idris2 ABI.
+-- | Git hook results.
 --
 -- Tags 0-1 (2 constructors).
 data HookResult
-  = Accept  -- ^ Tag 0.
-  | Reject  -- ^ Tag 1.
+  = Accept  -- ^ Accept (tag 0).
+  | Reject  -- ^ Reject (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HookResult' to its ABI tag value.
@@ -163,15 +165,15 @@ hookResultFromTag n
 -- ServerState
 -- ---------------------------------------------------------------------------
 
--- | ServerState type matching the Idris2 ABI.
+-- | Git server states.
 --
 -- Tags 0-4 (5 constructors).
 data ServerState
-  = Idle  -- ^ Tag 0.
-  | Discovery  -- ^ Tag 1.
-  | Negotiating  -- ^ Tag 2.
-  | Transfer  -- ^ Tag 3.
-  | Shutdown  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Discovery  -- ^ Discovery (tag 1).
+  | Negotiating  -- ^ Negotiating (tag 2).
+  | Transfer  -- ^ Transfer (tag 3).
+  | Shutdown  -- ^ Shutdown (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ServerState' to its ABI tag value.

@@ -1,61 +1,68 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | CA protocol types for proven-servers.
+-- | Certificate Authority types for the proven-servers ABI.
 --
--- Certificate Authority / PKI types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Ca
-  ( -- * ADT types matching Idris2 ABI
-      CertType(..)
-    , KeyAlgorithm(..)
-    , SignatureAlgorithm(..)
-    , CertState(..)
-    , RevocationReason(..)
-    , CrlStatus(..)
-    , OcspStatus(..)
-    , Extension(..)
-    , KeyUsageBit(..)
-    , certTypeToTag
-    , certTypeFromTag
-    , keyAlgorithmToTag
-    , keyAlgorithmFromTag
-    , signatureAlgorithmToTag
-    , signatureAlgorithmFromTag
-    , certStateToTag
-    , certStateFromTag
-    , revocationReasonToTag
-    , revocationReasonFromTag
-    , crlStatusToTag
-    , crlStatusFromTag
-    , ocspStatusToTag
-    , ocspStatusFromTag
-    , extensionToTag
-    , extensionFromTag
-    , keyUsageBitToTag
-    , keyUsageBitFromTag
+  (
+    caPort
+  , CertType(..)
+  , certTypeToTag
+  , certTypeFromTag
+  , isCa
+  , KeyAlgorithm(..)
+  , keyAlgorithmToTag
+  , keyAlgorithmFromTag
+  , isRsa
+  , isEllipticCurve
+  , SignatureAlgorithm(..)
+  , signatureAlgorithmToTag
+  , signatureAlgorithmFromTag
+  , CertState(..)
+  , certStateToTag
+  , certStateFromTag
+  , isUsable
+  , RevocationReason(..)
+  , revocationReasonToTag
+  , revocationReasonFromTag
+  , isSecurityIncident
+  , CrlStatus(..)
+  , crlStatusToTag
+  , crlStatusFromTag
+  , OcspStatus(..)
+  , ocspStatusToTag
+  , ocspStatusFromTag
+  , Extension(..)
+  , extensionToTag
+  , extensionFromTag
+  , KeyUsageBit(..)
+  , keyUsageBitToTag
+  , keyUsageBitFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard CA API port.
+caPort :: Word16
+caPort = 8443
 
 -- ---------------------------------------------------------------------------
 -- CertType
 -- ---------------------------------------------------------------------------
 
--- | CertType type matching the Idris2 ABI.
+-- | Standard CA API port.
 --
 -- Tags 0-6 (7 constructors).
 data CertType
-  = Root  -- ^ Tag 0.
-  | Intermediate  -- ^ Tag 1.
-  | EndEntity  -- ^ Tag 2.
-  | CrossSigned  -- ^ Tag 3.
-  | CodeSigning  -- ^ Tag 4.
-  | EmailProtection  -- ^ Tag 5.
-  | OcspSigning  -- ^ Tag 6.
+  = Root  -- ^ Root (tag 0).
+  | Intermediate  -- ^ Intermediate (tag 1).
+  | EndEntity  -- ^ EndEntity (tag 2).
+  | CrossSigned  -- ^ CrossSigned (tag 3).
+  | CodeSigning  -- ^ CodeSigning (tag 4).
+  | EmailProtection  -- ^ EmailProtection (tag 5).
+  | OcspSigning  -- ^ OCSP signing (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CertType' to its ABI tag value.
@@ -68,20 +75,27 @@ certTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: CertType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this certificate type is a CA certificate.
+isCa :: CertType -> Bool
+isCa Root = True
+isCa Intermediate = True
+isCa CrossSigned = True
+isCa _ = False
+
 -- ---------------------------------------------------------------------------
 -- KeyAlgorithm
 -- ---------------------------------------------------------------------------
 
--- | KeyAlgorithm type matching the Idris2 ABI.
+-- | Cryptographic key algorithms.
 --
 -- Tags 0-5 (6 constructors).
 data KeyAlgorithm
-  = Rsa2048  -- ^ Tag 0.
-  | Rsa4096  -- ^ Tag 1.
-  | EcdsaP256  -- ^ Tag 2.
-  | EcdsaP384  -- ^ Tag 3.
-  | Ed25519  -- ^ Tag 4.
-  | Ed448  -- ^ Tag 5.
+  = Rsa2048  -- ^ Rsa2048 (tag 0).
+  | Rsa4096  -- ^ Rsa4096 (tag 1).
+  | EcdsaP256  -- ^ ECDSA P-256 (tag 2).
+  | EcdsaP384  -- ^ ECDSA P-384 (tag 3).
+  | Ed25519  -- ^ Ed25519 (tag 4).
+  | Ed448  -- ^ Ed448 (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'KeyAlgorithm' to its ABI tag value.
@@ -94,21 +108,35 @@ keyAlgorithmFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: KeyAlgorithm)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this is an RSA algorithm.
+isRsa :: KeyAlgorithm -> Bool
+isRsa Rsa2048 = True
+isRsa Rsa4096 = True
+isRsa _ = False
+
+-- | Whether this is an elliptic curve algorithm.
+isEllipticCurve :: KeyAlgorithm -> Bool
+isEllipticCurve EcdsaP256 = True
+isEllipticCurve EcdsaP384 = True
+isEllipticCurve Ed25519 = True
+isEllipticCurve Ed448 = True
+isEllipticCurve _ = False
+
 -- ---------------------------------------------------------------------------
 -- SignatureAlgorithm
 -- ---------------------------------------------------------------------------
 
--- | SignatureAlgorithm type matching the Idris2 ABI.
+-- | Cryptographic signature algorithms.
 --
 -- Tags 0-6 (7 constructors).
 data SignatureAlgorithm
-  = Sha256WithRsa  -- ^ Tag 0.
-  | Sha384WithRsa  -- ^ Tag 1.
-  | Sha512WithRsa  -- ^ Tag 2.
-  | Sha256WithEcdsa  -- ^ Tag 3.
-  | Sha384WithEcdsa  -- ^ Tag 4.
-  | PureEd25519  -- ^ Tag 5.
-  | PureEd448  -- ^ Tag 6.
+  = Sha256WithRsa  -- ^ Sha256WithRsa (tag 0).
+  | Sha384WithRsa  -- ^ Sha384WithRsa (tag 1).
+  | Sha512WithRsa  -- ^ Sha512WithRsa (tag 2).
+  | Sha256WithEcdsa  -- ^ Sha256WithEcdsa (tag 3).
+  | Sha384WithEcdsa  -- ^ Sha384WithEcdsa (tag 4).
+  | PureEd25519  -- ^ PureEd25519 (tag 5).
+  | PureEd448  -- ^ PureEd448 (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SignatureAlgorithm' to its ABI tag value.
@@ -125,15 +153,15 @@ signatureAlgorithmFromTag n
 -- CertState
 -- ---------------------------------------------------------------------------
 
--- | CertState type matching the Idris2 ABI.
+-- | Certificate lifecycle states.
 --
 -- Tags 0-4 (5 constructors).
 data CertState
-  = Pending  -- ^ Tag 0.
-  | Active  -- ^ Tag 1.
-  | Revoked  -- ^ Tag 2.
-  | Expired  -- ^ Tag 3.
-  | Suspended  -- ^ Tag 4.
+  = Pending  -- ^ Pending (tag 0).
+  | Active  -- ^ Active (tag 1).
+  | Revoked  -- ^ Revoked (tag 2).
+  | Expired  -- ^ Expired (tag 3).
+  | Suspended  -- ^ Suspended (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CertState' to its ABI tag value.
@@ -146,21 +174,26 @@ certStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: CertState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether the certificate can be used.
+isUsable :: CertState -> Bool
+isUsable Active = True
+isUsable _ = False
+
 -- ---------------------------------------------------------------------------
 -- RevocationReason
 -- ---------------------------------------------------------------------------
 
--- | RevocationReason type matching the Idris2 ABI.
+-- | Certificate revocation reasons (RFC 5280).
 --
 -- Tags 0-6 (7 constructors).
 data RevocationReason
-  = Unspecified  -- ^ Tag 0.
-  | KeyCompromise  -- ^ Tag 1.
-  | CaCompromise  -- ^ Tag 2.
-  | AffiliationChanged  -- ^ Tag 3.
-  | Superseded  -- ^ Tag 4.
-  | CessationOfOperation  -- ^ Tag 5.
-  | CertificateHold  -- ^ Tag 6.
+  = Unspecified  -- ^ Unspecified (tag 0).
+  | KeyCompromise  -- ^ KeyCompromise (tag 1).
+  | CaCompromise  -- ^ CaCompromise (tag 2).
+  | AffiliationChanged  -- ^ AffiliationChanged (tag 3).
+  | Superseded  -- ^ Superseded (tag 4).
+  | CessationOfOperation  -- ^ CessationOfOperation (tag 5).
+  | CertificateHold  -- ^ CertificateHold (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RevocationReason' to its ABI tag value.
@@ -173,18 +206,24 @@ revocationReasonFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: RevocationReason)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this revocation indicates a security incident.
+isSecurityIncident :: RevocationReason -> Bool
+isSecurityIncident KeyCompromise = True
+isSecurityIncident CaCompromise = True
+isSecurityIncident _ = False
+
 -- ---------------------------------------------------------------------------
 -- CrlStatus
 -- ---------------------------------------------------------------------------
 
--- | CrlStatus type matching the Idris2 ABI.
+-- | CRL status.
 --
 -- Tags 0-3 (4 constructors).
 data CrlStatus
-  = Current  -- ^ Tag 0.
-  | CrlExpired  -- ^ Tag 1.
-  | CrlPending  -- ^ Tag 2.
-  | CrlError  -- ^ Tag 3.
+  = Current  -- ^ Current (tag 0).
+  | CrlExpired  -- ^ CrlExpired (tag 1).
+  | CrlPending  -- ^ CrlPending (tag 2).
+  | CrlError  -- ^ CrlError (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CrlStatus' to its ABI tag value.
@@ -201,14 +240,14 @@ crlStatusFromTag n
 -- OcspStatus
 -- ---------------------------------------------------------------------------
 
--- | OcspStatus type matching the Idris2 ABI.
+-- | OCSP response status.
 --
 -- Tags 0-3 (4 constructors).
 data OcspStatus
-  = Good  -- ^ Tag 0.
-  | OcspRevoked  -- ^ Tag 1.
-  | Unknown  -- ^ Tag 2.
-  | Unavailable  -- ^ Tag 3.
+  = Good  -- ^ Good (tag 0).
+  | OcspRevoked  -- ^ OcspRevoked (tag 1).
+  | Unknown  -- ^ Unknown (tag 2).
+  | Unavailable  -- ^ Unavailable (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'OcspStatus' to its ABI tag value.
@@ -225,16 +264,16 @@ ocspStatusFromTag n
 -- Extension
 -- ---------------------------------------------------------------------------
 
--- | Extension type matching the Idris2 ABI.
+-- | X.509 extension types.
 --
 -- Tags 0-5 (6 constructors).
 data Extension
-  = BasicConstraints  -- ^ Tag 0.
-  | KeyUsage  -- ^ Tag 1.
-  | ExtKeyUsage  -- ^ Tag 2.
-  | SubjectAltName  -- ^ Tag 3.
-  | AuthorityInfoAccess  -- ^ Tag 4.
-  | CrlDistributionPoints  -- ^ Tag 5.
+  = BasicConstraints  -- ^ BasicConstraints (tag 0).
+  | KeyUsage  -- ^ KeyUsage (tag 1).
+  | ExtKeyUsage  -- ^ ExtKeyUsage (tag 2).
+  | SubjectAltName  -- ^ SubjectAltName (tag 3).
+  | AuthorityInfoAccess  -- ^ AuthorityInfoAccess (tag 4).
+  | CrlDistributionPoints  -- ^ CrlDistributionPoints (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Extension' to its ABI tag value.
@@ -251,19 +290,19 @@ extensionFromTag n
 -- KeyUsageBit
 -- ---------------------------------------------------------------------------
 
--- | KeyUsageBit type matching the Idris2 ABI.
+-- | Key usage bit flags (RFC 5280).
 --
 -- Tags 0-8 (9 constructors).
 data KeyUsageBit
-  = DigitalSignature  -- ^ Tag 0.
-  | NonRepudiation  -- ^ Tag 1.
-  | KeyEncipherment  -- ^ Tag 2.
-  | DataEncipherment  -- ^ Tag 3.
-  | KeyAgreement  -- ^ Tag 4.
-  | KeyCertSign  -- ^ Tag 5.
-  | CrlSign  -- ^ Tag 6.
-  | EncipherOnly  -- ^ Tag 7.
-  | DecipherOnly  -- ^ Tag 8.
+  = DigitalSignature  -- ^ DigitalSignature (tag 0).
+  | NonRepudiation  -- ^ NonRepudiation (tag 1).
+  | KeyEncipherment  -- ^ KeyEncipherment (tag 2).
+  | DataEncipherment  -- ^ DataEncipherment (tag 3).
+  | KeyAgreement  -- ^ KeyAgreement (tag 4).
+  | KeyCertSign  -- ^ KeyCertSign (tag 5).
+  | CrlSign  -- ^ CrlSign (tag 6).
+  | EncipherOnly  -- ^ EncipherOnly (tag 7).
+  | DecipherOnly  -- ^ DecipherOnly (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'KeyUsageBit' to its ABI tag value.

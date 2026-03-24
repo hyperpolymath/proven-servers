@@ -1,41 +1,43 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | DoQ protocol types for proven-servers.
+-- | DNS-over-QUIC types for the proven-servers ABI.
 --
--- DNS-over-QUIC types (RFC 9250), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Doq
-  ( -- * ADT types matching Idris2 ABI
-      StreamType(..)
-    , ErrorCode(..)
-    , SessionState(..)
-    , ServerState(..)
-    , streamTypeToTag
-    , streamTypeFromTag
-    , errorCodeToTag
-    , errorCodeFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
-    , serverStateToTag
-    , serverStateFromTag
+  (
+    doqPort
+  , StreamType(..)
+  , streamTypeToTag
+  , streamTypeFromTag
+  , ErrorCode(..)
+  , errorCodeToTag
+  , errorCodeFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
+  , ServerState(..)
+  , serverStateToTag
+  , serverStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard DoQ port.
+doqPort :: Word16
+doqPort = 853
 
 -- ---------------------------------------------------------------------------
 -- StreamType
 -- ---------------------------------------------------------------------------
 
--- | StreamType type matching the Idris2 ABI.
+-- | Standard DoQ port.
 --
 -- Tags 0-1 (2 constructors).
 data StreamType
-  = Unidirectional  -- ^ Tag 0.
-  | Bidirectional  -- ^ Tag 1.
+  = Unidirectional  -- ^ Unidirectional (tag 0).
+  | Bidirectional  -- ^ Bidirectional (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StreamType' to its ABI tag value.
@@ -52,14 +54,14 @@ streamTypeFromTag n
 -- ErrorCode
 -- ---------------------------------------------------------------------------
 
--- | ErrorCode type matching the Idris2 ABI.
+-- | DoQ error codes.
 --
 -- Tags 0-3 (4 constructors).
 data ErrorCode
-  = NoError  -- ^ Tag 0.
-  | InternalError  -- ^ Tag 1.
-  | ExcessiveLoad  -- ^ Tag 2.
-  | ProtocolError  -- ^ Tag 3.
+  = NoError  -- ^ NoError (tag 0).
+  | InternalError  -- ^ InternalError (tag 1).
+  | ExcessiveLoad  -- ^ ExcessiveLoad (tag 2).
+  | ProtocolError  -- ^ ProtocolError (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorCode' to its ABI tag value.
@@ -76,15 +78,15 @@ errorCodeFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | DoQ session lifecycle states.
 --
 -- Tags 0-4 (5 constructors).
 data SessionState
-  = Initial  -- ^ Tag 0.
-  | Handshaking  -- ^ Tag 1.
-  | Ready  -- ^ Tag 2.
-  | Draining  -- ^ Tag 3.
-  | Closed  -- ^ Tag 4.
+  = Initial  -- ^ Initial (tag 0).
+  | Handshaking  -- ^ Handshaking (tag 1).
+  | Ready  -- ^ Ready (tag 2).
+  | Draining  -- ^ Draining (tag 3).
+  | Closed  -- ^ Closed (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.
@@ -101,15 +103,15 @@ sessionStateFromTag n
 -- ServerState
 -- ---------------------------------------------------------------------------
 
--- | ServerState type matching the Idris2 ABI.
+-- | DoQ server lifecycle states.
 --
 -- Tags 0-4 (5 constructors).
 data ServerState
-  = Idle  -- ^ Tag 0.
-  | Bound  -- ^ Tag 1.
-  | Listening  -- ^ Tag 2.
-  | Processing  -- ^ Tag 3.
-  | Shutdown  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Bound  -- ^ Bound (tag 1).
+  | Listening  -- ^ Listening (tag 2).
+  | Processing  -- ^ Processing (tag 3).
+  | Shutdown  -- ^ Shutdown (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ServerState' to its ABI tag value.

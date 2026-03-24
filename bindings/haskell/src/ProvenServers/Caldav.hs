@@ -1,46 +1,48 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | CalDAV protocol types for proven-servers.
+-- | CalDAV types for the proven-servers ABI.
 --
--- CalDAV types (RFC 4791), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Caldav
-  ( -- * ADT types matching Idris2 ABI
-      ComponentType(..)
-    , CalMethod(..)
-    , ScheduleStatus(..)
-    , CalError(..)
-    , ServerState(..)
-    , componentTypeToTag
-    , componentTypeFromTag
-    , calMethodToTag
-    , calMethodFromTag
-    , scheduleStatusToTag
-    , scheduleStatusFromTag
-    , calErrorToTag
-    , calErrorFromTag
-    , serverStateToTag
-    , serverStateFromTag
+  (
+    caldavPort
+  , ComponentType(..)
+  , componentTypeToTag
+  , componentTypeFromTag
+  , CalMethod(..)
+  , calMethodToTag
+  , calMethodFromTag
+  , ScheduleStatus(..)
+  , scheduleStatusToTag
+  , scheduleStatusFromTag
+  , CalError(..)
+  , calErrorToTag
+  , calErrorFromTag
+  , ServerState(..)
+  , serverStateToTag
+  , serverStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard CalDAV HTTPS port.
+caldavPort :: Word16
+caldavPort = 443
 
 -- ---------------------------------------------------------------------------
 -- ComponentType
 -- ---------------------------------------------------------------------------
 
--- | ComponentType type matching the Idris2 ABI.
+-- | Standard CalDAV HTTPS port.
 --
 -- Tags 0-3 (4 constructors).
 data ComponentType
-  = Vevent  -- ^ Tag 0.
-  | Vtodo  -- ^ Tag 1.
-  | Vjournal  -- ^ Tag 2.
-  | Vfreebusy  -- ^ Tag 3.
+  = Vevent  -- ^ VEVENT (tag 0).
+  | Vtodo  -- ^ VTODO (tag 1).
+  | Vjournal  -- ^ VJOURNAL (tag 2).
+  | Vfreebusy  -- ^ VFREEBUSY (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ComponentType' to its ABI tag value.
@@ -57,17 +59,17 @@ componentTypeFromTag n
 -- CalMethod
 -- ---------------------------------------------------------------------------
 
--- | CalMethod type matching the Idris2 ABI.
+-- | CalDAV methods.
 --
 -- Tags 0-6 (7 constructors).
 data CalMethod
-  = Get  -- ^ Tag 0.
-  | Put  -- ^ Tag 1.
-  | Delete  -- ^ Tag 2.
-  | Propfind  -- ^ Tag 3.
-  | Proppatch  -- ^ Tag 4.
-  | Report  -- ^ Tag 5.
-  | Mkcalendar  -- ^ Tag 6.
+  = Get  -- ^ Get (tag 0).
+  | Put  -- ^ Put (tag 1).
+  | Delete  -- ^ Delete (tag 2).
+  | Propfind  -- ^ PROPFIND (tag 3).
+  | Proppatch  -- ^ PROPPATCH (tag 4).
+  | Report  -- ^ REPORT (tag 5).
+  | Mkcalendar  -- ^ MKCALENDAR (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CalMethod' to its ABI tag value.
@@ -84,15 +86,15 @@ calMethodFromTag n
 -- ScheduleStatus
 -- ---------------------------------------------------------------------------
 
--- | ScheduleStatus type matching the Idris2 ABI.
+-- | CalDAV scheduling statuses.
 --
 -- Tags 0-4 (5 constructors).
 data ScheduleStatus
-  = NeedsAction  -- ^ Tag 0.
-  | Accepted  -- ^ Tag 1.
-  | Declined  -- ^ Tag 2.
-  | Tentative  -- ^ Tag 3.
-  | Delegated  -- ^ Tag 4.
+  = NeedsAction  -- ^ NeedsAction (tag 0).
+  | Accepted  -- ^ Accepted (tag 1).
+  | Declined  -- ^ Declined (tag 2).
+  | Tentative  -- ^ Tentative (tag 3).
+  | Delegated  -- ^ Delegated (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ScheduleStatus' to its ABI tag value.
@@ -109,16 +111,16 @@ scheduleStatusFromTag n
 -- CalError
 -- ---------------------------------------------------------------------------
 
--- | CalError type matching the Idris2 ABI.
+-- | CalDAV error codes.
 --
 -- Tags 0-5 (6 constructors).
 data CalError
-  = ValidCalendarData  -- ^ Tag 0.
-  | NoResourceTypeChange  -- ^ Tag 1.
-  | SupportedComponentMismatch  -- ^ Tag 2.
-  | MaxResourceSize  -- ^ Tag 3.
-  | UidConflict  -- ^ Tag 4.
-  | PreconditionFailed  -- ^ Tag 5.
+  = ValidCalendarData  -- ^ ValidCalendarData (tag 0).
+  | NoResourceTypeChange  -- ^ NoResourceTypeChange (tag 1).
+  | SupportedComponentMismatch  -- ^ SupportedComponentMismatch (tag 2).
+  | MaxResourceSize  -- ^ MaxResourceSize (tag 3).
+  | UidConflict  -- ^ UidConflict (tag 4).
+  | PreconditionFailed  -- ^ PreconditionFailed (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CalError' to its ABI tag value.
@@ -135,15 +137,15 @@ calErrorFromTag n
 -- ServerState
 -- ---------------------------------------------------------------------------
 
--- | ServerState type matching the Idris2 ABI.
+-- | CalDAV server lifecycle states.
 --
 -- Tags 0-4 (5 constructors).
 data ServerState
-  = Idle  -- ^ Tag 0.
-  | Bound  -- ^ Tag 1.
-  | Serving  -- ^ Tag 2.
-  | Scheduling  -- ^ Tag 3.
-  | Shutdown  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Bound  -- ^ Bound (tag 1).
+  | Serving  -- ^ Serving (tag 2).
+  | Scheduling  -- ^ Scheduling (tag 3).
+  | Shutdown  -- ^ Shutdown (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ServerState' to its ABI tag value.

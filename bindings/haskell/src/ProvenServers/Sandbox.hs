@@ -1,30 +1,27 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Sandbox protocol types for proven-servers.
+-- | Sandbox types for the proven-servers ABI.
 --
--- Sandbox/isolation types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Sandbox
-  ( -- * ADT types matching Idris2 ABI
-      ExecutionPolicy(..)
-    , ResourceLimit(..)
-    , SandboxState(..)
-    , ExitReason(..)
-    , SyscallPolicy(..)
-    , executionPolicyToTag
-    , executionPolicyFromTag
-    , resourceLimitToTag
-    , resourceLimitFromTag
-    , sandboxStateToTag
-    , sandboxStateFromTag
-    , exitReasonToTag
-    , exitReasonFromTag
-    , syscallPolicyToTag
-    , syscallPolicyFromTag
+  (
+    ExecutionPolicy(..)
+  , executionPolicyToTag
+  , executionPolicyFromTag
+  , ResourceLimit(..)
+  , resourceLimitToTag
+  , resourceLimitFromTag
+  , SandboxState(..)
+  , sandboxStateToTag
+  , sandboxStateFromTag
+  , ExitReason(..)
+  , exitReasonToTag
+  , exitReasonFromTag
+  , SyscallPolicy(..)
+  , syscallPolicyToTag
+  , syscallPolicyFromTag
   ) where
 
 import Data.Word (Word8)
@@ -33,15 +30,15 @@ import Data.Word (Word8)
 -- ExecutionPolicy
 -- ---------------------------------------------------------------------------
 
--- | ExecutionPolicy type matching the Idris2 ABI.
+-- | Sandbox execution policies.
 --
 -- Tags 0-4 (5 constructors).
 data ExecutionPolicy
-  = Unrestricted  -- ^ Tag 0.
-  | ReadOnly  -- ^ Tag 1.
-  | NetworkDenied  -- ^ Tag 2.
-  | Isolated  -- ^ Tag 3.
-  | Ephemeral  -- ^ Tag 4.
+  = Unrestricted  -- ^ Unrestricted (tag 0).
+  | ReadOnly  -- ^ ReadOnly (tag 1).
+  | NetworkDenied  -- ^ NetworkDenied (tag 2).
+  | Isolated  -- ^ Isolated (tag 3).
+  | Ephemeral  -- ^ Ephemeral (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ExecutionPolicy' to its ABI tag value.
@@ -58,16 +55,16 @@ executionPolicyFromTag n
 -- ResourceLimit
 -- ---------------------------------------------------------------------------
 
--- | ResourceLimit type matching the Idris2 ABI.
+-- | Sandbox resource limits.
 --
 -- Tags 0-5 (6 constructors).
 data ResourceLimit
-  = CpuTime  -- ^ Tag 0.
-  | Memory  -- ^ Tag 1.
-  | DiskIo  -- ^ Tag 2.
-  | NetworkIo  -- ^ Tag 3.
-  | FileDescriptors  -- ^ Tag 4.
-  | Processes  -- ^ Tag 5.
+  = CpuTime  -- ^ CPU time (tag 0).
+  | Memory  -- ^ Memory (tag 1).
+  | DiskIo  -- ^ Disk I/O (tag 2).
+  | NetworkIo  -- ^ Network I/O (tag 3).
+  | FileDescriptors  -- ^ FileDescriptors (tag 4).
+  | Processes  -- ^ Processes (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ResourceLimit' to its ABI tag value.
@@ -84,16 +81,16 @@ resourceLimitFromTag n
 -- SandboxState
 -- ---------------------------------------------------------------------------
 
--- | SandboxState type matching the Idris2 ABI.
+-- | Sandbox lifecycle states.
 --
 -- Tags 0-5 (6 constructors).
 data SandboxState
-  = Creating  -- ^ Tag 0.
-  | Ready  -- ^ Tag 1.
-  | Running  -- ^ Tag 2.
-  | Suspended  -- ^ Tag 3.
-  | Terminated  -- ^ Tag 4.
-  | Destroyed  -- ^ Tag 5.
+  = Creating  -- ^ Creating (tag 0).
+  | Ready  -- ^ Ready (tag 1).
+  | Running  -- ^ Running (tag 2).
+  | Suspended  -- ^ Suspended (tag 3).
+  | Terminated  -- ^ Terminated (tag 4).
+  | Destroyed  -- ^ Destroyed (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SandboxState' to its ABI tag value.
@@ -110,16 +107,16 @@ sandboxStateFromTag n
 -- ExitReason
 -- ---------------------------------------------------------------------------
 
--- | ExitReason type matching the Idris2 ABI.
+-- | Sandbox exit reasons.
 --
 -- Tags 0-5 (6 constructors).
 data ExitReason
-  = Normal  -- ^ Tag 0.
-  | Timeout  -- ^ Tag 1.
-  | MemoryExceeded  -- ^ Tag 2.
-  | PolicyViolation  -- ^ Tag 3.
-  | Killed  -- ^ Tag 4.
-  | Error  -- ^ Tag 5.
+  = Normal  -- ^ Normal (tag 0).
+  | Timeout  -- ^ Timeout (tag 1).
+  | MemoryExceeded  -- ^ MemoryExceeded (tag 2).
+  | PolicyViolation  -- ^ PolicyViolation (tag 3).
+  | Killed  -- ^ Killed (tag 4).
+  | Error  -- ^ Error (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ExitReason' to its ABI tag value.
@@ -136,14 +133,14 @@ exitReasonFromTag n
 -- SyscallPolicy
 -- ---------------------------------------------------------------------------
 
--- | SyscallPolicy type matching the Idris2 ABI.
+-- | System call filter policies.
 --
 -- Tags 0-3 (4 constructors).
 data SyscallPolicy
-  = Allow  -- ^ Tag 0.
-  | Deny  -- ^ Tag 1.
-  | Log  -- ^ Tag 2.
-  | Trap  -- ^ Tag 3.
+  = Allow  -- ^ Allow (tag 0).
+  | Deny  -- ^ Deny (tag 1).
+  | Log  -- ^ Log (tag 2).
+  | Trap  -- ^ Trap (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SyscallPolicy' to its ABI tag value.

@@ -1,33 +1,32 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Media protocol types for proven-servers.
+-- | Media Server types for the proven-servers ABI.
 --
--- Media streaming server types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Media
-  ( -- * ADT types matching Idris2 ABI
-      MediaContentType(..)
-    , Codec(..)
-    , StreamProtocol(..)
-    , TranscodeProfile(..)
-    , PlayerEvent(..)
-    , PlayerState(..)
-    , mediaContentTypeToTag
-    , mediaContentTypeFromTag
-    , codecToTag
-    , codecFromTag
-    , streamProtocolToTag
-    , streamProtocolFromTag
-    , transcodeProfileToTag
-    , transcodeProfileFromTag
-    , playerEventToTag
-    , playerEventFromTag
-    , playerStateToTag
-    , playerStateFromTag
+  (
+    MediaContentType(..)
+  , mediaContentTypeToTag
+  , mediaContentTypeFromTag
+  , Codec(..)
+  , codecToTag
+  , codecFromTag
+  , isVideo
+  , isAudio
+  , StreamProtocol(..)
+  , streamProtocolToTag
+  , streamProtocolFromTag
+  , TranscodeProfile(..)
+  , transcodeProfileToTag
+  , transcodeProfileFromTag
+  , PlayerEvent(..)
+  , playerEventToTag
+  , playerEventFromTag
+  , PlayerState(..)
+  , playerStateToTag
+  , playerStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,15 +35,15 @@ import Data.Word (Word8)
 -- MediaContentType
 -- ---------------------------------------------------------------------------
 
--- | MediaContentType type matching the Idris2 ABI.
+-- | Media content types.
 --
 -- Tags 0-4 (5 constructors).
 data MediaContentType
-  = Audio  -- ^ Tag 0.
-  | Video  -- ^ Tag 1.
-  | LiveStream  -- ^ Tag 2.
-  | Playlist  -- ^ Tag 3.
-  | Subtitle  -- ^ Tag 4.
+  = Audio  -- ^ Audio (tag 0).
+  | Video  -- ^ Video (tag 1).
+  | LiveStream  -- ^ LiveStream (tag 2).
+  | Playlist  -- ^ Playlist (tag 3).
+  | Subtitle  -- ^ Subtitle (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MediaContentType' to its ABI tag value.
@@ -61,18 +60,18 @@ mediaContentTypeFromTag n
 -- Codec
 -- ---------------------------------------------------------------------------
 
--- | Codec type matching the Idris2 ABI.
+-- | Media codecs.
 --
 -- Tags 0-7 (8 constructors).
 data Codec
-  = H264  -- ^ Tag 0.
-  | H265  -- ^ Tag 1.
-  | Av1  -- ^ Tag 2.
-  | Vp9  -- ^ Tag 3.
-  | Aac  -- ^ Tag 4.
-  | Opus  -- ^ Tag 5.
-  | Flac  -- ^ Tag 6.
-  | Mp3  -- ^ Tag 7.
+  = H264  -- ^ H264 (tag 0).
+  | H265  -- ^ H265 (tag 1).
+  | Av1  -- ^ AV1 (tag 2).
+  | Vp9  -- ^ VP9 (tag 3).
+  | Aac  -- ^ AAC (tag 4).
+  | Opus  -- ^ Opus (tag 5).
+  | Flac  -- ^ FLAC (tag 6).
+  | Mp3  -- ^ MP3 (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Codec' to its ABI tag value.
@@ -85,20 +84,36 @@ codecFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Codec)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this is a video codec.
+isVideo :: Codec -> Bool
+isVideo H264 = True
+isVideo H265 = True
+isVideo Av1 = True
+isVideo Vp9 = True
+isVideo _ = False
+
+-- | Whether this is an audio codec.
+isAudio :: Codec -> Bool
+isAudio Aac = True
+isAudio Opus = True
+isAudio Flac = True
+isAudio Mp3 = True
+isAudio _ = False
+
 -- ---------------------------------------------------------------------------
 -- StreamProtocol
 -- ---------------------------------------------------------------------------
 
--- | StreamProtocol type matching the Idris2 ABI.
+-- | Media streaming protocols.
 --
 -- Tags 0-5 (6 constructors).
 data StreamProtocol
-  = Hls  -- ^ Tag 0.
-  | Dash  -- ^ Tag 1.
-  | Rtmp  -- ^ Tag 2.
-  | Rtsp  -- ^ Tag 3.
-  | WebRtc  -- ^ Tag 4.
-  | Srt  -- ^ Tag 5.
+  = Hls  -- ^ HLS (tag 0).
+  | Dash  -- ^ DASH (tag 1).
+  | Rtmp  -- ^ RTMP (tag 2).
+  | Rtsp  -- ^ RTSP (tag 3).
+  | WebRtc  -- ^ WebRTC (tag 4).
+  | Srt  -- ^ SRT (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StreamProtocol' to its ABI tag value.
@@ -115,15 +130,15 @@ streamProtocolFromTag n
 -- TranscodeProfile
 -- ---------------------------------------------------------------------------
 
--- | TranscodeProfile type matching the Idris2 ABI.
+-- | Transcoding quality profiles.
 --
 -- Tags 0-4 (5 constructors).
 data TranscodeProfile
-  = Passthrough  -- ^ Tag 0.
-  | Low  -- ^ Tag 1.
-  | Medium  -- ^ Tag 2.
-  | High  -- ^ Tag 3.
-  | Ultra  -- ^ Tag 4.
+  = Passthrough  -- ^ Passthrough (tag 0).
+  | Low  -- ^ Low (tag 1).
+  | Medium  -- ^ Medium (tag 2).
+  | High  -- ^ High (tag 3).
+  | Ultra  -- ^ Ultra (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'TranscodeProfile' to its ABI tag value.
@@ -140,18 +155,18 @@ transcodeProfileFromTag n
 -- PlayerEvent
 -- ---------------------------------------------------------------------------
 
--- | PlayerEvent type matching the Idris2 ABI.
+-- | Media player events.
 --
 -- Tags 0-7 (8 constructors).
 data PlayerEvent
-  = Play  -- ^ Tag 0.
-  | Pause  -- ^ Tag 1.
-  | Seek  -- ^ Tag 2.
-  | Stop  -- ^ Tag 3.
-  | BufferStart  -- ^ Tag 4.
-  | BufferEnd  -- ^ Tag 5.
-  | Error  -- ^ Tag 6.
-  | QualityChange  -- ^ Tag 7.
+  = Play  -- ^ Play (tag 0).
+  | Pause  -- ^ Pause (tag 1).
+  | Seek  -- ^ Seek (tag 2).
+  | Stop  -- ^ Stop (tag 3).
+  | BufferStart  -- ^ BufferStart (tag 4).
+  | BufferEnd  -- ^ BufferEnd (tag 5).
+  | Error  -- ^ Error (tag 6).
+  | QualityChange  -- ^ QualityChange (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PlayerEvent' to its ABI tag value.
@@ -168,15 +183,15 @@ playerEventFromTag n
 -- PlayerState
 -- ---------------------------------------------------------------------------
 
--- | PlayerState type matching the Idris2 ABI.
+-- | Media player states.
 --
 -- Tags 0-4 (5 constructors).
 data PlayerState
-  = Idle  -- ^ Tag 0.
-  | Ready  -- ^ Tag 1.
-  | Playing  -- ^ Tag 2.
-  | Paused  -- ^ Tag 3.
-  | Stopping  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Ready  -- ^ Ready (tag 1).
+  | Playing  -- ^ Playing (tag 2).
+  | Paused  -- ^ Paused (tag 3).
+  | Stopping  -- ^ Stopping (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PlayerState' to its ABI tag value.

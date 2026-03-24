@@ -1,36 +1,33 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | NeSy protocol types for proven-servers.
+-- | NeSy types for the proven-servers ABI.
 --
--- Neurosymbolic AI types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Nesy
-  ( -- * ADT types matching Idris2 ABI
-      ReasoningMode(..)
-    , ProofStatus(..)
-    , ConstraintKind(..)
-    , NeuralBackend(..)
-    , Confidence(..)
-    , DriftKind(..)
-    , NeSyState(..)
-    , reasoningModeToTag
-    , reasoningModeFromTag
-    , proofStatusToTag
-    , proofStatusFromTag
-    , constraintKindToTag
-    , constraintKindFromTag
-    , neuralBackendToTag
-    , neuralBackendFromTag
-    , confidenceToTag
-    , confidenceFromTag
-    , driftKindToTag
-    , driftKindFromTag
-    , neSyStateToTag
-    , neSyStateFromTag
+  (
+    ReasoningMode(..)
+  , reasoningModeToTag
+  , reasoningModeFromTag
+  , ProofStatus(..)
+  , proofStatusToTag
+  , proofStatusFromTag
+  , ConstraintKind(..)
+  , constraintKindToTag
+  , constraintKindFromTag
+  , NeuralBackend(..)
+  , neuralBackendToTag
+  , neuralBackendFromTag
+  , Confidence(..)
+  , confidenceToTag
+  , confidenceFromTag
+  , DriftKind(..)
+  , driftKindToTag
+  , driftKindFromTag
+  , NeSyState(..)
+  , neSyStateToTag
+  , neSyStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -39,16 +36,16 @@ import Data.Word (Word8)
 -- ReasoningMode
 -- ---------------------------------------------------------------------------
 
--- | ReasoningMode type matching the Idris2 ABI.
+-- | Neurosymbolic reasoning modes.
 --
 -- Tags 0-5 (6 constructors).
 data ReasoningMode
-  = Symbolic  -- ^ Tag 0.
-  | Neural  -- ^ Tag 1.
-  | SymToNeural  -- ^ Tag 2.
-  | NeuralToSym  -- ^ Tag 3.
-  | Ensemble  -- ^ Tag 4.
-  | Cascade  -- ^ Tag 5.
+  = Symbolic  -- ^ Symbolic (tag 0).
+  | Neural  -- ^ Neural (tag 1).
+  | SymToNeural  -- ^ SymToNeural (tag 2).
+  | NeuralToSym  -- ^ NeuralToSym (tag 3).
+  | Ensemble  -- ^ Ensemble (tag 4).
+  | Cascade  -- ^ Cascade (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ReasoningMode' to its ABI tag value.
@@ -65,16 +62,16 @@ reasoningModeFromTag n
 -- ProofStatus
 -- ---------------------------------------------------------------------------
 
--- | ProofStatus type matching the Idris2 ABI.
+-- | Proof verification status.
 --
 -- Tags 0-5 (6 constructors).
 data ProofStatus
-  = Pending  -- ^ Tag 0.
-  | Attempting  -- ^ Tag 1.
-  | Proved  -- ^ Tag 2.
-  | Failed  -- ^ Tag 3.
-  | Assumed  -- ^ Tag 4.
-  | Vacuous  -- ^ Tag 5.
+  = Pending  -- ^ Pending (tag 0).
+  | Attempting  -- ^ Attempting (tag 1).
+  | Proved  -- ^ Proved (tag 2).
+  | Failed  -- ^ Failed (tag 3).
+  | Assumed  -- ^ Assumed (tag 4).
+  | Vacuous  -- ^ Vacuous (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ProofStatus' to its ABI tag value.
@@ -91,18 +88,18 @@ proofStatusFromTag n
 -- ConstraintKind
 -- ---------------------------------------------------------------------------
 
--- | ConstraintKind type matching the Idris2 ABI.
+-- | Type constraint kinds.
 --
 -- Tags 0-7 (8 constructors).
 data ConstraintKind
-  = TypeEquality  -- ^ Tag 0.
-  | Subtype  -- ^ Tag 1.
-  | Linearity  -- ^ Tag 2.
-  | Termination  -- ^ Tag 3.
-  | Totality  -- ^ Tag 4.
-  | Invariant  -- ^ Tag 5.
-  | Refinement  -- ^ Tag 6.
-  | DependentIndex  -- ^ Tag 7.
+  = TypeEquality  -- ^ TypeEquality (tag 0).
+  | Subtype  -- ^ Subtype (tag 1).
+  | Linearity  -- ^ Linearity (tag 2).
+  | Termination  -- ^ Termination (tag 3).
+  | Totality  -- ^ Totality (tag 4).
+  | Invariant  -- ^ Invariant (tag 5).
+  | Refinement  -- ^ Refinement (tag 6).
+  | DependentIndex  -- ^ DependentIndex (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ConstraintKind' to its ABI tag value.
@@ -119,16 +116,16 @@ constraintKindFromTag n
 -- NeuralBackend
 -- ---------------------------------------------------------------------------
 
--- | NeuralBackend type matching the Idris2 ABI.
+-- | Neural inference backend providers.
 --
 -- Tags 0-5 (6 constructors).
 data NeuralBackend
-  = LocalModel  -- ^ Tag 0.
-  | Claude  -- ^ Tag 1.
-  | Gemini  -- ^ Tag 2.
-  | Mistral  -- ^ Tag 3.
-  | Gpt  -- ^ Tag 4.
-  | CustomNeural  -- ^ Tag 5.
+  = LocalModel  -- ^ LocalModel (tag 0).
+  | Claude  -- ^ Claude (tag 1).
+  | Gemini  -- ^ Gemini (tag 2).
+  | Mistral  -- ^ Mistral (tag 3).
+  | Gpt  -- ^ GPT (tag 4).
+  | CustomNeural  -- ^ CustomNeural (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NeuralBackend' to its ABI tag value.
@@ -145,16 +142,16 @@ neuralBackendFromTag n
 -- Confidence
 -- ---------------------------------------------------------------------------
 
--- | Confidence type matching the Idris2 ABI.
+-- | Inference confidence levels.
 --
 -- Tags 0-5 (6 constructors).
 data Confidence
-  = Verified  -- ^ Tag 0.
-  | HighNeural  -- ^ Tag 1.
-  | MediumNeural  -- ^ Tag 2.
-  | LowNeural  -- ^ Tag 3.
-  | Unknown  -- ^ Tag 4.
-  | Contradicted  -- ^ Tag 5.
+  = Verified  -- ^ Verified (tag 0).
+  | HighNeural  -- ^ HighNeural (tag 1).
+  | MediumNeural  -- ^ MediumNeural (tag 2).
+  | LowNeural  -- ^ LowNeural (tag 3).
+  | Unknown  -- ^ Unknown (tag 4).
+  | Contradicted  -- ^ Contradicted (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Confidence' to its ABI tag value.
@@ -171,16 +168,16 @@ confidenceFromTag n
 -- DriftKind
 -- ---------------------------------------------------------------------------
 
--- | DriftKind type matching the Idris2 ABI.
+-- | Knowledge drift types.
 --
 -- Tags 0-5 (6 constructors).
 data DriftKind
-  = NoDrift  -- ^ Tag 0.
-  | SemanticDrift  -- ^ Tag 1.
-  | ConfidenceDrift  -- ^ Tag 2.
-  | FactualDrift  -- ^ Tag 3.
-  | TemporalDrift  -- ^ Tag 4.
-  | CatastrophicDrift  -- ^ Tag 5.
+  = NoDrift  -- ^ NoDrift (tag 0).
+  | SemanticDrift  -- ^ SemanticDrift (tag 1).
+  | ConfidenceDrift  -- ^ ConfidenceDrift (tag 2).
+  | FactualDrift  -- ^ FactualDrift (tag 3).
+  | TemporalDrift  -- ^ TemporalDrift (tag 4).
+  | CatastrophicDrift  -- ^ CatastrophicDrift (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DriftKind' to its ABI tag value.
@@ -197,16 +194,16 @@ driftKindFromTag n
 -- NeSyState
 -- ---------------------------------------------------------------------------
 
--- | NeSyState type matching the Idris2 ABI.
+-- | NeSy engine states.
 --
 -- Tags 0-5 (6 constructors).
 data NeSyState
-  = Idle  -- ^ Tag 0.
-  | Ready  -- ^ Tag 1.
-  | Reasoning  -- ^ Tag 2.
-  | Verifying  -- ^ Tag 3.
-  | Drift  -- ^ Tag 4.
-  | Shutdown  -- ^ Tag 5.
+  = Idle  -- ^ Idle (tag 0).
+  | Ready  -- ^ Ready (tag 1).
+  | Reasoning  -- ^ Reasoning (tag 2).
+  | Verifying  -- ^ Verifying (tag 3).
+  | Drift  -- ^ Drift (tag 4).
+  | Shutdown  -- ^ Shutdown (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NeSyState' to its ABI tag value.

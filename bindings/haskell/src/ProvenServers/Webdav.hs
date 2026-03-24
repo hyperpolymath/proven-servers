@@ -1,52 +1,64 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | WebDAV protocol types for proven-servers.
+-- | WebDAV protocol types for the proven-servers ABI.
 --
--- WebDAV protocol types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Webdav
-  ( -- * ADT types matching Idris2 ABI
-      Method(..)
-    , StatusCode(..)
-    , LockScope(..)
-    , LockType(..)
-    , Depth(..)
-    , PropertyOp(..)
-    , methodToTag
-    , methodFromTag
-    , statusCodeToTag
-    , statusCodeFromTag
-    , lockScopeToTag
-    , lockScopeFromTag
-    , lockTypeToTag
-    , lockTypeFromTag
-    , depthToTag
-    , depthFromTag
-    , propertyOpToTag
-    , propertyOpFromTag
+  (
+    webdavDefaultPort
+  , webdavTlsPort
+  , Method(..)
+  , methodToTag
+  , methodFromTag
+  , isWrite
+  , isLockRelated
+  , name
+  , StatusCode(..)
+  , statusCodeToTag
+  , statusCodeFromTag
+  , isError
+  , LockScope(..)
+  , lockScopeToTag
+  , lockScopeFromTag
+  , LockType(..)
+  , lockTypeToTag
+  , lockTypeFromTag
+  , Depth(..)
+  , depthToTag
+  , depthFromTag
+  , headerValue
+  , PropertyOp(..)
+  , propertyOpToTag
+  , propertyOpFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | WebDAV uses standard HTTP/HTTPS ports.
+webdavDefaultPort :: Word16
+webdavDefaultPort = 80
+
+-- | WebDAV over TLS uses standard HTTPS port.
+webdavTlsPort :: Word16
+webdavTlsPort = 443
 
 -- ---------------------------------------------------------------------------
 -- Method
 -- ---------------------------------------------------------------------------
 
--- | Method type matching the Idris2 ABI.
+-- | WebDAV HTTP extension methods (RFC 4918).
 --
 -- Tags 0-6 (7 constructors).
 data Method
-  = Propfind  -- ^ Tag 0.
-  | Proppatch  -- ^ Tag 1.
-  | Mkcol  -- ^ Tag 2.
-  | Copy  -- ^ Tag 3.
-  | Move  -- ^ Tag 4.
-  | Lock  -- ^ Tag 5.
-  | Unlock  -- ^ Tag 6.
+  = Propfind  -- ^ Retrieve properties of a resource (tag 0).
+  | Proppatch  -- ^ Set or remove properties on a resource (tag 1).
+  | Mkcol  -- ^ Create a new collection (directory) (tag 2).
+  | Copy  -- ^ Copy a resource (tag 3).
+  | Move  -- ^ Move a resource (tag 4).
+  | Lock  -- ^ Lock a resource (tag 5).
+  | Unlock  -- ^ Unlock a resource (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Method' to its ABI tag value.
@@ -59,19 +71,43 @@ methodFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Method)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this method modifies server state.
+isWrite :: Method -> Bool
+isWrite Proppatch = True
+isWrite Mkcol = True
+isWrite Copy = True
+isWrite Move = True
+isWrite _ = False
+
+-- | Whether this method relates to locking.
+isLockRelated :: Method -> Bool
+isLockRelated Lock = True
+isLockRelated Unlock = True
+isLockRelated _ = False
+
+-- | The HTTP method name string.
+name :: Method -> String
+name Propfind = "PROPFIND"
+name Proppatch = "PROPPATCH"
+name Mkcol = "MKCOL"
+name Copy = "COPY"
+name Move = "MOVE"
+name Lock = "LOCK"
+name Unlock = "UNLOCK"
+
 -- ---------------------------------------------------------------------------
 -- StatusCode
 -- ---------------------------------------------------------------------------
 
--- | StatusCode type matching the Idris2 ABI.
+-- | WebDAV-specific HTTP status codes (RFC 4918).
 --
 -- Tags 0-4 (5 constructors).
 data StatusCode
-  = MultiStatus  -- ^ Tag 0.
-  | UnprocessableEntity  -- ^ Tag 1.
-  | Locked  -- ^ Tag 2.
-  | FailedDependency  -- ^ Tag 3.
-  | InsufficientStorage  -- ^ Tag 4.
+  = MultiStatus  -- ^ 207 Multi-Status (tag 0).
+  | UnprocessableEntity  -- ^ 422 Unprocessable Entity (tag 1).
+  | Locked  -- ^ 423 Locked (tag 2).
+  | FailedDependency  -- ^ 424 Failed Dependency (tag 3).
+  | InsufficientStorage  -- ^ 507 Insufficient Storage (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StatusCode' to its ABI tag value.
@@ -84,16 +120,21 @@ statusCodeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: StatusCode)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this status is an error (4xx or 5xx).
+isError :: StatusCode -> Bool
+isError MultiStatus = False
+isError _ = True
+
 -- ---------------------------------------------------------------------------
 -- LockScope
 -- ---------------------------------------------------------------------------
 
--- | LockScope type matching the Idris2 ABI.
+-- | WebDAV lock scope (RFC 4918 Section 14.13).
 --
 -- Tags 0-1 (2 constructors).
 data LockScope
-  = Exclusive  -- ^ Tag 0.
-  | Shared  -- ^ Tag 1.
+  = Exclusive  -- ^ Exclusive lock — only the lock owner can modify (tag 0).
+  | Shared  -- ^ Shared lock — multiple users can hold the lock (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'LockScope' to its ABI tag value.
@@ -110,11 +151,11 @@ lockScopeFromTag n
 -- LockType
 -- ---------------------------------------------------------------------------
 
--- | LockType type matching the Idris2 ABI.
+-- | WebDAV lock type (RFC 4918 Section 14.15).
 --
 -- Tags 0-0 (1 constructors).
 data LockType
-  = Write  -- ^ Tag 0.
+  = Write  -- ^ Write lock — prevents modification by non-owners (tag 0).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'LockType' to its ABI tag value.
@@ -131,13 +172,13 @@ lockTypeFromTag n
 -- Depth
 -- ---------------------------------------------------------------------------
 
--- | Depth type matching the Idris2 ABI.
+-- | WebDAV Depth header values (RFC 4918 Section 10.2).
 --
 -- Tags 0-2 (3 constructors).
 data Depth
-  = Zero  -- ^ Tag 0.
-  | One  -- ^ Tag 1.
-  | Infinity  -- ^ Tag 2.
+  = Zero  -- ^ Depth 0 — resource only (tag 0).
+  | One  -- ^ Depth 1 — resource and immediate children (tag 1).
+  | Infinity  -- ^ Depth infinity — resource and all descendants (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Depth' to its ABI tag value.
@@ -150,16 +191,22 @@ depthFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Depth)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | The HTTP header string for this depth value.
+headerValue :: Depth -> String
+headerValue Zero = "0"
+headerValue One = "1"
+headerValue Infinity = "infinity"
+
 -- ---------------------------------------------------------------------------
 -- PropertyOp
 -- ---------------------------------------------------------------------------
 
--- | PropertyOp type matching the Idris2 ABI.
+-- | WebDAV PROPPATCH operations (RFC 4918 Section 14.23/14.26).
 --
 -- Tags 0-1 (2 constructors).
 data PropertyOp
-  = Set  -- ^ Tag 0.
-  | Remove  -- ^ Tag 1.
+  = Set  -- ^ Set (create or update) a property (tag 0).
+  | Remove  -- ^ Remove a property (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PropertyOp' to its ABI tag value.

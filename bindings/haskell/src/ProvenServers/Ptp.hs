@@ -1,49 +1,56 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | PTP protocol types for proven-servers.
+-- | PTP types for the proven-servers ABI.
 --
--- PTP (Precision Time Protocol, IEEE 1588) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Ptp
-  ( -- * ADT types matching Idris2 ABI
-      PtpMessageType(..)
-    , ClockClass(..)
-    , PtpPortState(..)
-    , DelayMechanism(..)
-    , ptpMessageTypeToTag
-    , ptpMessageTypeFromTag
-    , clockClassToTag
-    , clockClassFromTag
-    , ptpPortStateToTag
-    , ptpPortStateFromTag
-    , delayMechanismToTag
-    , delayMechanismFromTag
+  (
+    ptpEventPort
+  , ptpGeneralPort
+  , PtpMessageType(..)
+  , ptpMessageTypeToTag
+  , ptpMessageTypeFromTag
+  , ClockClass(..)
+  , clockClassToTag
+  , clockClassFromTag
+  , PtpPortState(..)
+  , ptpPortStateToTag
+  , ptpPortStateFromTag
+  , DelayMechanism(..)
+  , delayMechanismToTag
+  , delayMechanismFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | PTP event port.
+ptpEventPort :: Word16
+ptpEventPort = 319
+
+-- | PTP general port.
+ptpGeneralPort :: Word16
+ptpGeneralPort = 320
 
 -- ---------------------------------------------------------------------------
 -- PtpMessageType
 -- ---------------------------------------------------------------------------
 
--- | PtpMessageType type matching the Idris2 ABI.
+-- | PTP event port.
 --
 -- Tags 0-9 (10 constructors).
 data PtpMessageType
-  = Sync  -- ^ Tag 0.
-  | DelayReq  -- ^ Tag 1.
-  | PdelayReq  -- ^ Tag 2.
-  | PdelayResp  -- ^ Tag 3.
-  | FollowUp  -- ^ Tag 4.
-  | DelayResp  -- ^ Tag 5.
-  | PdelayRespFollowUp  -- ^ Tag 6.
-  | Announce  -- ^ Tag 7.
-  | Signaling  -- ^ Tag 8.
-  | Management  -- ^ Tag 9.
+  = Sync  -- ^ Sync (tag 0).
+  | DelayReq  -- ^ DelayReq (tag 1).
+  | PdelayReq  -- ^ PdelayReq (tag 2).
+  | PdelayResp  -- ^ PdelayResp (tag 3).
+  | FollowUp  -- ^ FollowUp (tag 4).
+  | DelayResp  -- ^ DelayResp (tag 5).
+  | PdelayRespFollowUp  -- ^ PdelayRespFollowUp (tag 6).
+  | Announce  -- ^ Announce (tag 7).
+  | Signaling  -- ^ Signaling (tag 8).
+  | Management  -- ^ Management (tag 9).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PtpMessageType' to its ABI tag value.
@@ -60,14 +67,14 @@ ptpMessageTypeFromTag n
 -- ClockClass
 -- ---------------------------------------------------------------------------
 
--- | ClockClass type matching the Idris2 ABI.
+-- | PTP clock classes.
 --
 -- Tags 0-3 (4 constructors).
 data ClockClass
-  = PrimaryClock  -- ^ Tag 0.
-  | ApplicationSpecific  -- ^ Tag 1.
-  | SlaveOnly  -- ^ Tag 2.
-  | DefaultClass  -- ^ Tag 3.
+  = PrimaryClock  -- ^ PrimaryClock (tag 0).
+  | ApplicationSpecific  -- ^ ApplicationSpecific (tag 1).
+  | SlaveOnly  -- ^ SlaveOnly (tag 2).
+  | DefaultClass  -- ^ DefaultClass (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ClockClass' to its ABI tag value.
@@ -84,19 +91,19 @@ clockClassFromTag n
 -- PtpPortState
 -- ---------------------------------------------------------------------------
 
--- | PtpPortState type matching the Idris2 ABI.
+-- | PTP port states (IEEE 1588).
 --
 -- Tags 0-8 (9 constructors).
 data PtpPortState
-  = Initializing  -- ^ Tag 0.
-  | Faulty  -- ^ Tag 1.
-  | Disabled  -- ^ Tag 2.
-  | Listening  -- ^ Tag 3.
-  | PreMaster  -- ^ Tag 4.
-  | Master  -- ^ Tag 5.
-  | Passive  -- ^ Tag 6.
-  | Uncalibrated  -- ^ Tag 7.
-  | Slave  -- ^ Tag 8.
+  = Initializing  -- ^ Initializing (tag 0).
+  | Faulty  -- ^ Faulty (tag 1).
+  | Disabled  -- ^ Disabled (tag 2).
+  | Listening  -- ^ Listening (tag 3).
+  | PreMaster  -- ^ PreMaster (tag 4).
+  | Master  -- ^ Master (tag 5).
+  | Passive  -- ^ Passive (tag 6).
+  | Uncalibrated  -- ^ Uncalibrated (tag 7).
+  | Slave  -- ^ Slave (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PtpPortState' to its ABI tag value.
@@ -113,13 +120,13 @@ ptpPortStateFromTag n
 -- DelayMechanism
 -- ---------------------------------------------------------------------------
 
--- | DelayMechanism type matching the Idris2 ABI.
+-- | PTP delay measurement mechanisms.
 --
 -- Tags 0-2 (3 constructors).
 data DelayMechanism
-  = E2E  -- ^ Tag 0.
-  | P2P  -- ^ Tag 1.
-  | DmDisabled  -- ^ Tag 2.
+  = E2E  -- ^ End-to-end (tag 0).
+  | P2P  -- ^ Peer-to-peer (tag 1).
+  | DmDisabled  -- ^ Disabled (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DelayMechanism' to its ABI tag value.

@@ -1,33 +1,33 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | PQC protocol types for proven-servers.
+-- | Post-Quantum Cryptography types for the proven-servers ABI.
 --
--- Post-Quantum Cryptography types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Pqc
-  ( -- * ADT types matching Idris2 ABI
-      PqcAlgorithm(..)
-    , NistLevel(..)
-    , Operation(..)
-    , HybridMode(..)
-    , AlgorithmCategory(..)
-    , KeyState(..)
-    , pqcAlgorithmToTag
-    , pqcAlgorithmFromTag
-    , nistLevelToTag
-    , nistLevelFromTag
-    , operationToTag
-    , operationFromTag
-    , hybridModeToTag
-    , hybridModeFromTag
-    , algorithmCategoryToTag
-    , algorithmCategoryFromTag
-    , keyStateToTag
-    , keyStateFromTag
+  (
+    PqcAlgorithm(..)
+  , pqcAlgorithmToTag
+  , pqcAlgorithmFromTag
+  , isKem
+  , isSignature
+  , NistLevel(..)
+  , nistLevelToTag
+  , nistLevelFromTag
+  , Operation(..)
+  , operationToTag
+  , operationFromTag
+  , HybridMode(..)
+  , hybridModeToTag
+  , hybridModeFromTag
+  , AlgorithmCategory(..)
+  , algorithmCategoryToTag
+  , algorithmCategoryFromTag
+  , KeyState(..)
+  , keyStateToTag
+  , keyStateFromTag
+  , isUsable
   ) where
 
 import Data.Word (Word8)
@@ -36,18 +36,18 @@ import Data.Word (Word8)
 -- PqcAlgorithm
 -- ---------------------------------------------------------------------------
 
--- | PqcAlgorithm type matching the Idris2 ABI.
+-- | Post-quantum cryptographic algorithms.
 --
 -- Tags 0-7 (8 constructors).
 data PqcAlgorithm
-  = CrystalsKyber  -- ^ Tag 0.
-  | CrystalsDilithium  -- ^ Tag 1.
-  | Falcon  -- ^ Tag 2.
-  | SphincsPlus  -- ^ Tag 3.
-  | ClassicMceliece  -- ^ Tag 4.
-  | Bike  -- ^ Tag 5.
-  | Hqc  -- ^ Tag 6.
-  | Frodokem  -- ^ Tag 7.
+  = CrystalsKyber  -- ^ CRYSTALS-Kyber KEM (tag 0).
+  | CrystalsDilithium  -- ^ CRYSTALS-Dilithium signature (tag 1).
+  | Falcon  -- ^ FALCON signature (tag 2).
+  | SphincsPlus  -- ^ SPHINCS+ signature (tag 3).
+  | ClassicMceliece  -- ^ Classic McEliece KEM (tag 4).
+  | Bike  -- ^ BIKE KEM (tag 5).
+  | Hqc  -- ^ HQC KEM (tag 6).
+  | Frodokem  -- ^ FrodoKEM (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PqcAlgorithm' to its ABI tag value.
@@ -60,19 +60,35 @@ pqcAlgorithmFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: PqcAlgorithm)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this is a KEM (key encapsulation) algorithm.
+isKem :: PqcAlgorithm -> Bool
+isKem CrystalsKyber = True
+isKem ClassicMceliece = True
+isKem Bike = True
+isKem Hqc = True
+isKem Frodokem = True
+isKem _ = False
+
+-- | Whether this is a signature algorithm.
+isSignature :: PqcAlgorithm -> Bool
+isSignature CrystalsDilithium = True
+isSignature Falcon = True
+isSignature SphincsPlus = True
+isSignature _ = False
+
 -- ---------------------------------------------------------------------------
 -- NistLevel
 -- ---------------------------------------------------------------------------
 
--- | NistLevel type matching the Idris2 ABI.
+-- | NIST security levels (1-5).
 --
 -- Tags 0-4 (5 constructors).
 data NistLevel
-  = Nist1  -- ^ Tag 0.
-  | Nist2  -- ^ Tag 1.
-  | Nist3  -- ^ Tag 2.
-  | Nist4  -- ^ Tag 3.
-  | Nist5  -- ^ Tag 4.
+  = Nist1  -- ^ Nist1 (tag 0).
+  | Nist2  -- ^ Nist2 (tag 1).
+  | Nist3  -- ^ Nist3 (tag 2).
+  | Nist4  -- ^ Nist4 (tag 3).
+  | Nist5  -- ^ Nist5 (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NistLevel' to its ABI tag value.
@@ -89,15 +105,15 @@ nistLevelFromTag n
 -- Operation
 -- ---------------------------------------------------------------------------
 
--- | Operation type matching the Idris2 ABI.
+-- | PQC cryptographic operations.
 --
 -- Tags 0-4 (5 constructors).
 data Operation
-  = Keygen  -- ^ Tag 0.
-  | Encapsulate  -- ^ Tag 1.
-  | Decapsulate  -- ^ Tag 2.
-  | Sign  -- ^ Tag 3.
-  | Verify  -- ^ Tag 4.
+  = Keygen  -- ^ Keygen (tag 0).
+  | Encapsulate  -- ^ Encapsulate (tag 1).
+  | Decapsulate  -- ^ Decapsulate (tag 2).
+  | Sign  -- ^ Sign (tag 3).
+  | Verify  -- ^ Verify (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Operation' to its ABI tag value.
@@ -114,13 +130,13 @@ operationFromTag n
 -- HybridMode
 -- ---------------------------------------------------------------------------
 
--- | HybridMode type matching the Idris2 ABI.
+-- | Classical/PQC hybrid modes.
 --
 -- Tags 0-2 (3 constructors).
 data HybridMode
-  = ClassicalOnly  -- ^ Tag 0.
-  | PqcOnly  -- ^ Tag 1.
-  | Hybrid  -- ^ Tag 2.
+  = ClassicalOnly  -- ^ ClassicalOnly (tag 0).
+  | PqcOnly  -- ^ PqcOnly (tag 1).
+  | Hybrid  -- ^ Hybrid (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HybridMode' to its ABI tag value.
@@ -137,12 +153,12 @@ hybridModeFromTag n
 -- AlgorithmCategory
 -- ---------------------------------------------------------------------------
 
--- | AlgorithmCategory type matching the Idris2 ABI.
+-- | PQC algorithm categories.
 --
 -- Tags 0-1 (2 constructors).
 data AlgorithmCategory
-  = Kem  -- ^ Tag 0.
-  | Signature  -- ^ Tag 1.
+  = Kem  -- ^ Key encapsulation (tag 0).
+  | Signature  -- ^ Signature (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AlgorithmCategory' to its ABI tag value.
@@ -159,16 +175,16 @@ algorithmCategoryFromTag n
 -- KeyState
 -- ---------------------------------------------------------------------------
 
--- | KeyState type matching the Idris2 ABI.
+-- | PQC key lifecycle states.
 --
 -- Tags 0-5 (6 constructors).
 data KeyState
-  = Empty  -- ^ Tag 0.
-  | Generating  -- ^ Tag 1.
-  | Generated  -- ^ Tag 2.
-  | Active  -- ^ Tag 3.
-  | Expired  -- ^ Tag 4.
-  | Compromised  -- ^ Tag 5.
+  = Empty  -- ^ Empty (tag 0).
+  | Generating  -- ^ Generating (tag 1).
+  | Generated  -- ^ Generated (tag 2).
+  | Active  -- ^ Active (tag 3).
+  | Expired  -- ^ Expired (tag 4).
+  | Compromised  -- ^ Compromised (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'KeyState' to its ABI tag value.
@@ -180,3 +196,8 @@ keyStateFromTag :: Word8 -> Maybe KeyState
 keyStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: KeyState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Whether the key can be used.
+isUsable :: KeyState -> Bool
+isUsable Active = True
+isUsable _ = False

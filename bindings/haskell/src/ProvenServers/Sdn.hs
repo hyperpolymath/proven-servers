@@ -1,51 +1,53 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | SDN protocol types for proven-servers.
+-- | SDN types for the proven-servers ABI.
 --
--- SDN (Software-Defined Networking) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Sdn
-  ( -- * ADT types matching Idris2 ABI
-      SdnMessageType(..)
-    , FlowAction(..)
-    , MatchField(..)
-    , PortState(..)
-    , sdnMessageTypeToTag
-    , sdnMessageTypeFromTag
-    , flowActionToTag
-    , flowActionFromTag
-    , matchFieldToTag
-    , matchFieldFromTag
-    , portStateToTag
-    , portStateFromTag
+  (
+    sdnPort
+  , SdnMessageType(..)
+  , sdnMessageTypeToTag
+  , sdnMessageTypeFromTag
+  , FlowAction(..)
+  , flowActionToTag
+  , flowActionFromTag
+  , MatchField(..)
+  , matchFieldToTag
+  , matchFieldFromTag
+  , PortState(..)
+  , portStateToTag
+  , portStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard OpenFlow port.
+sdnPort :: Word16
+sdnPort = 6653
 
 -- ---------------------------------------------------------------------------
 -- SdnMessageType
 -- ---------------------------------------------------------------------------
 
--- | SdnMessageType type matching the Idris2 ABI.
+-- | Standard OpenFlow port.
 --
 -- Tags 0-11 (12 constructors).
 data SdnMessageType
-  = Hello  -- ^ Tag 0.
-  | Error  -- ^ Tag 1.
-  | EchoRequest  -- ^ Tag 2.
-  | EchoReply  -- ^ Tag 3.
-  | FeaturesRequest  -- ^ Tag 4.
-  | FeaturesReply  -- ^ Tag 5.
-  | FlowMod  -- ^ Tag 6.
-  | PacketIn  -- ^ Tag 7.
-  | PacketOut  -- ^ Tag 8.
-  | PortStatus  -- ^ Tag 9.
-  | BarrierRequest  -- ^ Tag 10.
-  | BarrierReply  -- ^ Tag 11.
+  = Hello  -- ^ Hello (tag 0).
+  | Error  -- ^ Error (tag 1).
+  | EchoRequest  -- ^ EchoRequest (tag 2).
+  | EchoReply  -- ^ EchoReply (tag 3).
+  | FeaturesRequest  -- ^ FeaturesRequest (tag 4).
+  | FeaturesReply  -- ^ FeaturesReply (tag 5).
+  | FlowMod  -- ^ FlowMod (tag 6).
+  | PacketIn  -- ^ PacketIn (tag 7).
+  | PacketOut  -- ^ PacketOut (tag 8).
+  | PortStatus  -- ^ PortStatus (tag 9).
+  | BarrierRequest  -- ^ BarrierRequest (tag 10).
+  | BarrierReply  -- ^ BarrierReply (tag 11).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SdnMessageType' to its ABI tag value.
@@ -62,17 +64,17 @@ sdnMessageTypeFromTag n
 -- FlowAction
 -- ---------------------------------------------------------------------------
 
--- | FlowAction type matching the Idris2 ABI.
+-- | OpenFlow flow actions.
 --
 -- Tags 0-6 (7 constructors).
 data FlowAction
-  = Output  -- ^ Tag 0.
-  | SetField  -- ^ Tag 1.
-  | Drop  -- ^ Tag 2.
-  | PushVlan  -- ^ Tag 3.
-  | PopVlan  -- ^ Tag 4.
-  | SetQueue  -- ^ Tag 5.
-  | Group  -- ^ Tag 6.
+  = Output  -- ^ Output (tag 0).
+  | SetField  -- ^ SetField (tag 1).
+  | Drop  -- ^ Drop (tag 2).
+  | PushVlan  -- ^ Push VLAN (tag 3).
+  | PopVlan  -- ^ Pop VLAN (tag 4).
+  | SetQueue  -- ^ SetQueue (tag 5).
+  | Group  -- ^ Group (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'FlowAction' to its ABI tag value.
@@ -89,21 +91,21 @@ flowActionFromTag n
 -- MatchField
 -- ---------------------------------------------------------------------------
 
--- | MatchField type matching the Idris2 ABI.
+-- | OpenFlow match fields.
 --
 -- Tags 0-10 (11 constructors).
 data MatchField
-  = InPort  -- ^ Tag 0.
-  | EthDst  -- ^ Tag 1.
-  | EthSrc  -- ^ Tag 2.
-  | EthType  -- ^ Tag 3.
-  | VlanId  -- ^ Tag 4.
-  | IpSrc  -- ^ Tag 5.
-  | IpDst  -- ^ Tag 6.
-  | TcpSrc  -- ^ Tag 7.
-  | TcpDst  -- ^ Tag 8.
-  | UdpSrc  -- ^ Tag 9.
-  | UdpDst  -- ^ Tag 10.
+  = InPort  -- ^ InPort (tag 0).
+  | EthDst  -- ^ EthDst (tag 1).
+  | EthSrc  -- ^ EthSrc (tag 2).
+  | EthType  -- ^ EthType (tag 3).
+  | VlanId  -- ^ VLAN ID (tag 4).
+  | IpSrc  -- ^ IP source (tag 5).
+  | IpDst  -- ^ IP destination (tag 6).
+  | TcpSrc  -- ^ TCP source (tag 7).
+  | TcpDst  -- ^ TCP destination (tag 8).
+  | UdpSrc  -- ^ UDP source (tag 9).
+  | UdpDst  -- ^ UDP destination (tag 10).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MatchField' to its ABI tag value.
@@ -120,13 +122,13 @@ matchFieldFromTag n
 -- PortState
 -- ---------------------------------------------------------------------------
 
--- | PortState type matching the Idris2 ABI.
+-- | SDN port states.
 --
 -- Tags 0-2 (3 constructors).
 data PortState
-  = Up  -- ^ Tag 0.
-  | Down  -- ^ Tag 1.
-  | Blocked  -- ^ Tag 2.
+  = Up  -- ^ Up (tag 0).
+  | Down  -- ^ Down (tag 1).
+  | Blocked  -- ^ Blocked (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PortState' to its ABI tag value.

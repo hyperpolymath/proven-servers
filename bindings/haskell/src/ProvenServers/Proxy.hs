@@ -1,41 +1,48 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Proxy protocol types for proven-servers.
+-- | Reverse Proxy types for the proven-servers ABI.
 --
--- Reverse proxy types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Proxy
-  ( -- * ADT types matching Idris2 ABI
-      ProxyMode(..)
-    , HopByHopHeader(..)
-    , CacheDirective(..)
-    , ProxyError(..)
-    , proxyModeToTag
-    , proxyModeFromTag
-    , hopByHopHeaderToTag
-    , hopByHopHeaderFromTag
-    , cacheDirectiveToTag
-    , cacheDirectiveFromTag
-    , proxyErrorToTag
-    , proxyErrorFromTag
+  (
+    proxyHttpPort
+  , proxyHttpsPort
+  , ProxyMode(..)
+  , proxyModeToTag
+  , proxyModeFromTag
+  , HopByHopHeader(..)
+  , hopByHopHeaderToTag
+  , hopByHopHeaderFromTag
+  , CacheDirective(..)
+  , cacheDirectiveToTag
+  , cacheDirectiveFromTag
+  , ProxyError(..)
+  , proxyErrorToTag
+  , proxyErrorFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard HTTP proxy port.
+proxyHttpPort :: Word16
+proxyHttpPort = 80
+
+-- | Standard HTTPS proxy port.
+proxyHttpsPort :: Word16
+proxyHttpsPort = 443
 
 -- ---------------------------------------------------------------------------
 -- ProxyMode
 -- ---------------------------------------------------------------------------
 
--- | ProxyMode type matching the Idris2 ABI.
+-- | Standard HTTP proxy port.
 --
 -- Tags 0-1 (2 constructors).
 data ProxyMode
-  = Forward  -- ^ Tag 0.
-  | Reverse  -- ^ Tag 1.
+  = Forward  -- ^ Forward (tag 0).
+  | Reverse  -- ^ Reverse (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ProxyMode' to its ABI tag value.
@@ -52,18 +59,18 @@ proxyModeFromTag n
 -- HopByHopHeader
 -- ---------------------------------------------------------------------------
 
--- | HopByHopHeader type matching the Idris2 ABI.
+-- | HTTP hop-by-hop headers (RFC 2616).
 --
 -- Tags 0-7 (8 constructors).
 data HopByHopHeader
-  = Connection  -- ^ Tag 0.
-  | KeepAlive  -- ^ Tag 1.
-  | ProxyAuth  -- ^ Tag 2.
-  | ProxyAuthz  -- ^ Tag 3.
-  | Te  -- ^ Tag 4.
-  | Trailers  -- ^ Tag 5.
-  | TransferEncoding  -- ^ Tag 6.
-  | Upgrade  -- ^ Tag 7.
+  = Connection  -- ^ Connection (tag 0).
+  | KeepAlive  -- ^ KeepAlive (tag 1).
+  | ProxyAuth  -- ^ Proxy-Authenticate (tag 2).
+  | ProxyAuthz  -- ^ Proxy-Authorization (tag 3).
+  | Te  -- ^ TE (tag 4).
+  | Trailers  -- ^ Trailers (tag 5).
+  | TransferEncoding  -- ^ TransferEncoding (tag 6).
+  | Upgrade  -- ^ Upgrade (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HopByHopHeader' to its ABI tag value.
@@ -80,16 +87,16 @@ hopByHopHeaderFromTag n
 -- CacheDirective
 -- ---------------------------------------------------------------------------
 
--- | CacheDirective type matching the Idris2 ABI.
+-- | HTTP cache directives.
 --
 -- Tags 0-5 (6 constructors).
 data CacheDirective
-  = NoCache  -- ^ Tag 0.
-  | NoStore  -- ^ Tag 1.
-  | MaxAge  -- ^ Tag 2.
-  | Public  -- ^ Tag 3.
-  | Private  -- ^ Tag 4.
-  | MustRevalidate  -- ^ Tag 5.
+  = NoCache  -- ^ NoCache (tag 0).
+  | NoStore  -- ^ NoStore (tag 1).
+  | MaxAge  -- ^ MaxAge (tag 2).
+  | Public  -- ^ Public (tag 3).
+  | Private  -- ^ Private (tag 4).
+  | MustRevalidate  -- ^ MustRevalidate (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CacheDirective' to its ABI tag value.
@@ -106,14 +113,14 @@ cacheDirectiveFromTag n
 -- ProxyError
 -- ---------------------------------------------------------------------------
 
--- | ProxyError type matching the Idris2 ABI.
+-- | Proxy-specific error codes.
 --
 -- Tags 0-3 (4 constructors).
 data ProxyError
-  = BadGateway  -- ^ Tag 0.
-  | GatewayTimeout  -- ^ Tag 1.
-  | UpstreamRefused  -- ^ Tag 2.
-  | UpstreamTls  -- ^ Tag 3.
+  = BadGateway  -- ^ BadGateway (tag 0).
+  | GatewayTimeout  -- ^ GatewayTimeout (tag 1).
+  | UpstreamRefused  -- ^ UpstreamRefused (tag 2).
+  | UpstreamTls  -- ^ Upstream TLS error (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ProxyError' to its ABI tag value.

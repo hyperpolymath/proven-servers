@@ -1,33 +1,30 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Container protocol types for proven-servers.
+-- | Container Runtime types for the proven-servers ABI.
 --
--- Container runtime types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Container
-  ( -- * ADT types matching Idris2 ABI
-      ContainerState(..)
-    , ContainerOperation(..)
-    , NetworkMode(..)
-    , VolumeType(..)
-    , RestartPolicy(..)
-    , HealthStatus(..)
-    , containerStateToTag
-    , containerStateFromTag
-    , containerOperationToTag
-    , containerOperationFromTag
-    , networkModeToTag
-    , networkModeFromTag
-    , volumeTypeToTag
-    , volumeTypeFromTag
-    , restartPolicyToTag
-    , restartPolicyFromTag
-    , healthStatusToTag
-    , healthStatusFromTag
+  (
+    ContainerState(..)
+  , containerStateToTag
+  , containerStateFromTag
+  , ContainerOperation(..)
+  , containerOperationToTag
+  , containerOperationFromTag
+  , NetworkMode(..)
+  , networkModeToTag
+  , networkModeFromTag
+  , VolumeType(..)
+  , volumeTypeToTag
+  , volumeTypeFromTag
+  , RestartPolicy(..)
+  , restartPolicyToTag
+  , restartPolicyFromTag
+  , HealthStatus(..)
+  , healthStatusToTag
+  , healthStatusFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,17 +33,17 @@ import Data.Word (Word8)
 -- ContainerState
 -- ---------------------------------------------------------------------------
 
--- | ContainerState type matching the Idris2 ABI.
+-- | Container lifecycle states.
 --
 -- Tags 0-6 (7 constructors).
 data ContainerState
-  = Creating  -- ^ Tag 0.
-  | Running  -- ^ Tag 1.
-  | Paused  -- ^ Tag 2.
-  | Restarting  -- ^ Tag 3.
-  | Stopped  -- ^ Tag 4.
-  | Removing  -- ^ Tag 5.
-  | Dead  -- ^ Tag 6.
+  = Creating  -- ^ Creating (tag 0).
+  | Running  -- ^ Running (tag 1).
+  | Paused  -- ^ Paused (tag 2).
+  | Restarting  -- ^ Restarting (tag 3).
+  | Stopped  -- ^ Stopped (tag 4).
+  | Removing  -- ^ Removing (tag 5).
+  | Dead  -- ^ Dead (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ContainerState' to its ABI tag value.
@@ -63,21 +60,21 @@ containerStateFromTag n
 -- ContainerOperation
 -- ---------------------------------------------------------------------------
 
--- | ContainerOperation type matching the Idris2 ABI.
+-- | Container operations.
 --
 -- Tags 0-10 (11 constructors).
 data ContainerOperation
-  = Create  -- ^ Tag 0.
-  | Start  -- ^ Tag 1.
-  | Stop  -- ^ Tag 2.
-  | Restart  -- ^ Tag 3.
-  | Pause  -- ^ Tag 4.
-  | Unpause  -- ^ Tag 5.
-  | Kill  -- ^ Tag 6.
-  | Remove  -- ^ Tag 7.
-  | Exec  -- ^ Tag 8.
-  | Logs  -- ^ Tag 9.
-  | Inspect  -- ^ Tag 10.
+  = Create  -- ^ Create (tag 0).
+  | Start  -- ^ Start (tag 1).
+  | Stop  -- ^ Stop (tag 2).
+  | Restart  -- ^ Restart (tag 3).
+  | Pause  -- ^ Pause (tag 4).
+  | Unpause  -- ^ Unpause (tag 5).
+  | Kill  -- ^ Kill (tag 6).
+  | Remove  -- ^ Remove (tag 7).
+  | Exec  -- ^ Exec (tag 8).
+  | Logs  -- ^ Logs (tag 9).
+  | Inspect  -- ^ Inspect (tag 10).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ContainerOperation' to its ABI tag value.
@@ -94,15 +91,15 @@ containerOperationFromTag n
 -- NetworkMode
 -- ---------------------------------------------------------------------------
 
--- | NetworkMode type matching the Idris2 ABI.
+-- | Container network modes.
 --
 -- Tags 0-4 (5 constructors).
 data NetworkMode
-  = Bridge  -- ^ Tag 0.
-  | Host  -- ^ Tag 1.
-  | None  -- ^ Tag 2.
-  | Overlay  -- ^ Tag 3.
-  | Macvlan  -- ^ Tag 4.
+  = Bridge  -- ^ Bridge (tag 0).
+  | Host  -- ^ Host (tag 1).
+  | None  -- ^ None (tag 2).
+  | Overlay  -- ^ Overlay (tag 3).
+  | Macvlan  -- ^ Macvlan (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NetworkMode' to its ABI tag value.
@@ -119,13 +116,13 @@ networkModeFromTag n
 -- VolumeType
 -- ---------------------------------------------------------------------------
 
--- | VolumeType type matching the Idris2 ABI.
+-- | Container volume types.
 --
 -- Tags 0-2 (3 constructors).
 data VolumeType
-  = Bind  -- ^ Tag 0.
-  | Named  -- ^ Tag 1.
-  | Tmpfs  -- ^ Tag 2.
+  = Bind  -- ^ Bind (tag 0).
+  | Named  -- ^ Named (tag 1).
+  | Tmpfs  -- ^ Tmpfs (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'VolumeType' to its ABI tag value.
@@ -142,14 +139,14 @@ volumeTypeFromTag n
 -- RestartPolicy
 -- ---------------------------------------------------------------------------
 
--- | RestartPolicy type matching the Idris2 ABI.
+-- | Container restart policies.
 --
 -- Tags 0-3 (4 constructors).
 data RestartPolicy
-  = No  -- ^ Tag 0.
-  | Always  -- ^ Tag 1.
-  | OnFailure  -- ^ Tag 2.
-  | UnlessStopped  -- ^ Tag 3.
+  = No  -- ^ No (tag 0).
+  | Always  -- ^ Always (tag 1).
+  | OnFailure  -- ^ OnFailure (tag 2).
+  | UnlessStopped  -- ^ UnlessStopped (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RestartPolicy' to its ABI tag value.
@@ -166,14 +163,14 @@ restartPolicyFromTag n
 -- HealthStatus
 -- ---------------------------------------------------------------------------
 
--- | HealthStatus type matching the Idris2 ABI.
+-- | Container health check status.
 --
 -- Tags 0-3 (4 constructors).
 data HealthStatus
-  = Starting  -- ^ Tag 0.
-  | Healthy  -- ^ Tag 1.
-  | Unhealthy  -- ^ Tag 2.
-  | NoCheck  -- ^ Tag 3.
+  = Starting  -- ^ Starting (tag 0).
+  | Healthy  -- ^ Healthy (tag 1).
+  | Unhealthy  -- ^ Unhealthy (tag 2).
+  | NoCheck  -- ^ NoCheck (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HealthStatus' to its ABI tag value.

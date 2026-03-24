@@ -1,27 +1,24 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | SIEM protocol types for proven-servers.
+-- | SIEM types for the proven-servers ABI.
 --
--- SIEM (Security Information and Event Management) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Siem
-  ( -- * ADT types matching Idris2 ABI
-      EventSeverity(..)
-    , EventCategory(..)
-    , CorrelationRule(..)
-    , AlertState(..)
-    , eventSeverityToTag
-    , eventSeverityFromTag
-    , eventCategoryToTag
-    , eventCategoryFromTag
-    , correlationRuleToTag
-    , correlationRuleFromTag
-    , alertStateToTag
-    , alertStateFromTag
+  (
+    EventSeverity(..)
+  , eventSeverityToTag
+  , eventSeverityFromTag
+  , EventCategory(..)
+  , eventCategoryToTag
+  , eventCategoryFromTag
+  , CorrelationRule(..)
+  , correlationRuleToTag
+  , correlationRuleFromTag
+  , AlertState(..)
+  , alertStateToTag
+  , alertStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -30,15 +27,15 @@ import Data.Word (Word8)
 -- EventSeverity
 -- ---------------------------------------------------------------------------
 
--- | EventSeverity type matching the Idris2 ABI.
+-- | Security event severity.
 --
 -- Tags 0-4 (5 constructors).
 data EventSeverity
-  = Info  -- ^ Tag 0.
-  | Low  -- ^ Tag 1.
-  | Medium  -- ^ Tag 2.
-  | High  -- ^ Tag 3.
-  | Critical  -- ^ Tag 4.
+  = Info  -- ^ Info (tag 0).
+  | Low  -- ^ Low (tag 1).
+  | Medium  -- ^ Medium (tag 2).
+  | High  -- ^ High (tag 3).
+  | Critical  -- ^ Critical (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'EventSeverity' to its ABI tag value.
@@ -55,17 +52,17 @@ eventSeverityFromTag n
 -- EventCategory
 -- ---------------------------------------------------------------------------
 
--- | EventCategory type matching the Idris2 ABI.
+-- | Security event categories.
 --
 -- Tags 0-6 (7 constructors).
 data EventCategory
-  = Authentication  -- ^ Tag 0.
-  | NetworkTraffic  -- ^ Tag 1.
-  | FileActivity  -- ^ Tag 2.
-  | ProcessExecution  -- ^ Tag 3.
-  | PolicyViolation  -- ^ Tag 4.
-  | Malware  -- ^ Tag 5.
-  | DataExfiltration  -- ^ Tag 6.
+  = Authentication  -- ^ Authentication (tag 0).
+  | NetworkTraffic  -- ^ NetworkTraffic (tag 1).
+  | FileActivity  -- ^ FileActivity (tag 2).
+  | ProcessExecution  -- ^ ProcessExecution (tag 3).
+  | PolicyViolation  -- ^ PolicyViolation (tag 4).
+  | Malware  -- ^ Malware (tag 5).
+  | DataExfiltration  -- ^ DataExfiltration (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'EventCategory' to its ABI tag value.
@@ -82,15 +79,15 @@ eventCategoryFromTag n
 -- CorrelationRule
 -- ---------------------------------------------------------------------------
 
--- | CorrelationRule type matching the Idris2 ABI.
+-- | Event correlation rule types.
 --
 -- Tags 0-4 (5 constructors).
 data CorrelationRule
-  = Threshold  -- ^ Tag 0.
-  | Sequence  -- ^ Tag 1.
-  | Aggregation  -- ^ Tag 2.
-  | Absence  -- ^ Tag 3.
-  | Statistical  -- ^ Tag 4.
+  = Threshold  -- ^ Threshold (tag 0).
+  | Sequence  -- ^ Sequence (tag 1).
+  | Aggregation  -- ^ Aggregation (tag 2).
+  | Absence  -- ^ Absence (tag 3).
+  | Statistical  -- ^ Statistical (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CorrelationRule' to its ABI tag value.
@@ -107,15 +104,15 @@ correlationRuleFromTag n
 -- AlertState
 -- ---------------------------------------------------------------------------
 
--- | AlertState type matching the Idris2 ABI.
+-- | SIEM alert states.
 --
 -- Tags 0-4 (5 constructors).
 data AlertState
-  = New  -- ^ Tag 0.
-  | Acknowledged  -- ^ Tag 1.
-  | InProgress  -- ^ Tag 2.
-  | Resolved  -- ^ Tag 3.
-  | FalsePositive  -- ^ Tag 4.
+  = New  -- ^ New (tag 0).
+  | Acknowledged  -- ^ Acknowledged (tag 1).
+  | InProgress  -- ^ InProgress (tag 2).
+  | Resolved  -- ^ Resolved (tag 3).
+  | FalsePositive  -- ^ FalsePositive (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AlertState' to its ABI tag value.

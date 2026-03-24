@@ -1,57 +1,59 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | NETCONF protocol types for proven-servers.
+-- | NETCONF types for the proven-servers ABI.
 --
--- NETCONF types (RFC 6241), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Netconf
-  ( -- * ADT types matching Idris2 ABI
-      NetconfOperation(..)
-    , Datastore(..)
-    , EditOperation(..)
-    , NetconfErrorType(..)
-    , ErrorSeverity(..)
-    , NetconfState(..)
-    , netconfOperationToTag
-    , netconfOperationFromTag
-    , datastoreToTag
-    , datastoreFromTag
-    , editOperationToTag
-    , editOperationFromTag
-    , netconfErrorTypeToTag
-    , netconfErrorTypeFromTag
-    , errorSeverityToTag
-    , errorSeverityFromTag
-    , netconfStateToTag
-    , netconfStateFromTag
+  (
+    netconfPort
+  , NetconfOperation(..)
+  , netconfOperationToTag
+  , netconfOperationFromTag
+  , Datastore(..)
+  , datastoreToTag
+  , datastoreFromTag
+  , EditOperation(..)
+  , editOperationToTag
+  , editOperationFromTag
+  , NetconfErrorType(..)
+  , netconfErrorTypeToTag
+  , netconfErrorTypeFromTag
+  , ErrorSeverity(..)
+  , errorSeverityToTag
+  , errorSeverityFromTag
+  , NetconfState(..)
+  , netconfStateToTag
+  , netconfStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard NETCONF SSH port.
+netconfPort :: Word16
+netconfPort = 830
 
 -- ---------------------------------------------------------------------------
 -- NetconfOperation
 -- ---------------------------------------------------------------------------
 
--- | NetconfOperation type matching the Idris2 ABI.
+-- | Standard NETCONF SSH port.
 --
 -- Tags 0-11 (12 constructors).
 data NetconfOperation
-  = Get  -- ^ Tag 0.
-  | GetConfig  -- ^ Tag 1.
-  | EditConfig  -- ^ Tag 2.
-  | CopyConfig  -- ^ Tag 3.
-  | DeleteConfig  -- ^ Tag 4.
-  | Lock  -- ^ Tag 5.
-  | Unlock  -- ^ Tag 6.
-  | CloseSession  -- ^ Tag 7.
-  | KillSession  -- ^ Tag 8.
-  | Commit  -- ^ Tag 9.
-  | Validate  -- ^ Tag 10.
-  | DiscardChanges  -- ^ Tag 11.
+  = Get  -- ^ Get (tag 0).
+  | GetConfig  -- ^ GetConfig (tag 1).
+  | EditConfig  -- ^ EditConfig (tag 2).
+  | CopyConfig  -- ^ CopyConfig (tag 3).
+  | DeleteConfig  -- ^ DeleteConfig (tag 4).
+  | Lock  -- ^ Lock (tag 5).
+  | Unlock  -- ^ Unlock (tag 6).
+  | CloseSession  -- ^ CloseSession (tag 7).
+  | KillSession  -- ^ KillSession (tag 8).
+  | Commit  -- ^ Commit (tag 9).
+  | Validate  -- ^ Validate (tag 10).
+  | DiscardChanges  -- ^ DiscardChanges (tag 11).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NetconfOperation' to its ABI tag value.
@@ -68,13 +70,13 @@ netconfOperationFromTag n
 -- Datastore
 -- ---------------------------------------------------------------------------
 
--- | Datastore type matching the Idris2 ABI.
+-- | NETCONF datastores.
 --
 -- Tags 0-2 (3 constructors).
 data Datastore
-  = Running  -- ^ Tag 0.
-  | Startup  -- ^ Tag 1.
-  | Candidate  -- ^ Tag 2.
+  = Running  -- ^ Running (tag 0).
+  | Startup  -- ^ Startup (tag 1).
+  | Candidate  -- ^ Candidate (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Datastore' to its ABI tag value.
@@ -91,15 +93,15 @@ datastoreFromTag n
 -- EditOperation
 -- ---------------------------------------------------------------------------
 
--- | EditOperation type matching the Idris2 ABI.
+-- | NETCONF edit operations.
 --
 -- Tags 0-4 (5 constructors).
 data EditOperation
-  = Merge  -- ^ Tag 0.
-  | Replace  -- ^ Tag 1.
-  | Create  -- ^ Tag 2.
-  | Delete  -- ^ Tag 3.
-  | Remove  -- ^ Tag 4.
+  = Merge  -- ^ Merge (tag 0).
+  | Replace  -- ^ Replace (tag 1).
+  | Create  -- ^ Create (tag 2).
+  | Delete  -- ^ Delete (tag 3).
+  | Remove  -- ^ Remove (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'EditOperation' to its ABI tag value.
@@ -116,14 +118,14 @@ editOperationFromTag n
 -- NetconfErrorType
 -- ---------------------------------------------------------------------------
 
--- | NetconfErrorType type matching the Idris2 ABI.
+-- | NETCONF error types.
 --
 -- Tags 0-3 (4 constructors).
 data NetconfErrorType
-  = Transport  -- ^ Tag 0.
-  | Rpc  -- ^ Tag 1.
-  | Protocol  -- ^ Tag 2.
-  | Application  -- ^ Tag 3.
+  = Transport  -- ^ Transport (tag 0).
+  | Rpc  -- ^ RPC (tag 1).
+  | Protocol  -- ^ Protocol (tag 2).
+  | Application  -- ^ Application (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NetconfErrorType' to its ABI tag value.
@@ -140,12 +142,12 @@ netconfErrorTypeFromTag n
 -- ErrorSeverity
 -- ---------------------------------------------------------------------------
 
--- | ErrorSeverity type matching the Idris2 ABI.
+-- | NETCONF error severity.
 --
 -- Tags 0-1 (2 constructors).
 data ErrorSeverity
-  = Error  -- ^ Tag 0.
-  | Warning  -- ^ Tag 1.
+  = Error  -- ^ Error (tag 0).
+  | Warning  -- ^ Warning (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorSeverity' to its ABI tag value.
@@ -162,16 +164,16 @@ errorSeverityFromTag n
 -- NetconfState
 -- ---------------------------------------------------------------------------
 
--- | NetconfState type matching the Idris2 ABI.
+-- | NETCONF session states.
 --
 -- Tags 0-5 (6 constructors).
 data NetconfState
-  = Idle  -- ^ Tag 0.
-  | Connected  -- ^ Tag 1.
-  | Locked  -- ^ Tag 2.
-  | Editing  -- ^ Tag 3.
-  | Closing  -- ^ Tag 4.
-  | Terminated  -- ^ Tag 5.
+  = Idle  -- ^ Idle (tag 0).
+  | Connected  -- ^ Connected (tag 1).
+  | Locked  -- ^ Locked (tag 2).
+  | Editing  -- ^ Editing (tag 3).
+  | Closing  -- ^ Closing (tag 4).
+  | Terminated  -- ^ Terminated (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NetconfState' to its ABI tag value.

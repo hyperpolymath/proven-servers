@@ -1,33 +1,30 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | File Server protocol types for proven-servers.
+-- | File Server types for the proven-servers ABI.
 --
--- File server types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Fileserver
-  ( -- * ADT types matching Idris2 ABI
-      FileOperation(..)
-    , FileType(..)
-    , FilePermission(..)
-    , LockType(..)
-    , FileErrorCode(..)
-    , SessionState(..)
-    , fileOperationToTag
-    , fileOperationFromTag
-    , fileTypeToTag
-    , fileTypeFromTag
-    , filePermissionToTag
-    , filePermissionFromTag
-    , lockTypeToTag
-    , lockTypeFromTag
-    , fileErrorCodeToTag
-    , fileErrorCodeFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    FileOperation(..)
+  , fileOperationToTag
+  , fileOperationFromTag
+  , FileType(..)
+  , fileTypeToTag
+  , fileTypeFromTag
+  , FilePermission(..)
+  , filePermissionToTag
+  , filePermissionFromTag
+  , LockType(..)
+  , lockTypeToTag
+  , lockTypeFromTag
+  , FileErrorCode(..)
+  , fileErrorCodeToTag
+  , fileErrorCodeFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,20 +33,20 @@ import Data.Word (Word8)
 -- FileOperation
 -- ---------------------------------------------------------------------------
 
--- | FileOperation type matching the Idris2 ABI.
+-- | File server operations.
 --
 -- Tags 0-9 (10 constructors).
 data FileOperation
-  = Read  -- ^ Tag 0.
-  | Write  -- ^ Tag 1.
-  | Create  -- ^ Tag 2.
-  | Delete  -- ^ Tag 3.
-  | Rename  -- ^ Tag 4.
-  | List  -- ^ Tag 5.
-  | Stat  -- ^ Tag 6.
-  | Lock  -- ^ Tag 7.
-  | Unlock  -- ^ Tag 8.
-  | Watch  -- ^ Tag 9.
+  = Read  -- ^ Read (tag 0).
+  | Write  -- ^ Write (tag 1).
+  | Create  -- ^ Create (tag 2).
+  | Delete  -- ^ Delete (tag 3).
+  | Rename  -- ^ Rename (tag 4).
+  | List  -- ^ List (tag 5).
+  | Stat  -- ^ Stat (tag 6).
+  | Lock  -- ^ Lock (tag 7).
+  | Unlock  -- ^ Unlock (tag 8).
+  | Watch  -- ^ Watch (tag 9).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'FileOperation' to its ABI tag value.
@@ -66,17 +63,17 @@ fileOperationFromTag n
 -- FileType
 -- ---------------------------------------------------------------------------
 
--- | FileType type matching the Idris2 ABI.
+-- | File types.
 --
 -- Tags 0-6 (7 constructors).
 data FileType
-  = Regular  -- ^ Tag 0.
-  | Directory  -- ^ Tag 1.
-  | Symlink  -- ^ Tag 2.
-  | BlockDevice  -- ^ Tag 3.
-  | CharDevice  -- ^ Tag 4.
-  | Fifo  -- ^ Tag 5.
-  | Socket  -- ^ Tag 6.
+  = Regular  -- ^ Regular (tag 0).
+  | Directory  -- ^ Directory (tag 1).
+  | Symlink  -- ^ Symlink (tag 2).
+  | BlockDevice  -- ^ BlockDevice (tag 3).
+  | CharDevice  -- ^ CharDevice (tag 4).
+  | Fifo  -- ^ FIFO (tag 5).
+  | Socket  -- ^ Socket (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'FileType' to its ABI tag value.
@@ -93,19 +90,19 @@ fileTypeFromTag n
 -- FilePermission
 -- ---------------------------------------------------------------------------
 
--- | FilePermission type matching the Idris2 ABI.
+-- | POSIX file permissions.
 --
 -- Tags 0-8 (9 constructors).
 data FilePermission
-  = OwnerRead  -- ^ Tag 0.
-  | OwnerWrite  -- ^ Tag 1.
-  | OwnerExecute  -- ^ Tag 2.
-  | GroupRead  -- ^ Tag 3.
-  | GroupWrite  -- ^ Tag 4.
-  | GroupExecute  -- ^ Tag 5.
-  | OtherRead  -- ^ Tag 6.
-  | OtherWrite  -- ^ Tag 7.
-  | OtherExecute  -- ^ Tag 8.
+  = OwnerRead  -- ^ OwnerRead (tag 0).
+  | OwnerWrite  -- ^ OwnerWrite (tag 1).
+  | OwnerExecute  -- ^ OwnerExecute (tag 2).
+  | GroupRead  -- ^ GroupRead (tag 3).
+  | GroupWrite  -- ^ GroupWrite (tag 4).
+  | GroupExecute  -- ^ GroupExecute (tag 5).
+  | OtherRead  -- ^ OtherRead (tag 6).
+  | OtherWrite  -- ^ OtherWrite (tag 7).
+  | OtherExecute  -- ^ OtherExecute (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'FilePermission' to its ABI tag value.
@@ -122,14 +119,14 @@ filePermissionFromTag n
 -- LockType
 -- ---------------------------------------------------------------------------
 
--- | LockType type matching the Idris2 ABI.
+-- | File lock types.
 --
 -- Tags 0-3 (4 constructors).
 data LockType
-  = Shared  -- ^ Tag 0.
-  | Exclusive  -- ^ Tag 1.
-  | Advisory  -- ^ Tag 2.
-  | Mandatory  -- ^ Tag 3.
+  = Shared  -- ^ Shared (tag 0).
+  | Exclusive  -- ^ Exclusive (tag 1).
+  | Advisory  -- ^ Advisory (tag 2).
+  | Mandatory  -- ^ Mandatory (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'LockType' to its ABI tag value.
@@ -146,20 +143,20 @@ lockTypeFromTag n
 -- FileErrorCode
 -- ---------------------------------------------------------------------------
 
--- | FileErrorCode type matching the Idris2 ABI.
+-- | File server error codes.
 --
 -- Tags 0-9 (10 constructors).
 data FileErrorCode
-  = NotFound  -- ^ Tag 0.
-  | PermissionDenied  -- ^ Tag 1.
-  | AlreadyExists  -- ^ Tag 2.
-  | NotEmpty  -- ^ Tag 3.
-  | IsDirectory  -- ^ Tag 4.
-  | NotDirectory  -- ^ Tag 5.
-  | NoSpace  -- ^ Tag 6.
-  | ReadOnly  -- ^ Tag 7.
-  | Locked  -- ^ Tag 8.
-  | IoError  -- ^ Tag 9.
+  = NotFound  -- ^ NotFound (tag 0).
+  | PermissionDenied  -- ^ PermissionDenied (tag 1).
+  | AlreadyExists  -- ^ AlreadyExists (tag 2).
+  | NotEmpty  -- ^ NotEmpty (tag 3).
+  | IsDirectory  -- ^ IsDirectory (tag 4).
+  | NotDirectory  -- ^ NotDirectory (tag 5).
+  | NoSpace  -- ^ NoSpace (tag 6).
+  | ReadOnly  -- ^ ReadOnly (tag 7).
+  | Locked  -- ^ Locked (tag 8).
+  | IoError  -- ^ I/O error (tag 9).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'FileErrorCode' to its ABI tag value.
@@ -176,15 +173,15 @@ fileErrorCodeFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | File server session states.
 --
 -- Tags 0-4 (5 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | Connected  -- ^ Tag 1.
-  | Operating  -- ^ Tag 2.
-  | FsLocked  -- ^ Tag 3.
-  | Disconnecting  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Connected  -- ^ Connected (tag 1).
+  | Operating  -- ^ Operating (tag 2).
+  | FsLocked  -- ^ Locked (tag 3).
+  | Disconnecting  -- ^ Disconnecting (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.

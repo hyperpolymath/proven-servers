@@ -1,44 +1,46 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | DoT protocol types for proven-servers.
+-- | DNS-over-TLS types for the proven-servers ABI.
 --
--- DNS-over-TLS types (RFC 7858), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Dot
-  ( -- * ADT types matching Idris2 ABI
-      SessionState(..)
-    , PaddingStrategy(..)
-    , ErrorReason(..)
-    , ServerState(..)
-    , sessionStateToTag
-    , sessionStateFromTag
-    , paddingStrategyToTag
-    , paddingStrategyFromTag
-    , errorReasonToTag
-    , errorReasonFromTag
-    , serverStateToTag
-    , serverStateFromTag
+  (
+    dotPort
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
+  , PaddingStrategy(..)
+  , paddingStrategyToTag
+  , paddingStrategyFromTag
+  , ErrorReason(..)
+  , errorReasonToTag
+  , errorReasonFromTag
+  , ServerState(..)
+  , serverStateToTag
+  , serverStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard DoT port.
+dotPort :: Word16
+dotPort = 853
 
 -- ---------------------------------------------------------------------------
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | Standard DoT port.
 --
 -- Tags 0-4 (5 constructors).
 data SessionState
-  = Connecting  -- ^ Tag 0.
-  | Handshaking  -- ^ Tag 1.
-  | Established  -- ^ Tag 2.
-  | Closing  -- ^ Tag 3.
-  | Closed  -- ^ Tag 4.
+  = Connecting  -- ^ Connecting (tag 0).
+  | Handshaking  -- ^ Handshaking (tag 1).
+  | Established  -- ^ Established (tag 2).
+  | Closing  -- ^ Closing (tag 3).
+  | Closed  -- ^ Closed (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.
@@ -55,13 +57,13 @@ sessionStateFromTag n
 -- PaddingStrategy
 -- ---------------------------------------------------------------------------
 
--- | PaddingStrategy type matching the Idris2 ABI.
+-- | DoT padding strategies (RFC 7830).
 --
 -- Tags 0-2 (3 constructors).
 data PaddingStrategy
-  = NoPadding  -- ^ Tag 0.
-  | BlockPadding  -- ^ Tag 1.
-  | RandomPadding  -- ^ Tag 2.
+  = NoPadding  -- ^ NoPadding (tag 0).
+  | BlockPadding  -- ^ BlockPadding (tag 1).
+  | RandomPadding  -- ^ RandomPadding (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PaddingStrategy' to its ABI tag value.
@@ -78,14 +80,14 @@ paddingStrategyFromTag n
 -- ErrorReason
 -- ---------------------------------------------------------------------------
 
--- | ErrorReason type matching the Idris2 ABI.
+-- | DoT error reasons.
 --
 -- Tags 0-3 (4 constructors).
 data ErrorReason
-  = HandshakeFailed  -- ^ Tag 0.
-  | CertificateInvalid  -- ^ Tag 1.
-  | Timeout  -- ^ Tag 2.
-  | UpstreamError  -- ^ Tag 3.
+  = HandshakeFailed  -- ^ HandshakeFailed (tag 0).
+  | CertificateInvalid  -- ^ CertificateInvalid (tag 1).
+  | Timeout  -- ^ Timeout (tag 2).
+  | UpstreamError  -- ^ UpstreamError (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorReason' to its ABI tag value.
@@ -102,15 +104,15 @@ errorReasonFromTag n
 -- ServerState
 -- ---------------------------------------------------------------------------
 
--- | ServerState type matching the Idris2 ABI.
+-- | DoT server lifecycle states.
 --
 -- Tags 0-4 (5 constructors).
 data ServerState
-  = Idle  -- ^ Tag 0.
-  | Bound  -- ^ Tag 1.
-  | Listening  -- ^ Tag 2.
-  | Processing  -- ^ Tag 3.
-  | Shutdown  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Bound  -- ^ Bound (tag 1).
+  | Listening  -- ^ Listening (tag 2).
+  | Processing  -- ^ Processing (tag 3).
+  | Shutdown  -- ^ Shutdown (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ServerState' to its ABI tag value.

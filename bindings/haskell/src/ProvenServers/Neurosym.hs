@@ -1,36 +1,33 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Neurosym protocol types for proven-servers.
+-- | Neurosymbolic Engine types for the proven-servers ABI.
 --
--- Neurosymbolic engine types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Neurosym
-  ( -- * ADT types matching Idris2 ABI
-      InferenceMode(..)
-    , SymbolicOp(..)
-    , NeuralOp(..)
-    , FusionStrategy(..)
-    , ConfidenceLevel(..)
-    , KnowledgeType(..)
-    , NeurosymState(..)
-    , inferenceModeToTag
-    , inferenceModeFromTag
-    , symbolicOpToTag
-    , symbolicOpFromTag
-    , neuralOpToTag
-    , neuralOpFromTag
-    , fusionStrategyToTag
-    , fusionStrategyFromTag
-    , confidenceLevelToTag
-    , confidenceLevelFromTag
-    , knowledgeTypeToTag
-    , knowledgeTypeFromTag
-    , neurosymStateToTag
-    , neurosymStateFromTag
+  (
+    InferenceMode(..)
+  , inferenceModeToTag
+  , inferenceModeFromTag
+  , SymbolicOp(..)
+  , symbolicOpToTag
+  , symbolicOpFromTag
+  , NeuralOp(..)
+  , neuralOpToTag
+  , neuralOpFromTag
+  , FusionStrategy(..)
+  , fusionStrategyToTag
+  , fusionStrategyFromTag
+  , ConfidenceLevel(..)
+  , confidenceLevelToTag
+  , confidenceLevelFromTag
+  , KnowledgeType(..)
+  , knowledgeTypeToTag
+  , knowledgeTypeFromTag
+  , NeurosymState(..)
+  , neurosymStateToTag
+  , neurosymStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -39,14 +36,14 @@ import Data.Word (Word8)
 -- InferenceMode
 -- ---------------------------------------------------------------------------
 
--- | InferenceMode type matching the Idris2 ABI.
+-- | Neurosymbolic inference modes.
 --
 -- Tags 0-3 (4 constructors).
 data InferenceMode
-  = Neural  -- ^ Tag 0.
-  | Symbolic  -- ^ Tag 1.
-  | Hybrid  -- ^ Tag 2.
-  | Cascade  -- ^ Tag 3.
+  = Neural  -- ^ Neural (tag 0).
+  | Symbolic  -- ^ Symbolic (tag 1).
+  | Hybrid  -- ^ Hybrid (tag 2).
+  | Cascade  -- ^ Cascade (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'InferenceMode' to its ABI tag value.
@@ -63,16 +60,16 @@ inferenceModeFromTag n
 -- SymbolicOp
 -- ---------------------------------------------------------------------------
 
--- | SymbolicOp type matching the Idris2 ABI.
+-- | Symbolic reasoning operations.
 --
 -- Tags 0-5 (6 constructors).
 data SymbolicOp
-  = Unify  -- ^ Tag 0.
-  | Resolve  -- ^ Tag 1.
-  | Rewrite  -- ^ Tag 2.
-  | Prove  -- ^ Tag 3.
-  | Search  -- ^ Tag 4.
-  | Constrain  -- ^ Tag 5.
+  = Unify  -- ^ Unify (tag 0).
+  | Resolve  -- ^ Resolve (tag 1).
+  | Rewrite  -- ^ Rewrite (tag 2).
+  | Prove  -- ^ Prove (tag 3).
+  | Search  -- ^ Search (tag 4).
+  | Constrain  -- ^ Constrain (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SymbolicOp' to its ABI tag value.
@@ -89,16 +86,16 @@ symbolicOpFromTag n
 -- NeuralOp
 -- ---------------------------------------------------------------------------
 
--- | NeuralOp type matching the Idris2 ABI.
+-- | Neural inference operations.
 --
 -- Tags 0-5 (6 constructors).
 data NeuralOp
-  = Embed  -- ^ Tag 0.
-  | Classify  -- ^ Tag 1.
-  | Generate  -- ^ Tag 2.
-  | Attend  -- ^ Tag 3.
-  | Retrieve  -- ^ Tag 4.
-  | Finetune  -- ^ Tag 5.
+  = Embed  -- ^ Embed (tag 0).
+  | Classify  -- ^ Classify (tag 1).
+  | Generate  -- ^ Generate (tag 2).
+  | Attend  -- ^ Attend (tag 3).
+  | Retrieve  -- ^ Retrieve (tag 4).
+  | Finetune  -- ^ Finetune (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NeuralOp' to its ABI tag value.
@@ -115,15 +112,15 @@ neuralOpFromTag n
 -- FusionStrategy
 -- ---------------------------------------------------------------------------
 
--- | FusionStrategy type matching the Idris2 ABI.
+-- | Neural-symbolic fusion strategies.
 --
 -- Tags 0-4 (5 constructors).
 data FusionStrategy
-  = NeuralThenSymbolic  -- ^ Tag 0.
-  | SymbolicThenNeural  -- ^ Tag 1.
-  | Parallel  -- ^ Tag 2.
-  | Iterative  -- ^ Tag 3.
-  | Gated  -- ^ Tag 4.
+  = NeuralThenSymbolic  -- ^ NeuralThenSymbolic (tag 0).
+  | SymbolicThenNeural  -- ^ SymbolicThenNeural (tag 1).
+  | Parallel  -- ^ Parallel (tag 2).
+  | Iterative  -- ^ Iterative (tag 3).
+  | Gated  -- ^ Gated (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'FusionStrategy' to its ABI tag value.
@@ -140,16 +137,16 @@ fusionStrategyFromTag n
 -- ConfidenceLevel
 -- ---------------------------------------------------------------------------
 
--- | ConfidenceLevel type matching the Idris2 ABI.
+-- | Inference confidence levels.
 --
 -- Tags 0-5 (6 constructors).
 data ConfidenceLevel
-  = Proven  -- ^ Tag 0.
-  | HighConfidence  -- ^ Tag 1.
-  | Moderate  -- ^ Tag 2.
-  | LowConfidence  -- ^ Tag 3.
-  | Uncertain  -- ^ Tag 4.
-  | Contradicted  -- ^ Tag 5.
+  = Proven  -- ^ Proven (tag 0).
+  | HighConfidence  -- ^ HighConfidence (tag 1).
+  | Moderate  -- ^ Moderate (tag 2).
+  | LowConfidence  -- ^ LowConfidence (tag 3).
+  | Uncertain  -- ^ Uncertain (tag 4).
+  | Contradicted  -- ^ Contradicted (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ConfidenceLevel' to its ABI tag value.
@@ -166,16 +163,16 @@ confidenceLevelFromTag n
 -- KnowledgeType
 -- ---------------------------------------------------------------------------
 
--- | KnowledgeType type matching the Idris2 ABI.
+-- | Knowledge entry types.
 --
 -- Tags 0-5 (6 constructors).
 data KnowledgeType
-  = Axiom  -- ^ Tag 0.
-  | Learned  -- ^ Tag 1.
-  | Inferred  -- ^ Tag 2.
-  | Grounded  -- ^ Tag 3.
-  | Hypothetical  -- ^ Tag 4.
-  | Retracted  -- ^ Tag 5.
+  = Axiom  -- ^ Axiom (tag 0).
+  | Learned  -- ^ Learned (tag 1).
+  | Inferred  -- ^ Inferred (tag 2).
+  | Grounded  -- ^ Grounded (tag 3).
+  | Hypothetical  -- ^ Hypothetical (tag 4).
+  | Retracted  -- ^ Retracted (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'KnowledgeType' to its ABI tag value.
@@ -192,16 +189,16 @@ knowledgeTypeFromTag n
 -- NeurosymState
 -- ---------------------------------------------------------------------------
 
--- | NeurosymState type matching the Idris2 ABI.
+-- | Neurosymbolic engine states.
 --
 -- Tags 0-5 (6 constructors).
 data NeurosymState
-  = Idle  -- ^ Tag 0.
-  | Ready  -- ^ Tag 1.
-  | Inferring  -- ^ Tag 2.
-  | Reasoning  -- ^ Tag 3.
-  | Fusing  -- ^ Tag 4.
-  | Shutdown  -- ^ Tag 5.
+  = Idle  -- ^ Idle (tag 0).
+  | Ready  -- ^ Ready (tag 1).
+  | Inferring  -- ^ Inferring (tag 2).
+  | Reasoning  -- ^ Reasoning (tag 3).
+  | Fusing  -- ^ Fusing (tag 4).
+  | Shutdown  -- ^ Shutdown (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NeurosymState' to its ABI tag value.

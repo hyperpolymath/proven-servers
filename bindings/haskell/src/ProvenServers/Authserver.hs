@@ -1,50 +1,56 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Auth protocol types for proven-servers.
+-- | Authentication server types for the proven-servers ABI.
 --
--- Authentication server types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Authserver
-  ( -- * ADT types matching Idris2 ABI
-      AuthMethod(..)
-    , TokenType(..)
-    , AuthResult(..)
-    , MfaMethod(..)
-    , SessionState(..)
-    , authMethodToTag
-    , authMethodFromTag
-    , tokenTypeToTag
-    , tokenTypeFromTag
-    , authResultToTag
-    , authResultFromTag
-    , mfaMethodToTag
-    , mfaMethodFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    authHttpsPort
+  , AuthMethod(..)
+  , authMethodToTag
+  , authMethodFromTag
+  , isPasswordless
+  , TokenType(..)
+  , tokenTypeToTag
+  , tokenTypeFromTag
+  , AuthResult(..)
+  , authResultToTag
+  , authResultFromTag
+  , isSuccess
+  , requiresAction
+  , MfaMethod(..)
+  , mfaMethodToTag
+  , mfaMethodFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
+  , isValid
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard HTTPS port for auth.
+authHttpsPort :: Word16
+authHttpsPort = 443
 
 -- ---------------------------------------------------------------------------
 -- AuthMethod
 -- ---------------------------------------------------------------------------
 
--- | AuthMethod type matching the Idris2 ABI.
+-- | Standard HTTPS port for auth.
 --
 -- Tags 0-7 (8 constructors).
 data AuthMethod
-  = Password  -- ^ Tag 0.
-  | Certificate  -- ^ Tag 1.
-  | OAuth2  -- ^ Tag 2.
-  | Saml  -- ^ Tag 3.
-  | Fido2  -- ^ Tag 4.
-  | Kerberos  -- ^ Tag 5.
-  | Ldap  -- ^ Tag 6.
-  | Radius  -- ^ Tag 7.
+  = Password  -- ^ Password (tag 0).
+  | Certificate  -- ^ Certificate (tag 1).
+  | OAuth2  -- ^ OAuth2 (tag 2).
+  | Saml  -- ^ SAML (tag 3).
+  | Fido2  -- ^ FIDO2/WebAuthn (tag 4).
+  | Kerberos  -- ^ Kerberos (tag 5).
+  | Ldap  -- ^ LDAP (tag 6).
+  | Radius  -- ^ RADIUS (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AuthMethod' to its ABI tag value.
@@ -57,18 +63,24 @@ authMethodFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: AuthMethod)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this method is passwordless.
+isPasswordless :: AuthMethod -> Bool
+isPasswordless Certificate = True
+isPasswordless Fido2 = True
+isPasswordless _ = False
+
 -- ---------------------------------------------------------------------------
 -- TokenType
 -- ---------------------------------------------------------------------------
 
--- | TokenType type matching the Idris2 ABI.
+-- | Authentication token types.
 --
 -- Tags 0-3 (4 constructors).
 data TokenType
-  = Access  -- ^ Tag 0.
-  | Refresh  -- ^ Tag 1.
-  | Id  -- ^ Tag 2.
-  | Api  -- ^ Tag 3.
+  = Access  -- ^ Access (tag 0).
+  | Refresh  -- ^ Refresh (tag 1).
+  | Id  -- ^ ID token (tag 2).
+  | Api  -- ^ API key (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'TokenType' to its ABI tag value.
@@ -85,16 +97,16 @@ tokenTypeFromTag n
 -- AuthResult
 -- ---------------------------------------------------------------------------
 
--- | AuthResult type matching the Idris2 ABI.
+-- | Authentication attempt result codes.
 --
 -- Tags 0-5 (6 constructors).
 data AuthResult
-  = Success  -- ^ Tag 0.
-  | InvalidCredentials  -- ^ Tag 1.
-  | AccountLocked  -- ^ Tag 2.
-  | AccountExpired  -- ^ Tag 3.
-  | MfaRequired  -- ^ Tag 4.
-  | IpBlocked  -- ^ Tag 5.
+  = Success  -- ^ Success (tag 0).
+  | InvalidCredentials  -- ^ InvalidCredentials (tag 1).
+  | AccountLocked  -- ^ AccountLocked (tag 2).
+  | AccountExpired  -- ^ AccountExpired (tag 3).
+  | MfaRequired  -- ^ MFA required (tag 4).
+  | IpBlocked  -- ^ IP address blocked (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AuthResult' to its ABI tag value.
@@ -107,19 +119,29 @@ authResultFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: AuthResult)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether authentication succeeded.
+isSuccess :: AuthResult -> Bool
+isSuccess Success = True
+isSuccess _ = False
+
+-- | Whether the result requires further user action.
+requiresAction :: AuthResult -> Bool
+requiresAction MfaRequired = True
+requiresAction _ = False
+
 -- ---------------------------------------------------------------------------
 -- MfaMethod
 -- ---------------------------------------------------------------------------
 
--- | MfaMethod type matching the Idris2 ABI.
+-- | Multi-factor authentication methods.
 --
 -- Tags 0-4 (5 constructors).
 data MfaMethod
-  = Totp  -- ^ Tag 0.
-  | Sms  -- ^ Tag 1.
-  | Push  -- ^ Tag 2.
-  | Fido2Mfa  -- ^ Tag 3.
-  | Email  -- ^ Tag 4.
+  = Totp  -- ^ TOTP (tag 0).
+  | Sms  -- ^ SMS (tag 1).
+  | Push  -- ^ Push (tag 2).
+  | Fido2Mfa  -- ^ FIDO2 MFA (tag 3).
+  | Email  -- ^ Email (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MfaMethod' to its ABI tag value.
@@ -136,14 +158,14 @@ mfaMethodFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | Auth session lifecycle states.
 --
 -- Tags 0-3 (4 constructors).
 data SessionState
-  = Active  -- ^ Tag 0.
-  | Expired  -- ^ Tag 1.
-  | Revoked  -- ^ Tag 2.
-  | Locked  -- ^ Tag 3.
+  = Active  -- ^ Active (tag 0).
+  | Expired  -- ^ Expired (tag 1).
+  | Revoked  -- ^ Revoked (tag 2).
+  | Locked  -- ^ Locked (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.
@@ -155,3 +177,8 @@ sessionStateFromTag :: Word8 -> Maybe SessionState
 sessionStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: SessionState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Whether the session is still usable.
+isValid :: SessionState -> Bool
+isValid Active = True
+isValid _ = False

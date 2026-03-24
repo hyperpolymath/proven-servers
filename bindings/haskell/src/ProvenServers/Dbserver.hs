@@ -1,57 +1,63 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Database protocol types for proven-servers.
+-- | Database server types for the proven-servers ABI.
 --
--- Database server types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Dbserver
-  ( -- * ADT types matching Idris2 ABI
-      QueryType(..)
-    , DataType(..)
-    , IsolationLevel(..)
-    , ErrorCode(..)
-    , JoinType(..)
-    , SessionState(..)
-    , queryTypeToTag
-    , queryTypeFromTag
-    , dataTypeToTag
-    , dataTypeFromTag
-    , isolationLevelToTag
-    , isolationLevelFromTag
-    , errorCodeToTag
-    , errorCodeFromTag
-    , joinTypeToTag
-    , joinTypeFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    dbserverPort
+  , QueryType(..)
+  , queryTypeToTag
+  , queryTypeFromTag
+  , isDdl
+  , isTransactionControl
+  , DataType(..)
+  , dataTypeToTag
+  , dataTypeFromTag
+  , IsolationLevel(..)
+  , isolationLevelToTag
+  , isolationLevelFromTag
+  , ErrorCode(..)
+  , errorCodeToTag
+  , errorCodeFromTag
+  , isRecoverable
+  , JoinType(..)
+  , joinTypeToTag
+  , joinTypeFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
+  , canQuery
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard PostgreSQL port.
+dbserverPort :: Word16
+dbserverPort = 5432
 
 -- ---------------------------------------------------------------------------
 -- QueryType
 -- ---------------------------------------------------------------------------
 
--- | QueryType type matching the Idris2 ABI.
+-- | Standard PostgreSQL port.
 --
 -- Tags 0-11 (12 constructors).
 data QueryType
-  = Select  -- ^ Tag 0.
-  | Insert  -- ^ Tag 1.
-  | Update  -- ^ Tag 2.
-  | Delete  -- ^ Tag 3.
-  | CreateTable  -- ^ Tag 4.
-  | DropTable  -- ^ Tag 5.
-  | AlterTable  -- ^ Tag 6.
-  | CreateIndex  -- ^ Tag 7.
-  | DropIndex  -- ^ Tag 8.
-  | Begin  -- ^ Tag 9.
-  | Commit  -- ^ Tag 10.
-  | Rollback  -- ^ Tag 11.
+  = Select  -- ^ SELECT query (tag 0).
+  | Insert  -- ^ INSERT query (tag 1).
+  | Update  -- ^ UPDATE query (tag 2).
+  | Delete  -- ^ DELETE query (tag 3).
+  | CreateTable  -- ^ CREATE TABLE DDL (tag 4).
+  | DropTable  -- ^ DROP TABLE DDL (tag 5).
+  | AlterTable  -- ^ ALTER TABLE DDL (tag 6).
+  | CreateIndex  -- ^ CREATE INDEX DDL (tag 7).
+  | DropIndex  -- ^ DROP INDEX DDL (tag 8).
+  | Begin  -- ^ BEGIN TRANSACTION (tag 9).
+  | Commit  -- ^ COMMIT TRANSACTION (tag 10).
+  | Rollback  -- ^ ROLLBACK TRANSACTION (tag 11).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'QueryType' to its ABI tag value.
@@ -64,23 +70,39 @@ queryTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: QueryType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this is a DDL (schema modification) query.
+isDdl :: QueryType -> Bool
+isDdl CreateTable = True
+isDdl DropTable = True
+isDdl AlterTable = True
+isDdl CreateIndex = True
+isDdl DropIndex = True
+isDdl _ = False
+
+-- | Whether this is a transaction control statement.
+isTransactionControl :: QueryType -> Bool
+isTransactionControl Begin = True
+isTransactionControl Commit = True
+isTransactionControl Rollback = True
+isTransactionControl _ = False
+
 -- ---------------------------------------------------------------------------
 -- DataType
 -- ---------------------------------------------------------------------------
 
--- | DataType type matching the Idris2 ABI.
+-- | Database column/value data types.
 --
 -- Tags 0-8 (9 constructors).
 data DataType
-  = Integer  -- ^ Tag 0.
-  | Float  -- ^ Tag 1.
-  | Text  -- ^ Tag 2.
-  | Blob  -- ^ Tag 3.
-  | Boolean  -- ^ Tag 4.
-  | Timestamp  -- ^ Tag 5.
-  | Uuid  -- ^ Tag 6.
-  | Json  -- ^ Tag 7.
-  | Null  -- ^ Tag 8.
+  = Integer  -- ^ Integer (tag 0).
+  | Float  -- ^ Float (tag 1).
+  | Text  -- ^ Text (tag 2).
+  | Blob  -- ^ Blob (tag 3).
+  | Boolean  -- ^ Boolean (tag 4).
+  | Timestamp  -- ^ Timestamp (tag 5).
+  | Uuid  -- ^ UUID type (tag 6).
+  | Json  -- ^ JSON type (tag 7).
+  | Null  -- ^ Null (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DataType' to its ABI tag value.
@@ -97,14 +119,14 @@ dataTypeFromTag n
 -- IsolationLevel
 -- ---------------------------------------------------------------------------
 
--- | IsolationLevel type matching the Idris2 ABI.
+-- | Transaction isolation levels (ANSI SQL).
 --
 -- Tags 0-3 (4 constructors).
 data IsolationLevel
-  = ReadUncommitted  -- ^ Tag 0.
-  | ReadCommitted  -- ^ Tag 1.
-  | RepeatableRead  -- ^ Tag 2.
-  | Serializable  -- ^ Tag 3.
+  = ReadUncommitted  -- ^ ReadUncommitted (tag 0).
+  | ReadCommitted  -- ^ ReadCommitted (tag 1).
+  | RepeatableRead  -- ^ RepeatableRead (tag 2).
+  | Serializable  -- ^ Serializable (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'IsolationLevel' to its ABI tag value.
@@ -121,20 +143,20 @@ isolationLevelFromTag n
 -- ErrorCode
 -- ---------------------------------------------------------------------------
 
--- | ErrorCode type matching the Idris2 ABI.
+-- | Database error codes.
 --
 -- Tags 0-9 (10 constructors).
 data ErrorCode
-  = SyntaxError  -- ^ Tag 0.
-  | TableNotFound  -- ^ Tag 1.
-  | ColumnNotFound  -- ^ Tag 2.
-  | DuplicateKey  -- ^ Tag 3.
-  | ConstraintViolation  -- ^ Tag 4.
-  | TypeMismatch  -- ^ Tag 5.
-  | DeadlockDetected  -- ^ Tag 6.
-  | TransactionAborted  -- ^ Tag 7.
-  | DiskFull  -- ^ Tag 8.
-  | ConnectionLost  -- ^ Tag 9.
+  = SyntaxError  -- ^ SyntaxError (tag 0).
+  | TableNotFound  -- ^ TableNotFound (tag 1).
+  | ColumnNotFound  -- ^ ColumnNotFound (tag 2).
+  | DuplicateKey  -- ^ DuplicateKey (tag 3).
+  | ConstraintViolation  -- ^ ConstraintViolation (tag 4).
+  | TypeMismatch  -- ^ TypeMismatch (tag 5).
+  | DeadlockDetected  -- ^ DeadlockDetected (tag 6).
+  | TransactionAborted  -- ^ TransactionAborted (tag 7).
+  | DiskFull  -- ^ DiskFull (tag 8).
+  | ConnectionLost  -- ^ ConnectionLost (tag 9).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorCode' to its ABI tag value.
@@ -147,19 +169,26 @@ errorCodeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: ErrorCode)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this error is potentially recoverable.
+isRecoverable :: ErrorCode -> Bool
+isRecoverable DeadlockDetected = True
+isRecoverable TransactionAborted = True
+isRecoverable ConnectionLost = True
+isRecoverable _ = False
+
 -- ---------------------------------------------------------------------------
 -- JoinType
 -- ---------------------------------------------------------------------------
 
--- | JoinType type matching the Idris2 ABI.
+-- | SQL JOIN types.
 --
 -- Tags 0-4 (5 constructors).
 data JoinType
-  = Inner  -- ^ Tag 0.
-  | LeftOuter  -- ^ Tag 1.
-  | RightOuter  -- ^ Tag 2.
-  | FullOuter  -- ^ Tag 3.
-  | Cross  -- ^ Tag 4.
+  = Inner  -- ^ Inner (tag 0).
+  | LeftOuter  -- ^ LeftOuter (tag 1).
+  | RightOuter  -- ^ RightOuter (tag 2).
+  | FullOuter  -- ^ FullOuter (tag 3).
+  | Cross  -- ^ Cross (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'JoinType' to its ABI tag value.
@@ -176,16 +205,16 @@ joinTypeFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | Database session lifecycle states.
 --
 -- Tags 0-5 (6 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | Connected  -- ^ Tag 1.
-  | Transaction  -- ^ Tag 2.
-  | Executing  -- ^ Tag 3.
-  | Finalising  -- ^ Tag 4.
-  | Disconnecting  -- ^ Tag 5.
+  = Idle  -- ^ Idle (tag 0).
+  | Connected  -- ^ Connected (tag 1).
+  | Transaction  -- ^ Transaction (tag 2).
+  | Executing  -- ^ Executing (tag 3).
+  | Finalising  -- ^ Finalising (tag 4).
+  | Disconnecting  -- ^ Disconnecting (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.
@@ -197,3 +226,9 @@ sessionStateFromTag :: Word8 -> Maybe SessionState
 sessionStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: SessionState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Whether queries can be executed in this state.
+canQuery :: SessionState -> Bool
+canQuery Connected = True
+canQuery Transaction = True
+canQuery _ = False

@@ -271,4 +271,127 @@ defmodule ProvenServers.SshBastion do
       when r in [:host_not_allowed, :host_auth_failed, :mac_error, :host_key_not_verifiable, :auth_cancelled],
       do: true
   def disconnect_reason_security_related?(_r), do: false
+
+  # ===========================================================================
+  # HostKeyAlgorithm (tags 0-3)
+  # ===========================================================================
+
+  @typedoc "SSH host key algorithms."
+  @type host_key_algorithm :: :ssh_ed25519 | :rsa_sha2_256 | :rsa_sha2_512 | :ecdsa_nistp256
+
+  @host_key_algorithm_tags %{ssh_ed25519: 0, rsa_sha2_256: 1, rsa_sha2_512: 2, ecdsa_nistp256: 3}
+  @tag_to_host_key_algorithm Map.new(@host_key_algorithm_tags, fn {k, v} -> {v, k} end)
+
+  @host_key_algorithm_names %{
+    ssh_ed25519: "ssh-ed25519", rsa_sha2_256: "rsa-sha2-256",
+    rsa_sha2_512: "rsa-sha2-512", ecdsa_nistp256: "ecdsa-sha2-nistp256"
+  }
+
+  @doc "Decode from a C-ABI tag value."
+  @spec host_key_algorithm_from_tag(non_neg_integer()) :: {:ok, host_key_algorithm()} | :error
+  def host_key_algorithm_from_tag(tag) when is_integer(tag) and tag >= 0 and tag <= 3 do
+    {:ok, Map.fetch!(@tag_to_host_key_algorithm, tag)}
+  end
+  def host_key_algorithm_from_tag(_tag), do: :error
+
+  @doc "Encode to the C-ABI tag value."
+  @spec host_key_algorithm_to_tag(host_key_algorithm()) :: non_neg_integer()
+  def host_key_algorithm_to_tag(alg) when is_map_key(@host_key_algorithm_tags, alg) do
+    Map.fetch!(@host_key_algorithm_tags, alg)
+  end
+
+  @doc "Algorithm name string."
+  @spec host_key_algorithm_name(host_key_algorithm()) :: String.t()
+  def host_key_algorithm_name(alg) when is_map_key(@host_key_algorithm_names, alg) do
+    Map.fetch!(@host_key_algorithm_names, alg)
+  end
+
+  @doc "Whether this algorithm uses elliptic curve cryptography."
+  @spec host_key_algorithm_ecc?(host_key_algorithm()) :: boolean()
+  def host_key_algorithm_ecc?(alg) when alg in [:ssh_ed25519, :ecdsa_nistp256], do: true
+  def host_key_algorithm_ecc?(_alg), do: false
+
+  # ===========================================================================
+  # CipherAlgorithm (tags 0-5)
+  # ===========================================================================
+
+  @typedoc "SSH symmetric cipher algorithms."
+  @type cipher_algorithm ::
+          :chacha20_poly1305 | :aes256_gcm | :aes128_gcm
+          | :aes256_ctr | :aes192_ctr | :aes128_ctr
+
+  @cipher_algorithm_tags %{
+    chacha20_poly1305: 0, aes256_gcm: 1, aes128_gcm: 2,
+    aes256_ctr: 3, aes192_ctr: 4, aes128_ctr: 5
+  }
+
+  @tag_to_cipher_algorithm Map.new(@cipher_algorithm_tags, fn {k, v} -> {v, k} end)
+
+  @cipher_algorithm_names %{
+    chacha20_poly1305: "chacha20-poly1305@openssh.com",
+    aes256_gcm: "aes256-gcm@openssh.com",
+    aes128_gcm: "aes128-gcm@openssh.com",
+    aes256_ctr: "aes256-ctr",
+    aes192_ctr: "aes192-ctr",
+    aes128_ctr: "aes128-ctr"
+  }
+
+  @doc "Decode from a C-ABI tag value."
+  @spec cipher_algorithm_from_tag(non_neg_integer()) :: {:ok, cipher_algorithm()} | :error
+  def cipher_algorithm_from_tag(tag) when is_integer(tag) and tag >= 0 and tag <= 5 do
+    {:ok, Map.fetch!(@tag_to_cipher_algorithm, tag)}
+  end
+  def cipher_algorithm_from_tag(_tag), do: :error
+
+  @doc "Encode to the C-ABI tag value."
+  @spec cipher_algorithm_to_tag(cipher_algorithm()) :: non_neg_integer()
+  def cipher_algorithm_to_tag(alg) when is_map_key(@cipher_algorithm_tags, alg) do
+    Map.fetch!(@cipher_algorithm_tags, alg)
+  end
+
+  @doc "Cipher algorithm name string."
+  @spec cipher_algorithm_name(cipher_algorithm()) :: String.t()
+  def cipher_algorithm_name(alg) when is_map_key(@cipher_algorithm_names, alg) do
+    Map.fetch!(@cipher_algorithm_names, alg)
+  end
+
+  @doc "Whether this cipher provides authenticated encryption (AEAD)."
+  @spec cipher_algorithm_aead?(cipher_algorithm()) :: boolean()
+  def cipher_algorithm_aead?(alg) when alg in [:chacha20_poly1305, :aes256_gcm, :aes128_gcm], do: true
+  def cipher_algorithm_aead?(_alg), do: false
+
+  @doc "The key size in bits for this cipher."
+  @spec cipher_algorithm_key_bits(cipher_algorithm()) :: non_neg_integer()
+  def cipher_algorithm_key_bits(:chacha20_poly1305), do: 256
+  def cipher_algorithm_key_bits(:aes256_gcm), do: 256
+  def cipher_algorithm_key_bits(:aes256_ctr), do: 256
+  def cipher_algorithm_key_bits(:aes192_ctr), do: 192
+  def cipher_algorithm_key_bits(:aes128_gcm), do: 128
+  def cipher_algorithm_key_bits(:aes128_ctr), do: 128
+
+  # ===========================================================================
+  # ChannelOpenFailure (tags 0-3)
+  # ===========================================================================
+
+  @typedoc "Reasons an SSH channel open request can be rejected."
+  @type channel_open_failure :: :admin_prohibited | :connect_failed | :unknown_channel_type | :resource_shortage
+
+  @channel_open_failure_tags %{
+    admin_prohibited: 0, connect_failed: 1, unknown_channel_type: 2, resource_shortage: 3
+  }
+
+  @tag_to_channel_open_failure Map.new(@channel_open_failure_tags, fn {k, v} -> {v, k} end)
+
+  @doc "Decode from a C-ABI tag value."
+  @spec channel_open_failure_from_tag(non_neg_integer()) :: {:ok, channel_open_failure()} | :error
+  def channel_open_failure_from_tag(tag) when is_integer(tag) and tag >= 0 and tag <= 3 do
+    {:ok, Map.fetch!(@tag_to_channel_open_failure, tag)}
+  end
+  def channel_open_failure_from_tag(_tag), do: :error
+
+  @doc "Encode to the C-ABI tag value."
+  @spec channel_open_failure_to_tag(channel_open_failure()) :: non_neg_integer()
+  def channel_open_failure_to_tag(reason) when is_map_key(@channel_open_failure_tags, reason) do
+    Map.fetch!(@channel_open_failure_tags, reason)
+  end
 end

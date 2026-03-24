@@ -1,30 +1,27 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Virtualization protocol types for proven-servers.
+-- | Virtualization types for the proven-servers ABI.
 --
--- Virtualization/hypervisor types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Virt
-  ( -- * ADT types matching Idris2 ABI
-      VmState(..)
-    , VirtOperation(..)
-    , DiskFormat(..)
-    , NetworkType(..)
-    , BootDevice(..)
-    , vmStateToTag
-    , vmStateFromTag
-    , virtOperationToTag
-    , virtOperationFromTag
-    , diskFormatToTag
-    , diskFormatFromTag
-    , networkTypeToTag
-    , networkTypeFromTag
-    , bootDeviceToTag
-    , bootDeviceFromTag
+  (
+    VmState(..)
+  , vmStateToTag
+  , vmStateFromTag
+  , VirtOperation(..)
+  , virtOperationToTag
+  , virtOperationFromTag
+  , DiskFormat(..)
+  , diskFormatToTag
+  , diskFormatFromTag
+  , NetworkType(..)
+  , networkTypeToTag
+  , networkTypeFromTag
+  , BootDevice(..)
+  , bootDeviceToTag
+  , bootDeviceFromTag
   ) where
 
 import Data.Word (Word8)
@@ -33,18 +30,18 @@ import Data.Word (Word8)
 -- VmState
 -- ---------------------------------------------------------------------------
 
--- | VmState type matching the Idris2 ABI.
+-- | VM lifecycle states.
 --
 -- Tags 0-7 (8 constructors).
 data VmState
-  = Creating  -- ^ Tag 0.
-  | Running  -- ^ Tag 1.
-  | Paused  -- ^ Tag 2.
-  | Suspended  -- ^ Tag 3.
-  | ShuttingDown  -- ^ Tag 4.
-  | Stopped  -- ^ Tag 5.
-  | Crashed  -- ^ Tag 6.
-  | Migrating  -- ^ Tag 7.
+  = Creating  -- ^ Creating (tag 0).
+  | Running  -- ^ Running (tag 1).
+  | Paused  -- ^ Paused (tag 2).
+  | Suspended  -- ^ Suspended (tag 3).
+  | ShuttingDown  -- ^ ShuttingDown (tag 4).
+  | Stopped  -- ^ Stopped (tag 5).
+  | Crashed  -- ^ Crashed (tag 6).
+  | Migrating  -- ^ Migrating (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'VmState' to its ABI tag value.
@@ -61,21 +58,21 @@ vmStateFromTag n
 -- VirtOperation
 -- ---------------------------------------------------------------------------
 
--- | VirtOperation type matching the Idris2 ABI.
+-- | VM operations.
 --
 -- Tags 0-10 (11 constructors).
 data VirtOperation
-  = Create  -- ^ Tag 0.
-  | Start  -- ^ Tag 1.
-  | Stop  -- ^ Tag 2.
-  | Restart  -- ^ Tag 3.
-  | Pause  -- ^ Tag 4.
-  | Resume  -- ^ Tag 5.
-  | Suspend  -- ^ Tag 6.
-  | Migrate  -- ^ Tag 7.
-  | Snapshot  -- ^ Tag 8.
-  | Clone  -- ^ Tag 9.
-  | Delete  -- ^ Tag 10.
+  = Create  -- ^ Create (tag 0).
+  | Start  -- ^ Start (tag 1).
+  | Stop  -- ^ Stop (tag 2).
+  | Restart  -- ^ Restart (tag 3).
+  | Pause  -- ^ Pause (tag 4).
+  | Resume  -- ^ Resume (tag 5).
+  | Suspend  -- ^ Suspend (tag 6).
+  | Migrate  -- ^ Migrate (tag 7).
+  | Snapshot  -- ^ Snapshot (tag 8).
+  | Clone  -- ^ Clone (tag 9).
+  | Delete  -- ^ Delete (tag 10).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'VirtOperation' to its ABI tag value.
@@ -92,15 +89,15 @@ virtOperationFromTag n
 -- DiskFormat
 -- ---------------------------------------------------------------------------
 
--- | DiskFormat type matching the Idris2 ABI.
+-- | Virtual disk formats.
 --
 -- Tags 0-4 (5 constructors).
 data DiskFormat
-  = Raw  -- ^ Tag 0.
-  | Qcow2  -- ^ Tag 1.
-  | Vdi  -- ^ Tag 2.
-  | Vmdk  -- ^ Tag 3.
-  | Vhd  -- ^ Tag 4.
+  = Raw  -- ^ Raw (tag 0).
+  | Qcow2  -- ^ QCOW2 (tag 1).
+  | Vdi  -- ^ VDI (tag 2).
+  | Vmdk  -- ^ VMDK (tag 3).
+  | Vhd  -- ^ VHD (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DiskFormat' to its ABI tag value.
@@ -117,14 +114,14 @@ diskFormatFromTag n
 -- NetworkType
 -- ---------------------------------------------------------------------------
 
--- | NetworkType type matching the Idris2 ABI.
+-- | VM network types.
 --
 -- Tags 0-3 (4 constructors).
 data NetworkType
-  = Nat  -- ^ Tag 0.
-  | Bridged  -- ^ Tag 1.
-  | Internal  -- ^ Tag 2.
-  | HostOnly  -- ^ Tag 3.
+  = Nat  -- ^ NAT (tag 0).
+  | Bridged  -- ^ Bridged (tag 1).
+  | Internal  -- ^ Internal (tag 2).
+  | HostOnly  -- ^ HostOnly (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NetworkType' to its ABI tag value.
@@ -141,14 +138,14 @@ networkTypeFromTag n
 -- BootDevice
 -- ---------------------------------------------------------------------------
 
--- | BootDevice type matching the Idris2 ABI.
+-- | VM boot devices.
 --
 -- Tags 0-3 (4 constructors).
 data BootDevice
-  = HardDisk  -- ^ Tag 0.
-  | Cdrom  -- ^ Tag 1.
-  | Network  -- ^ Tag 2.
-  | Usb  -- ^ Tag 3.
+  = HardDisk  -- ^ HardDisk (tag 0).
+  | Cdrom  -- ^ CD-ROM (tag 1).
+  | Network  -- ^ Network (tag 2).
+  | Usb  -- ^ USB (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'BootDevice' to its ABI tag value.

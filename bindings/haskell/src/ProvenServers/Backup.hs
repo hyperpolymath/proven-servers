@@ -1,33 +1,30 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Backup protocol types for proven-servers.
+-- | Backup Server types for the proven-servers ABI.
 --
--- Backup/restore server types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Backup
-  ( -- * ADT types matching Idris2 ABI
-      BackupType(..)
-    , ScheduleFreq(..)
-    , CompressionAlg(..)
-    , EncryptionAlg(..)
-    , BackupState(..)
-    , RetentionPolicy(..)
-    , backupTypeToTag
-    , backupTypeFromTag
-    , scheduleFreqToTag
-    , scheduleFreqFromTag
-    , compressionAlgToTag
-    , compressionAlgFromTag
-    , encryptionAlgToTag
-    , encryptionAlgFromTag
-    , backupStateToTag
-    , backupStateFromTag
-    , retentionPolicyToTag
-    , retentionPolicyFromTag
+  (
+    BackupType(..)
+  , backupTypeToTag
+  , backupTypeFromTag
+  , ScheduleFreq(..)
+  , scheduleFreqToTag
+  , scheduleFreqFromTag
+  , CompressionAlg(..)
+  , compressionAlgToTag
+  , compressionAlgFromTag
+  , EncryptionAlg(..)
+  , encryptionAlgToTag
+  , encryptionAlgFromTag
+  , BackupState(..)
+  , backupStateToTag
+  , backupStateFromTag
+  , RetentionPolicy(..)
+  , retentionPolicyToTag
+  , retentionPolicyFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,15 +33,15 @@ import Data.Word (Word8)
 -- BackupType
 -- ---------------------------------------------------------------------------
 
--- | BackupType type matching the Idris2 ABI.
+-- | Backup types.
 --
 -- Tags 0-4 (5 constructors).
 data BackupType
-  = Full  -- ^ Tag 0.
-  | Incremental  -- ^ Tag 1.
-  | Differential  -- ^ Tag 2.
-  | Snapshot  -- ^ Tag 3.
-  | Mirror  -- ^ Tag 4.
+  = Full  -- ^ Full (tag 0).
+  | Incremental  -- ^ Incremental (tag 1).
+  | Differential  -- ^ Differential (tag 2).
+  | Snapshot  -- ^ Snapshot (tag 3).
+  | Mirror  -- ^ Mirror (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'BackupType' to its ABI tag value.
@@ -61,15 +58,15 @@ backupTypeFromTag n
 -- ScheduleFreq
 -- ---------------------------------------------------------------------------
 
--- | ScheduleFreq type matching the Idris2 ABI.
+-- | Backup schedule frequencies.
 --
 -- Tags 0-4 (5 constructors).
 data ScheduleFreq
-  = Hourly  -- ^ Tag 0.
-  | Daily  -- ^ Tag 1.
-  | Weekly  -- ^ Tag 2.
-  | Monthly  -- ^ Tag 3.
-  | OnDemand  -- ^ Tag 4.
+  = Hourly  -- ^ Hourly (tag 0).
+  | Daily  -- ^ Daily (tag 1).
+  | Weekly  -- ^ Weekly (tag 2).
+  | Monthly  -- ^ Monthly (tag 3).
+  | OnDemand  -- ^ OnDemand (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ScheduleFreq' to its ABI tag value.
@@ -86,15 +83,15 @@ scheduleFreqFromTag n
 -- CompressionAlg
 -- ---------------------------------------------------------------------------
 
--- | CompressionAlg type matching the Idris2 ABI.
+-- | Backup compression algorithms.
 --
 -- Tags 0-4 (5 constructors).
 data CompressionAlg
-  = None  -- ^ Tag 0.
-  | Gzip  -- ^ Tag 1.
-  | Zstd  -- ^ Tag 2.
-  | Lz4  -- ^ Tag 3.
-  | Xz  -- ^ Tag 4.
+  = None  -- ^ None (tag 0).
+  | Gzip  -- ^ Gzip (tag 1).
+  | Zstd  -- ^ Zstd (tag 2).
+  | Lz4  -- ^ LZ4 (tag 3).
+  | Xz  -- ^ XZ (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CompressionAlg' to its ABI tag value.
@@ -111,13 +108,13 @@ compressionAlgFromTag n
 -- EncryptionAlg
 -- ---------------------------------------------------------------------------
 
--- | EncryptionAlg type matching the Idris2 ABI.
+-- | Backup encryption algorithms.
 --
 -- Tags 0-2 (3 constructors).
 data EncryptionAlg
-  = NoEncryption  -- ^ Tag 0.
-  | Aes256Gcm  -- ^ Tag 1.
-  | ChaCha20Poly1305  -- ^ Tag 2.
+  = NoEncryption  -- ^ NoEncryption (tag 0).
+  | Aes256Gcm  -- ^ AES-256-GCM (tag 1).
+  | ChaCha20Poly1305  -- ^ ChaCha20Poly1305 (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'EncryptionAlg' to its ABI tag value.
@@ -134,16 +131,16 @@ encryptionAlgFromTag n
 -- BackupState
 -- ---------------------------------------------------------------------------
 
--- | BackupState type matching the Idris2 ABI.
+-- | Backup job states.
 --
 -- Tags 0-5 (6 constructors).
 data BackupState
-  = Idle  -- ^ Tag 0.
-  | Running  -- ^ Tag 1.
-  | Verifying  -- ^ Tag 2.
-  | Complete  -- ^ Tag 3.
-  | Failed  -- ^ Tag 4.
-  | Cancelled  -- ^ Tag 5.
+  = Idle  -- ^ Idle (tag 0).
+  | Running  -- ^ Running (tag 1).
+  | Verifying  -- ^ Verifying (tag 2).
+  | Complete  -- ^ Complete (tag 3).
+  | Failed  -- ^ Failed (tag 4).
+  | Cancelled  -- ^ Cancelled (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'BackupState' to its ABI tag value.
@@ -160,15 +157,15 @@ backupStateFromTag n
 -- RetentionPolicy
 -- ---------------------------------------------------------------------------
 
--- | RetentionPolicy type matching the Idris2 ABI.
+-- | Backup retention policies.
 --
 -- Tags 0-4 (5 constructors).
 data RetentionPolicy
-  = KeepAll  -- ^ Tag 0.
-  | KeepLast  -- ^ Tag 1.
-  | KeepDaily  -- ^ Tag 2.
-  | KeepWeekly  -- ^ Tag 3.
-  | KeepMonthly  -- ^ Tag 4.
+  = KeepAll  -- ^ KeepAll (tag 0).
+  | KeepLast  -- ^ KeepLast (tag 1).
+  | KeepDaily  -- ^ KeepDaily (tag 2).
+  | KeepWeekly  -- ^ KeepWeekly (tag 3).
+  | KeepMonthly  -- ^ KeepMonthly (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RetentionPolicy' to its ABI tag value.

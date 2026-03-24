@@ -1,55 +1,68 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | AMQP protocol types for proven-servers.
+-- | AMQP 0-9-1 protocol types for the proven-servers ABI.
 --
--- AMQP 0-9-1 protocol types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Amqp
-  ( -- * ADT types matching Idris2 ABI
-      FrameType(..)
-    , MethodClass(..)
-    , ExchangeType(..)
-    , DeliveryMode(..)
-    , ErrorSeverity(..)
-    , ConnectionState(..)
-    , ChannelState(..)
-    , BrokerState(..)
-    , frameTypeToTag
-    , frameTypeFromTag
-    , methodClassToTag
-    , methodClassFromTag
-    , exchangeTypeToTag
-    , exchangeTypeFromTag
-    , deliveryModeToTag
-    , deliveryModeFromTag
-    , errorSeverityToTag
-    , errorSeverityFromTag
-    , connectionStateToTag
-    , connectionStateFromTag
-    , channelStateToTag
-    , channelStateFromTag
-    , brokerStateToTag
-    , brokerStateFromTag
+  (
+    amqpPort
+  , amqpsPort
+  , FrameType(..)
+  , frameTypeToTag
+  , frameTypeFromTag
+  , isContent
+  , MethodClass(..)
+  , methodClassToTag
+  , methodClassFromTag
+  , isConnectionLevel
+  , ExchangeType(..)
+  , exchangeTypeToTag
+  , exchangeTypeFromTag
+  , usesRoutingKey
+  , DeliveryMode(..)
+  , deliveryModeToTag
+  , deliveryModeFromTag
+  , ErrorSeverity(..)
+  , errorSeverityToTag
+  , errorSeverityFromTag
+  , ConnectionState(..)
+  , connectionStateToTag
+  , connectionStateFromTag
+  , connectionStateCanTransitionTo
+  , ChannelState(..)
+  , channelStateToTag
+  , channelStateFromTag
+  , channelStateCanTransitionTo
+  , BrokerState(..)
+  , brokerStateToTag
+  , brokerStateFromTag
+  , brokerStateCanTransitionTo
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard AMQP port (non-TLS).
+amqpPort :: Word16
+amqpPort = 5672
+
+-- | Standard AMQPS port (TLS).
+amqpsPort :: Word16
+amqpsPort = 5671
 
 -- ---------------------------------------------------------------------------
 -- FrameType
 -- ---------------------------------------------------------------------------
 
--- | FrameType type matching the Idris2 ABI.
+-- | Standard AMQP port (non-TLS).
 --
 -- Tags 0-3 (4 constructors).
 data FrameType
-  = Method  -- ^ Tag 0.
-  | Header  -- ^ Tag 1.
-  | Body  -- ^ Tag 2.
-  | Heartbeat  -- ^ Tag 3.
+  = Method  -- ^ Method frame carrying AMQP commands (tag 0).
+  | Header  -- ^ Content header frame with message properties (tag 1).
+  | Body  -- ^ Content body frame with message payload (tag 2).
+  | Heartbeat  -- ^ Heartbeat frame for keepalive (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'FrameType' to its ABI tag value.
@@ -62,21 +75,27 @@ frameTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: FrameType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this frame type carries message content.
+isContent :: FrameType -> Bool
+isContent Header = True
+isContent Body = True
+isContent _ = False
+
 -- ---------------------------------------------------------------------------
 -- MethodClass
 -- ---------------------------------------------------------------------------
 
--- | MethodClass type matching the Idris2 ABI.
+-- | AMQP 0-9-1 method classes.
 --
 -- Tags 0-6 (7 constructors).
 data MethodClass
-  = Connection  -- ^ Tag 0.
-  | Channel  -- ^ Tag 1.
-  | Exchange  -- ^ Tag 2.
-  | Queue  -- ^ Tag 3.
-  | Basic  -- ^ Tag 4.
-  | Tx  -- ^ Tag 5.
-  | Confirm  -- ^ Tag 6.
+  = Connection  -- ^ Connection-level methods (tag 0).
+  | Channel  -- ^ Channel-level methods (tag 1).
+  | Exchange  -- ^ Exchange declaration and management (tag 2).
+  | Queue  -- ^ Queue declaration and management (tag 3).
+  | Basic  -- ^ Basic publish/consume/ack operations (tag 4).
+  | Tx  -- ^ Transaction support (tag 5).
+  | Confirm  -- ^ Publisher confirms (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MethodClass' to its ABI tag value.
@@ -89,18 +108,23 @@ methodClassFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: MethodClass)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this class operates at the connection level (vs channel level).
+isConnectionLevel :: MethodClass -> Bool
+isConnectionLevel Connection = True
+isConnectionLevel _ = False
+
 -- ---------------------------------------------------------------------------
 -- ExchangeType
 -- ---------------------------------------------------------------------------
 
--- | ExchangeType type matching the Idris2 ABI.
+-- | AMQP exchange routing types.
 --
 -- Tags 0-3 (4 constructors).
 data ExchangeType
-  = Direct  -- ^ Tag 0.
-  | Fanout  -- ^ Tag 1.
-  | Topic  -- ^ Tag 2.
-  | Headers  -- ^ Tag 3.
+  = Direct  -- ^ Direct routing by exact routing key match (tag 0).
+  | Fanout  -- ^ Fanout to all bound queues (tag 1).
+  | Topic  -- ^ Topic-based pattern matching on routing keys (tag 2).
+  | Headers  -- ^ Headers-based matching on message properties (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ExchangeType' to its ABI tag value.
@@ -113,16 +137,22 @@ exchangeTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: ExchangeType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this exchange type uses routing keys for message delivery.
+usesRoutingKey :: ExchangeType -> Bool
+usesRoutingKey Direct = True
+usesRoutingKey Topic = True
+usesRoutingKey _ = False
+
 -- ---------------------------------------------------------------------------
 -- DeliveryMode
 -- ---------------------------------------------------------------------------
 
--- | DeliveryMode type matching the Idris2 ABI.
+-- | AMQP message delivery/persistence mode.
 --
 -- Tags 0-1 (2 constructors).
 data DeliveryMode
-  = NonPersistent  -- ^ Tag 0.
-  | Persistent  -- ^ Tag 1.
+  = NonPersistent  -- ^ Non-persistent: message may be lost on broker restart (tag 0).
+  | Persistent  -- ^ Persistent: message survives broker restart (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DeliveryMode' to its ABI tag value.
@@ -139,12 +169,12 @@ deliveryModeFromTag n
 -- ErrorSeverity
 -- ---------------------------------------------------------------------------
 
--- | ErrorSeverity type matching the Idris2 ABI.
+-- | AMQP error severity levels.
 --
 -- Tags 0-1 (2 constructors).
 data ErrorSeverity
-  = ChannelLevel  -- ^ Tag 0.
-  | ConnectionLevel  -- ^ Tag 1.
+  = ChannelLevel  -- ^ Channel-level error: only the affected channel is closed (tag 0).
+  | ConnectionLevel  -- ^ Connection-level error: the entire connection is closed (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorSeverity' to its ABI tag value.
@@ -161,15 +191,15 @@ errorSeverityFromTag n
 -- ConnectionState
 -- ---------------------------------------------------------------------------
 
--- | ConnectionState type matching the Idris2 ABI.
+-- | AMQP connection state machine.
 --
 -- Tags 0-4 (5 constructors).
 data ConnectionState
-  = ConnectionState_Idle  -- ^ Tag 0.
-  | Negotiating  -- ^ Tag 1.
-  | TuningOk  -- ^ Tag 2.
-  | Open  -- ^ Tag 3.
-  | Closing  -- ^ Tag 4.
+  = Idle  -- ^ Initial idle state, no connection yet (tag 0).
+  | Negotiating  -- ^ Protocol negotiation in progress (tag 1).
+  | TuningOk  -- ^ Connection tuning parameters accepted (tag 2).
+  | Open  -- ^ Connection is open and ready (tag 3).
+  | Closing  -- ^ Connection close in progress (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ConnectionState' to its ABI tag value.
@@ -182,18 +212,27 @@ connectionStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: ConnectionState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Validate whether a state transition is allowed.
+connectionStateCanTransitionTo :: ConnectionState -> ConnectionState -> Bool
+connectionStateCanTransitionTo Idle Negotiating = True
+connectionStateCanTransitionTo Negotiating TuningOk = True
+connectionStateCanTransitionTo TuningOk Open = True
+connectionStateCanTransitionTo Open Closing = True
+connectionStateCanTransitionTo _ Closing = True
+connectionStateCanTransitionTo _ _ = False
+
 -- ---------------------------------------------------------------------------
 -- ChannelState
 -- ---------------------------------------------------------------------------
 
--- | ChannelState type matching the Idris2 ABI.
+-- | AMQP channel state machine.
 --
 -- Tags 0-3 (4 constructors).
 data ChannelState
-  = Closed  -- ^ Tag 0.
-  | Opening  -- ^ Tag 1.
-  | ChOpen  -- ^ Tag 2.
-  | ChClosing  -- ^ Tag 3.
+  = Closed  -- ^ Channel is closed (tag 0).
+  | Opening  -- ^ Channel open request sent (tag 1).
+  | ChOpen  -- ^ Channel is open and ready (tag 2).
+  | ChClosing  -- ^ Channel close in progress (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ChannelState' to its ABI tag value.
@@ -206,20 +245,29 @@ channelStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: ChannelState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Validate whether a state transition is allowed.
+channelStateCanTransitionTo :: ChannelState -> ChannelState -> Bool
+channelStateCanTransitionTo Closed Opening = True
+channelStateCanTransitionTo Opening ChOpen = True
+channelStateCanTransitionTo Opening Closed = True
+channelStateCanTransitionTo ChOpen ChClosing = True
+channelStateCanTransitionTo ChClosing Closed = True
+channelStateCanTransitionTo _ _ = False
+
 -- ---------------------------------------------------------------------------
 -- BrokerState
 -- ---------------------------------------------------------------------------
 
--- | BrokerState type matching the Idris2 ABI.
+-- | AMQP broker lifecycle state machine.
 --
 -- Tags 0-5 (6 constructors).
 data BrokerState
-  = BrokerState_Idle  -- ^ Tag 0.
-  | Connected  -- ^ Tag 1.
-  | ChannelOpen  -- ^ Tag 2.
-  | Consuming  -- ^ Tag 3.
-  | Publishing  -- ^ Tag 4.
-  | Disconnecting  -- ^ Tag 5.
+  = Idle  -- ^ Broker is idle, not connected (tag 0).
+  | Connected  -- ^ Connected to broker (tag 1).
+  | ChannelOpen  -- ^ Channel is open on the broker connection (tag 2).
+  | Consuming  -- ^ Actively consuming messages (tag 3).
+  | Publishing  -- ^ Actively publishing messages (tag 4).
+  | Disconnecting  -- ^ Disconnecting from broker (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'BrokerState' to its ABI tag value.
@@ -231,3 +279,14 @@ brokerStateFromTag :: Word8 -> Maybe BrokerState
 brokerStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: BrokerState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Validate whether a state transition is allowed.
+brokerStateCanTransitionTo :: BrokerState -> BrokerState -> Bool
+brokerStateCanTransitionTo Idle Connected = True
+brokerStateCanTransitionTo Connected ChannelOpen = True
+brokerStateCanTransitionTo ChannelOpen Consuming = True
+brokerStateCanTransitionTo ChannelOpen Publishing = True
+brokerStateCanTransitionTo Consuming Disconnecting = True
+brokerStateCanTransitionTo Publishing Disconnecting = True
+brokerStateCanTransitionTo _ Disconnecting = True
+brokerStateCanTransitionTo _ _ = False

@@ -1,30 +1,27 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Chat protocol types for proven-servers.
+-- | Chat Server types for the proven-servers ABI.
 --
--- Real-time chat server types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Chat
-  ( -- * ADT types matching Idris2 ABI
-      MessageType(..)
-    , PresenceStatus(..)
-    , RoomType(..)
-    , Permission(..)
-    , Event(..)
-    , messageTypeToTag
-    , messageTypeFromTag
-    , presenceStatusToTag
-    , presenceStatusFromTag
-    , roomTypeToTag
-    , roomTypeFromTag
-    , permissionToTag
-    , permissionFromTag
-    , eventToTag
-    , eventFromTag
+  (
+    MessageType(..)
+  , messageTypeToTag
+  , messageTypeFromTag
+  , PresenceStatus(..)
+  , presenceStatusToTag
+  , presenceStatusFromTag
+  , RoomType(..)
+  , roomTypeToTag
+  , roomTypeFromTag
+  , Permission(..)
+  , permissionToTag
+  , permissionFromTag
+  , Event(..)
+  , eventToTag
+  , eventFromTag
   ) where
 
 import Data.Word (Word8)
@@ -33,19 +30,19 @@ import Data.Word (Word8)
 -- MessageType
 -- ---------------------------------------------------------------------------
 
--- | MessageType type matching the Idris2 ABI.
+-- | Chat message types.
 --
 -- Tags 0-8 (9 constructors).
 data MessageType
-  = Text  -- ^ Tag 0.
-  | Image  -- ^ Tag 1.
-  | File  -- ^ Tag 2.
-  | System  -- ^ Tag 3.
-  | Reaction  -- ^ Tag 4.
-  | Edit  -- ^ Tag 5.
-  | Delete  -- ^ Tag 6.
-  | Reply  -- ^ Tag 7.
-  | Thread  -- ^ Tag 8.
+  = Text  -- ^ Text (tag 0).
+  | Image  -- ^ Image (tag 1).
+  | File  -- ^ File (tag 2).
+  | System  -- ^ System (tag 3).
+  | Reaction  -- ^ Reaction (tag 4).
+  | Edit  -- ^ Edit (tag 5).
+  | Delete  -- ^ Delete (tag 6).
+  | Reply  -- ^ Reply (tag 7).
+  | Thread  -- ^ Thread (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MessageType' to its ABI tag value.
@@ -62,15 +59,15 @@ messageTypeFromTag n
 -- PresenceStatus
 -- ---------------------------------------------------------------------------
 
--- | PresenceStatus type matching the Idris2 ABI.
+-- | User presence statuses.
 --
 -- Tags 0-4 (5 constructors).
 data PresenceStatus
-  = Online  -- ^ Tag 0.
-  | Away  -- ^ Tag 1.
-  | Dnd  -- ^ Tag 2.
-  | Invisible  -- ^ Tag 3.
-  | Offline  -- ^ Tag 4.
+  = Online  -- ^ Online (tag 0).
+  | Away  -- ^ Away (tag 1).
+  | Dnd  -- ^ Do Not Disturb (tag 2).
+  | Invisible  -- ^ Invisible (tag 3).
+  | Offline  -- ^ Offline (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PresenceStatus' to its ABI tag value.
@@ -87,14 +84,14 @@ presenceStatusFromTag n
 -- RoomType
 -- ---------------------------------------------------------------------------
 
--- | RoomType type matching the Idris2 ABI.
+-- | Chat room types.
 --
 -- Tags 0-3 (4 constructors).
 data RoomType
-  = Direct  -- ^ Tag 0.
-  | Group  -- ^ Tag 1.
-  | Channel  -- ^ Tag 2.
-  | Broadcast  -- ^ Tag 3.
+  = Direct  -- ^ Direct (tag 0).
+  | Group  -- ^ Group (tag 1).
+  | Channel  -- ^ Channel (tag 2).
+  | Broadcast  -- ^ Broadcast (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RoomType' to its ABI tag value.
@@ -111,18 +108,18 @@ roomTypeFromTag n
 -- Permission
 -- ---------------------------------------------------------------------------
 
--- | Permission type matching the Idris2 ABI.
+-- | Chat permissions.
 --
 -- Tags 0-7 (8 constructors).
 data Permission
-  = Read  -- ^ Tag 0.
-  | Write  -- ^ Tag 1.
-  | Admin  -- ^ Tag 2.
-  | Invite  -- ^ Tag 3.
-  | Kick  -- ^ Tag 4.
-  | Ban  -- ^ Tag 5.
-  | Pin  -- ^ Tag 6.
-  | DeleteOthers  -- ^ Tag 7.
+  = Read  -- ^ Read (tag 0).
+  | Write  -- ^ Write (tag 1).
+  | Admin  -- ^ Admin (tag 2).
+  | Invite  -- ^ Invite (tag 3).
+  | Kick  -- ^ Kick (tag 4).
+  | Ban  -- ^ Ban (tag 5).
+  | Pin  -- ^ Pin (tag 6).
+  | DeleteOthers  -- ^ DeleteOthers (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Permission' to its ABI tag value.
@@ -139,17 +136,17 @@ permissionFromTag n
 -- Event
 -- ---------------------------------------------------------------------------
 
--- | Event type matching the Idris2 ABI.
+-- | Chat events.
 --
 -- Tags 0-6 (7 constructors).
 data Event
-  = MessageSent  -- ^ Tag 0.
-  | MessageDelivered  -- ^ Tag 1.
-  | MessageRead  -- ^ Tag 2.
-  | UserJoined  -- ^ Tag 3.
-  | UserLeft  -- ^ Tag 4.
-  | Typing  -- ^ Tag 5.
-  | RoomCreated  -- ^ Tag 6.
+  = MessageSent  -- ^ MessageSent (tag 0).
+  | MessageDelivered  -- ^ MessageDelivered (tag 1).
+  | MessageRead  -- ^ MessageRead (tag 2).
+  | UserJoined  -- ^ UserJoined (tag 3).
+  | UserLeft  -- ^ UserLeft (tag 4).
+  | Typing  -- ^ Typing (tag 5).
+  | RoomCreated  -- ^ RoomCreated (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Event' to its ABI tag value.

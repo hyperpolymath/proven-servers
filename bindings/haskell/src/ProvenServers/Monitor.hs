@@ -1,33 +1,30 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Monitor protocol types for proven-servers.
+-- | Monitor types for the proven-servers ABI.
 --
--- Monitoring/uptime types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Monitor
-  ( -- * ADT types matching Idris2 ABI
-      CheckType(..)
-    , Status(..)
-    , AlertChannel(..)
-    , Severity(..)
-    , CheckState(..)
-    , MonitorState(..)
-    , checkTypeToTag
-    , checkTypeFromTag
-    , statusToTag
-    , statusFromTag
-    , alertChannelToTag
-    , alertChannelFromTag
-    , severityToTag
-    , severityFromTag
-    , checkStateToTag
-    , checkStateFromTag
-    , monitorStateToTag
-    , monitorStateFromTag
+  (
+    CheckType(..)
+  , checkTypeToTag
+  , checkTypeFromTag
+  , Status(..)
+  , statusToTag
+  , statusFromTag
+  , AlertChannel(..)
+  , alertChannelToTag
+  , alertChannelFromTag
+  , Severity(..)
+  , severityToTag
+  , severityFromTag
+  , CheckState(..)
+  , checkStateToTag
+  , checkStateFromTag
+  , MonitorState(..)
+  , monitorStateToTag
+  , monitorStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,21 +33,21 @@ import Data.Word (Word8)
 -- CheckType
 -- ---------------------------------------------------------------------------
 
--- | CheckType type matching the Idris2 ABI.
+-- | Monitor check types.
 --
 -- Tags 0-10 (11 constructors).
 data CheckType
-  = Http  -- ^ Tag 0.
-  | Tcp  -- ^ Tag 1.
-  | Udp  -- ^ Tag 2.
-  | Icmp  -- ^ Tag 3.
-  | Dns  -- ^ Tag 4.
-  | Certificate  -- ^ Tag 5.
-  | Disk  -- ^ Tag 6.
-  | Cpu  -- ^ Tag 7.
-  | Memory  -- ^ Tag 8.
-  | Process  -- ^ Tag 9.
-  | Custom  -- ^ Tag 10.
+  = Http  -- ^ HTTP (tag 0).
+  | Tcp  -- ^ TCP (tag 1).
+  | Udp  -- ^ UDP (tag 2).
+  | Icmp  -- ^ ICMP (tag 3).
+  | Dns  -- ^ DNS (tag 4).
+  | Certificate  -- ^ Certificate (tag 5).
+  | Disk  -- ^ Disk (tag 6).
+  | Cpu  -- ^ CPU (tag 7).
+  | Memory  -- ^ Memory (tag 8).
+  | Process  -- ^ Process (tag 9).
+  | Custom  -- ^ Custom (tag 10).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CheckType' to its ABI tag value.
@@ -67,15 +64,15 @@ checkTypeFromTag n
 -- Status
 -- ---------------------------------------------------------------------------
 
--- | Status type matching the Idris2 ABI.
+-- | Monitor status values.
 --
 -- Tags 0-4 (5 constructors).
 data Status
-  = Up  -- ^ Tag 0.
-  | Down  -- ^ Tag 1.
-  | Degraded  -- ^ Tag 2.
-  | Unknown  -- ^ Tag 3.
-  | Maintenance  -- ^ Tag 4.
+  = Up  -- ^ Up (tag 0).
+  | Down  -- ^ Down (tag 1).
+  | Degraded  -- ^ Degraded (tag 2).
+  | Unknown  -- ^ Unknown (tag 3).
+  | Maintenance  -- ^ Maintenance (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Status' to its ABI tag value.
@@ -92,15 +89,15 @@ statusFromTag n
 -- AlertChannel
 -- ---------------------------------------------------------------------------
 
--- | AlertChannel type matching the Idris2 ABI.
+-- | Alert notification channels.
 --
 -- Tags 0-4 (5 constructors).
 data AlertChannel
-  = Email  -- ^ Tag 0.
-  | Sms  -- ^ Tag 1.
-  | Webhook  -- ^ Tag 2.
-  | Slack  -- ^ Tag 3.
-  | PagerDuty  -- ^ Tag 4.
+  = Email  -- ^ Email (tag 0).
+  | Sms  -- ^ SMS (tag 1).
+  | Webhook  -- ^ Webhook (tag 2).
+  | Slack  -- ^ Slack (tag 3).
+  | PagerDuty  -- ^ PagerDuty (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AlertChannel' to its ABI tag value.
@@ -117,14 +114,14 @@ alertChannelFromTag n
 -- Severity
 -- ---------------------------------------------------------------------------
 
--- | Severity type matching the Idris2 ABI.
+-- | Monitor severity levels.
 --
 -- Tags 0-3 (4 constructors).
 data Severity
-  = Info  -- ^ Tag 0.
-  | Warning  -- ^ Tag 1.
-  | Error  -- ^ Tag 2.
-  | Critical  -- ^ Tag 3.
+  = Info  -- ^ Info (tag 0).
+  | Warning  -- ^ Warning (tag 1).
+  | Error  -- ^ Error (tag 2).
+  | Critical  -- ^ Critical (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Severity' to its ABI tag value.
@@ -141,16 +138,16 @@ severityFromTag n
 -- CheckState
 -- ---------------------------------------------------------------------------
 
--- | CheckState type matching the Idris2 ABI.
+-- | Monitor check execution states.
 --
 -- Tags 0-5 (6 constructors).
 data CheckState
-  = Pending  -- ^ Tag 0.
-  | CheckState_Running  -- ^ Tag 1.
-  | Passed  -- ^ Tag 2.
-  | Failed  -- ^ Tag 3.
-  | Timeout  -- ^ Tag 4.
-  | CsError  -- ^ Tag 5.
+  = Pending  -- ^ Pending (tag 0).
+  | Running  -- ^ Running (tag 1).
+  | Passed  -- ^ Passed (tag 2).
+  | Failed  -- ^ Failed (tag 3).
+  | Timeout  -- ^ Timeout (tag 4).
+  | CsError  -- ^ Error (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CheckState' to its ABI tag value.
@@ -167,16 +164,16 @@ checkStateFromTag n
 -- MonitorState
 -- ---------------------------------------------------------------------------
 
--- | MonitorState type matching the Idris2 ABI.
+-- | Monitor service states.
 --
 -- Tags 0-5 (6 constructors).
 data MonitorState
-  = Idle  -- ^ Tag 0.
-  | Configured  -- ^ Tag 1.
-  | MonitorState_Running  -- ^ Tag 2.
-  | MonPaused  -- ^ Tag 3.
-  | Alerting  -- ^ Tag 4.
-  | Shutdown  -- ^ Tag 5.
+  = Idle  -- ^ Idle (tag 0).
+  | Configured  -- ^ Configured (tag 1).
+  | Running  -- ^ Running (tag 2).
+  | MonPaused  -- ^ Paused (tag 3).
+  | Alerting  -- ^ Alerting (tag 4).
+  | Shutdown  -- ^ Shutdown (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MonitorState' to its ABI tag value.

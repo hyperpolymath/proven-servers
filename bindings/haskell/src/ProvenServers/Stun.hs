@@ -1,48 +1,57 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | STUN/TURN protocol types for proven-servers.
+-- | STUN/TURN types for the proven-servers ABI.
 --
--- STUN/TURN types (RFC 8489/8656), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Stun
-  ( -- * ADT types matching Idris2 ABI
-      MessageType(..)
-    , TransportProtocol(..)
-    , ErrorCode(..)
-    , messageTypeToTag
-    , messageTypeFromTag
-    , transportProtocolToTag
-    , transportProtocolFromTag
-    , errorCodeToTag
-    , errorCodeFromTag
+  (
+    stunPort
+  , stunTlsPort
+  , MessageType(..)
+  , messageTypeToTag
+  , messageTypeFromTag
+  , isRequest
+  , isTurn
+  , TransportProtocol(..)
+  , transportProtocolToTag
+  , transportProtocolFromTag
+  , ErrorCode(..)
+  , errorCodeToTag
+  , errorCodeFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard STUN port.
+stunPort :: Word16
+stunPort = 3478
+
+-- | Standard STUN TLS port.
+stunTlsPort :: Word16
+stunTlsPort = 5349
 
 -- ---------------------------------------------------------------------------
 -- MessageType
 -- ---------------------------------------------------------------------------
 
--- | MessageType type matching the Idris2 ABI.
+-- | Standard STUN port.
 --
 -- Tags 0-11 (12 constructors).
 data MessageType
-  = BindingRequest  -- ^ Tag 0.
-  | BindingResponse  -- ^ Tag 1.
-  | BindingError  -- ^ Tag 2.
-  | AllocateRequest  -- ^ Tag 3.
-  | AllocateResponse  -- ^ Tag 4.
-  | AllocateError  -- ^ Tag 5.
-  | RefreshRequest  -- ^ Tag 6.
-  | RefreshResponse  -- ^ Tag 7.
-  | SendIndication  -- ^ Tag 8.
-  | DataIndication  -- ^ Tag 9.
-  | CreatePermission  -- ^ Tag 10.
-  | ChannelBind  -- ^ Tag 11.
+  = BindingRequest  -- ^ BindingRequest (tag 0).
+  | BindingResponse  -- ^ BindingResponse (tag 1).
+  | BindingError  -- ^ BindingError (tag 2).
+  | AllocateRequest  -- ^ AllocateRequest (tag 3).
+  | AllocateResponse  -- ^ AllocateResponse (tag 4).
+  | AllocateError  -- ^ AllocateError (tag 5).
+  | RefreshRequest  -- ^ RefreshRequest (tag 6).
+  | RefreshResponse  -- ^ RefreshResponse (tag 7).
+  | SendIndication  -- ^ SendIndication (tag 8).
+  | DataIndication  -- ^ DataIndication (tag 9).
+  | CreatePermission  -- ^ CreatePermission (tag 10).
+  | ChannelBind  -- ^ ChannelBind (tag 11).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MessageType' to its ABI tag value.
@@ -55,18 +64,40 @@ messageTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: MessageType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this is a request message.
+isRequest :: MessageType -> Bool
+isRequest BindingRequest = True
+isRequest AllocateRequest = True
+isRequest RefreshRequest = True
+isRequest CreatePermission = True
+isRequest ChannelBind = True
+isRequest _ = False
+
+-- | Whether this is a TURN-specific message.
+isTurn :: MessageType -> Bool
+isTurn AllocateRequest = True
+isTurn AllocateResponse = True
+isTurn AllocateError = True
+isTurn RefreshRequest = True
+isTurn RefreshResponse = True
+isTurn SendIndication = True
+isTurn DataIndication = True
+isTurn CreatePermission = True
+isTurn ChannelBind = True
+isTurn _ = False
+
 -- ---------------------------------------------------------------------------
 -- TransportProtocol
 -- ---------------------------------------------------------------------------
 
--- | TransportProtocol type matching the Idris2 ABI.
+-- | STUN transport protocols.
 --
 -- Tags 0-3 (4 constructors).
 data TransportProtocol
-  = Udp  -- ^ Tag 0.
-  | Tcp  -- ^ Tag 1.
-  | Tls  -- ^ Tag 2.
-  | Dtls  -- ^ Tag 3.
+  = Udp  -- ^ UDP (tag 0).
+  | Tcp  -- ^ TCP (tag 1).
+  | Tls  -- ^ TLS (tag 2).
+  | Dtls  -- ^ DTLS (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'TransportProtocol' to its ABI tag value.
@@ -83,18 +114,18 @@ transportProtocolFromTag n
 -- ErrorCode
 -- ---------------------------------------------------------------------------
 
--- | ErrorCode type matching the Idris2 ABI.
+-- | STUN error codes.
 --
 -- Tags 0-7 (8 constructors).
 data ErrorCode
-  = TryAlternate  -- ^ Tag 0.
-  | BadRequest  -- ^ Tag 1.
-  | Unauthorized  -- ^ Tag 2.
-  | Forbidden  -- ^ Tag 3.
-  | MobilityForbidden  -- ^ Tag 4.
-  | StaleNonce  -- ^ Tag 5.
-  | ServerError  -- ^ Tag 6.
-  | InsufficientCapacity  -- ^ Tag 7.
+  = TryAlternate  -- ^ TryAlternate (tag 0).
+  | BadRequest  -- ^ BadRequest (tag 1).
+  | Unauthorized  -- ^ Unauthorized (tag 2).
+  | Forbidden  -- ^ Forbidden (tag 3).
+  | MobilityForbidden  -- ^ MobilityForbidden (tag 4).
+  | StaleNonce  -- ^ StaleNonce (tag 5).
+  | ServerError  -- ^ ServerError (tag 6).
+  | InsufficientCapacity  -- ^ InsufficientCapacity (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorCode' to its ABI tag value.

@@ -1,39 +1,55 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | SNMP protocol types for proven-servers.
+-- | SNMP protocol types for the proven-servers ABI.
 --
--- SNMP (Simple Network Management Protocol) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Snmp
-  ( -- * ADT types matching Idris2 ABI
-      Version(..)
-    , PduType(..)
-    , ErrorStatus(..)
-    , versionToTag
-    , versionFromTag
-    , pduTypeToTag
-    , pduTypeFromTag
-    , errorStatusToTag
-    , errorStatusFromTag
+  (
+    snmpPort
+  , snmpTrapPort
+  , Version(..)
+  , versionToTag
+  , versionFromTag
+  , hasUsm
+  , usesCommunityStrings
+  , supportsGetBulk
+  , PduType(..)
+  , pduTypeToTag
+  , pduTypeFromTag
+  , isRequest
+  , isNotification
+  , isWrite
+  , ErrorStatus(..)
+  , errorStatusToTag
+  , errorStatusFromTag
+  , isSuccess
+  , isV1Only
+  , isAuthError
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard SNMP agent port (RFC 3411).
+snmpPort :: Word16
+snmpPort = 161
+
+-- | Standard SNMP trap port (RFC 3411).
+snmpTrapPort :: Word16
+snmpTrapPort = 162
 
 -- ---------------------------------------------------------------------------
 -- Version
 -- ---------------------------------------------------------------------------
 
--- | Version type matching the Idris2 ABI.
+-- | Standard SNMP agent port (RFC 3411).
 --
 -- Tags 0-2 (3 constructors).
 data Version
-  = V1  -- ^ Tag 0.
-  | V2c  -- ^ Tag 1.
-  | V3  -- ^ Tag 2.
+  = V1  -- ^ SNMPv1 (RFC 1157) (tag 0).
+  | V2c  -- ^ SNMPv2c — community-based SNMPv2 (RFC 3584) (tag 1).
+  | V3  -- ^ SNMPv3 — user-based security model (RFC 3414) (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Version' to its ABI tag value.
@@ -46,21 +62,37 @@ versionFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Version)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this version supports the User-based Security Model (USM).
+hasUsm :: Version -> Bool
+hasUsm V3 = True
+hasUsm _ = False
+
+-- | Whether this version uses community strings for authentication.
+usesCommunityStrings :: Version -> Bool
+usesCommunityStrings V1 = True
+usesCommunityStrings V2c = True
+usesCommunityStrings _ = False
+
+-- | Whether this version supports GetBulkRequest.
+supportsGetBulk :: Version -> Bool
+supportsGetBulk V1 = False
+supportsGetBulk _ = True
+
 -- ---------------------------------------------------------------------------
 -- PduType
 -- ---------------------------------------------------------------------------
 
--- | PduType type matching the Idris2 ABI.
+-- | SNMP PDU (Protocol Data Unit) types.
 --
 -- Tags 0-6 (7 constructors).
 data PduType
-  = GetRequest  -- ^ Tag 0.
-  | GetNextRequest  -- ^ Tag 1.
-  | GetResponse  -- ^ Tag 2.
-  | SetRequest  -- ^ Tag 3.
-  | GetBulkRequest  -- ^ Tag 4.
-  | InformRequest  -- ^ Tag 5.
-  | SnmpV2Trap  -- ^ Tag 6.
+  = GetRequest  -- ^ Get value of specific OIDs (tag 0).
+  | GetNextRequest  -- ^ Get next OID in MIB tree (tag 1).
+  | GetResponse  -- ^ Response to a request (tag 2).
+  | SetRequest  -- ^ Set value of specific OIDs (tag 3).
+  | GetBulkRequest  -- ^ Bulk retrieval — SNMPv2c/v3 only (tag 4).
+  | InformRequest  -- ^ Manager-to-manager notification (tag 5).
+  | SnmpV2Trap  -- ^ SNMPv2 trap notification (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PduType' to its ABI tag value.
@@ -73,30 +105,49 @@ pduTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: PduType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this PDU is a request from manager to agent.
+isRequest :: PduType -> Bool
+isRequest GetRequest = True
+isRequest GetNextRequest = True
+isRequest SetRequest = True
+isRequest GetBulkRequest = True
+isRequest _ = False
+
+-- | Whether this PDU is a notification (trap or inform).
+isNotification :: PduType -> Bool
+isNotification InformRequest = True
+isNotification SnmpV2Trap = True
+isNotification _ = False
+
+-- | Whether this PDU modifies agent state.
+isWrite :: PduType -> Bool
+isWrite SetRequest = True
+isWrite _ = False
+
 -- ---------------------------------------------------------------------------
 -- ErrorStatus
 -- ---------------------------------------------------------------------------
 
--- | ErrorStatus type matching the Idris2 ABI.
+-- | SNMP error status codes.
 --
 -- Tags 0-15 (16 constructors).
 data ErrorStatus
-  = NoError  -- ^ Tag 0.
-  | TooBig  -- ^ Tag 1.
-  | NoSuchName  -- ^ Tag 2.
-  | BadValue  -- ^ Tag 3.
-  | ReadOnly  -- ^ Tag 4.
-  | GenErr  -- ^ Tag 5.
-  | NoAccess  -- ^ Tag 6.
-  | WrongType  -- ^ Tag 7.
-  | WrongLength  -- ^ Tag 8.
-  | WrongValue  -- ^ Tag 9.
-  | NoCreation  -- ^ Tag 10.
-  | InconsistentValue  -- ^ Tag 11.
-  | ResourceUnavailable  -- ^ Tag 12.
-  | CommitFailed  -- ^ Tag 13.
-  | UndoFailed  -- ^ Tag 14.
-  | AuthorizationError  -- ^ Tag 15.
+  = NoError  -- ^ No error occurred (tag 0).
+  | TooBig  -- ^ Response too large for transport (tag 1).
+  | NoSuchName  -- ^ OID not found — SNMPv1 (tag 2).
+  | BadValue  -- ^ Invalid value in set request — SNMPv1 (tag 3).
+  | ReadOnly  -- ^ Object is read-only — SNMPv1 (tag 4).
+  | GenErr  -- ^ Generic error (tag 5).
+  | NoAccess  -- ^ No access to the object (tag 6).
+  | WrongType  -- ^ Wrong ASN.1 type for the object (tag 7).
+  | WrongLength  -- ^ Wrong value length (tag 8).
+  | WrongValue  -- ^ Wrong encoding of value (tag 9).
+  | NoCreation  -- ^ Object cannot be created (tag 10).
+  | InconsistentValue  -- ^ Value inconsistent with other managed objects (tag 11).
+  | ResourceUnavailable  -- ^ Required resource is unavailable (tag 12).
+  | CommitFailed  -- ^ Set operation commit failed (tag 13).
+  | UndoFailed  -- ^ Set operation undo failed (tag 14).
+  | AuthorizationError  -- ^ Authorization error (tag 15).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorStatus' to its ABI tag value.
@@ -108,3 +159,21 @@ errorStatusFromTag :: Word8 -> Maybe ErrorStatus
 errorStatusFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: ErrorStatus)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Whether this status indicates success.
+isSuccess :: ErrorStatus -> Bool
+isSuccess NoError = True
+isSuccess _ = False
+
+-- | Whether this is an SNMPv1-only error code.
+isV1Only :: ErrorStatus -> Bool
+isV1Only NoSuchName = True
+isV1Only BadValue = True
+isV1Only ReadOnly = True
+isV1Only _ = False
+
+-- | Whether this error relates to authorisation/access control.
+isAuthError :: ErrorStatus -> Bool
+isAuthError NoAccess = True
+isAuthError AuthorizationError = True
+isAuthError _ = False

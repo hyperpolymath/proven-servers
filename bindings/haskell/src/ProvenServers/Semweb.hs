@@ -1,30 +1,27 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Semantic Web protocol types for proven-servers.
+-- | Semantic Web types for the proven-servers ABI.
 --
--- Semantic Web types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Semweb
-  ( -- * ADT types matching Idris2 ABI
-      RdfFormat(..)
-    , SemwebResourceType(..)
-    , HttpMethod(..)
-    , ContentNegotiation(..)
-    , SemwebErrorCode(..)
-    , rdfFormatToTag
-    , rdfFormatFromTag
-    , semwebResourceTypeToTag
-    , semwebResourceTypeFromTag
-    , httpMethodToTag
-    , httpMethodFromTag
-    , contentNegotiationToTag
-    , contentNegotiationFromTag
-    , semwebErrorCodeToTag
-    , semwebErrorCodeFromTag
+  (
+    RdfFormat(..)
+  , rdfFormatToTag
+  , rdfFormatFromTag
+  , SemwebResourceType(..)
+  , semwebResourceTypeToTag
+  , semwebResourceTypeFromTag
+  , HttpMethod(..)
+  , httpMethodToTag
+  , httpMethodFromTag
+  , ContentNegotiation(..)
+  , contentNegotiationToTag
+  , contentNegotiationFromTag
+  , SemwebErrorCode(..)
+  , semwebErrorCodeToTag
+  , semwebErrorCodeFromTag
   ) where
 
 import Data.Word (Word8)
@@ -33,16 +30,16 @@ import Data.Word (Word8)
 -- RdfFormat
 -- ---------------------------------------------------------------------------
 
--- | RdfFormat type matching the Idris2 ABI.
+-- | RDF serialization formats.
 --
 -- Tags 0-5 (6 constructors).
 data RdfFormat
-  = RdfXml  -- ^ Tag 0.
-  | Turtle  -- ^ Tag 1.
-  | NTriples  -- ^ Tag 2.
-  | NQuads  -- ^ Tag 3.
-  | JsonLd  -- ^ Tag 4.
-  | Trig  -- ^ Tag 5.
+  = RdfXml  -- ^ RDF/XML (tag 0).
+  | Turtle  -- ^ Turtle (tag 1).
+  | NTriples  -- ^ NTriples (tag 2).
+  | NQuads  -- ^ NQuads (tag 3).
+  | JsonLd  -- ^ JSON-LD (tag 4).
+  | Trig  -- ^ Trig (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RdfFormat' to its ABI tag value.
@@ -59,15 +56,15 @@ rdfFormatFromTag n
 -- SemwebResourceType
 -- ---------------------------------------------------------------------------
 
--- | SemwebResourceType type matching the Idris2 ABI.
+-- | Semantic web resource types.
 --
 -- Tags 0-4 (5 constructors).
 data SemwebResourceType
-  = Class  -- ^ Tag 0.
-  | Property  -- ^ Tag 1.
-  | Individual  -- ^ Tag 2.
-  | Ontology  -- ^ Tag 3.
-  | NamedGraph  -- ^ Tag 4.
+  = Class  -- ^ Class (tag 0).
+  | Property  -- ^ Property (tag 1).
+  | Individual  -- ^ Individual (tag 2).
+  | Ontology  -- ^ Ontology (tag 3).
+  | NamedGraph  -- ^ NamedGraph (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SemwebResourceType' to its ABI tag value.
@@ -84,15 +81,15 @@ semwebResourceTypeFromTag n
 -- HttpMethod
 -- ---------------------------------------------------------------------------
 
--- | HttpMethod type matching the Idris2 ABI.
+-- | Semantic web HTTP methods.
 --
 -- Tags 0-4 (5 constructors).
 data HttpMethod
-  = Get  -- ^ Tag 0.
-  | Post  -- ^ Tag 1.
-  | Put  -- ^ Tag 2.
-  | Patch  -- ^ Tag 3.
-  | Delete  -- ^ Tag 4.
+  = Get  -- ^ Get (tag 0).
+  | Post  -- ^ Post (tag 1).
+  | Put  -- ^ Put (tag 2).
+  | Patch  -- ^ Patch (tag 3).
+  | Delete  -- ^ Delete (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HttpMethod' to its ABI tag value.
@@ -109,14 +106,14 @@ httpMethodFromTag n
 -- ContentNegotiation
 -- ---------------------------------------------------------------------------
 
--- | ContentNegotiation type matching the Idris2 ABI.
+-- | Content negotiation preferences.
 --
 -- Tags 0-3 (4 constructors).
 data ContentNegotiation
-  = NegRdfXml  -- ^ Tag 0.
-  | NegTurtle  -- ^ Tag 1.
-  | NegJsonLd  -- ^ Tag 2.
-  | NegHtml  -- ^ Tag 3.
+  = NegRdfXml  -- ^ RDF/XML (tag 0).
+  | NegTurtle  -- ^ Turtle (tag 1).
+  | NegJsonLd  -- ^ JSON-LD (tag 2).
+  | NegHtml  -- ^ HTML (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ContentNegotiation' to its ABI tag value.
@@ -133,15 +130,15 @@ contentNegotiationFromTag n
 -- SemwebErrorCode
 -- ---------------------------------------------------------------------------
 
--- | SemwebErrorCode type matching the Idris2 ABI.
+-- | Semantic web error codes.
 --
 -- Tags 0-4 (5 constructors).
 data SemwebErrorCode
-  = NotFound  -- ^ Tag 0.
-  | InvalidUri  -- ^ Tag 1.
-  | MalformedRdf  -- ^ Tag 2.
-  | UnsupportedFormat  -- ^ Tag 3.
-  | ConflictingTriples  -- ^ Tag 4.
+  = NotFound  -- ^ NotFound (tag 0).
+  | InvalidUri  -- ^ Invalid URI (tag 1).
+  | MalformedRdf  -- ^ Malformed RDF (tag 2).
+  | UnsupportedFormat  -- ^ UnsupportedFormat (tag 3).
+  | ConflictingTriples  -- ^ ConflictingTriples (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SemwebErrorCode' to its ABI tag value.

@@ -1,30 +1,27 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | ODNS protocol types for proven-servers.
+-- | ODNS types for the proven-servers ABI.
 --
--- Oblivious DNS types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Odns
-  ( -- * ADT types matching Idris2 ABI
-      Role(..)
-    , OdnsMessageType(..)
-    , OdnsErrorReason(..)
-    , EncapsulationFormat(..)
-    , SessionState(..)
-    , roleToTag
-    , roleFromTag
-    , odnsMessageTypeToTag
-    , odnsMessageTypeFromTag
-    , odnsErrorReasonToTag
-    , odnsErrorReasonFromTag
-    , encapsulationFormatToTag
-    , encapsulationFormatFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    Role(..)
+  , roleToTag
+  , roleFromTag
+  , OdnsMessageType(..)
+  , odnsMessageTypeToTag
+  , odnsMessageTypeFromTag
+  , OdnsErrorReason(..)
+  , odnsErrorReasonToTag
+  , odnsErrorReasonFromTag
+  , EncapsulationFormat(..)
+  , encapsulationFormatToTag
+  , encapsulationFormatFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -33,13 +30,13 @@ import Data.Word (Word8)
 -- Role
 -- ---------------------------------------------------------------------------
 
--- | Role type matching the Idris2 ABI.
+-- | ODNS participant roles.
 --
 -- Tags 0-2 (3 constructors).
 data Role
-  = Client  -- ^ Tag 0.
-  | Proxy  -- ^ Tag 1.
-  | Target  -- ^ Tag 2.
+  = Client  -- ^ Client (tag 0).
+  | Proxy  -- ^ Proxy (tag 1).
+  | Target  -- ^ Target (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Role' to its ABI tag value.
@@ -56,12 +53,12 @@ roleFromTag n
 -- OdnsMessageType
 -- ---------------------------------------------------------------------------
 
--- | OdnsMessageType type matching the Idris2 ABI.
+-- | ODNS message types.
 --
 -- Tags 0-1 (2 constructors).
 data OdnsMessageType
-  = Query  -- ^ Tag 0.
-  | Response  -- ^ Tag 1.
+  = Query  -- ^ Query (tag 0).
+  | Response  -- ^ Response (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'OdnsMessageType' to its ABI tag value.
@@ -78,15 +75,15 @@ odnsMessageTypeFromTag n
 -- OdnsErrorReason
 -- ---------------------------------------------------------------------------
 
--- | OdnsErrorReason type matching the Idris2 ABI.
+-- | ODNS error reasons.
 --
 -- Tags 0-4 (5 constructors).
 data OdnsErrorReason
-  = ProxyError  -- ^ Tag 0.
-  | TargetError  -- ^ Tag 1.
-  | DecryptionFailed  -- ^ Tag 2.
-  | InvalidConfig  -- ^ Tag 3.
-  | PayloadTooLarge  -- ^ Tag 4.
+  = ProxyError  -- ^ ProxyError (tag 0).
+  | TargetError  -- ^ TargetError (tag 1).
+  | DecryptionFailed  -- ^ DecryptionFailed (tag 2).
+  | InvalidConfig  -- ^ InvalidConfig (tag 3).
+  | PayloadTooLarge  -- ^ PayloadTooLarge (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'OdnsErrorReason' to its ABI tag value.
@@ -103,11 +100,11 @@ odnsErrorReasonFromTag n
 -- EncapsulationFormat
 -- ---------------------------------------------------------------------------
 
--- | EncapsulationFormat type matching the Idris2 ABI.
+-- | ODNS encapsulation formats.
 --
 -- Tags 0-0 (1 constructors).
 data EncapsulationFormat
-  = Hpke  -- ^ Tag 0.
+  = Hpke  -- ^ HPKE (tag 0).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'EncapsulationFormat' to its ABI tag value.
@@ -124,15 +121,15 @@ encapsulationFormatFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | ODNS session states.
 --
 -- Tags 0-4 (5 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | KeyExchange  -- ^ Tag 1.
-  | Ready  -- ^ Tag 2.
-  | Processing  -- ^ Tag 3.
-  | Closing  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | KeyExchange  -- ^ KeyExchange (tag 1).
+  | Ready  -- ^ Ready (tag 2).
+  | Processing  -- ^ Processing (tag 3).
+  | Closing  -- ^ Closing (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.

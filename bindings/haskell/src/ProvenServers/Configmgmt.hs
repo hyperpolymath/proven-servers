@@ -1,30 +1,27 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Config Mgmt protocol types for proven-servers.
+-- | Configuration Management types for the proven-servers ABI.
 --
--- Configuration management types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Configmgmt
-  ( -- * ADT types matching Idris2 ABI
-      ResourceType(..)
-    , ResourceState(..)
-    , ChangeAction(..)
-    , DriftStatus(..)
-    , ApplyMode(..)
-    , resourceTypeToTag
-    , resourceTypeFromTag
-    , resourceStateToTag
-    , resourceStateFromTag
-    , changeActionToTag
-    , changeActionFromTag
-    , driftStatusToTag
-    , driftStatusFromTag
-    , applyModeToTag
-    , applyModeFromTag
+  (
+    ResourceType(..)
+  , resourceTypeToTag
+  , resourceTypeFromTag
+  , ResourceState(..)
+  , resourceStateToTag
+  , resourceStateFromTag
+  , ChangeAction(..)
+  , changeActionToTag
+  , changeActionFromTag
+  , DriftStatus(..)
+  , driftStatusToTag
+  , driftStatusFromTag
+  , ApplyMode(..)
+  , applyModeToTag
+  , applyModeFromTag
   ) where
 
 import Data.Word (Word8)
@@ -33,19 +30,19 @@ import Data.Word (Word8)
 -- ResourceType
 -- ---------------------------------------------------------------------------
 
--- | ResourceType type matching the Idris2 ABI.
+-- | Managed resource types.
 --
 -- Tags 0-8 (9 constructors).
 data ResourceType
-  = File  -- ^ Tag 0.
-  | Package  -- ^ Tag 1.
-  | Service  -- ^ Tag 2.
-  | User  -- ^ Tag 3.
-  | Group  -- ^ Tag 4.
-  | Cron  -- ^ Tag 5.
-  | Mount  -- ^ Tag 6.
-  | Firewall  -- ^ Tag 7.
-  | Registry  -- ^ Tag 8.
+  = File  -- ^ File (tag 0).
+  | Package  -- ^ Package (tag 1).
+  | Service  -- ^ Service (tag 2).
+  | User  -- ^ User (tag 3).
+  | Group  -- ^ Group (tag 4).
+  | Cron  -- ^ Cron (tag 5).
+  | Mount  -- ^ Mount (tag 6).
+  | Firewall  -- ^ Firewall (tag 7).
+  | Registry  -- ^ Registry (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ResourceType' to its ABI tag value.
@@ -62,16 +59,16 @@ resourceTypeFromTag n
 -- ResourceState
 -- ---------------------------------------------------------------------------
 
--- | ResourceState type matching the Idris2 ABI.
+-- | Desired resource states.
 --
 -- Tags 0-5 (6 constructors).
 data ResourceState
-  = Present  -- ^ Tag 0.
-  | Absent  -- ^ Tag 1.
-  | Running  -- ^ Tag 2.
-  | Stopped  -- ^ Tag 3.
-  | Enabled  -- ^ Tag 4.
-  | Disabled  -- ^ Tag 5.
+  = Present  -- ^ Present (tag 0).
+  | Absent  -- ^ Absent (tag 1).
+  | Running  -- ^ Running (tag 2).
+  | Stopped  -- ^ Stopped (tag 3).
+  | Enabled  -- ^ Enabled (tag 4).
+  | Disabled  -- ^ Disabled (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ResourceState' to its ABI tag value.
@@ -88,16 +85,16 @@ resourceStateFromTag n
 -- ChangeAction
 -- ---------------------------------------------------------------------------
 
--- | ChangeAction type matching the Idris2 ABI.
+-- | Configuration change actions.
 --
 -- Tags 0-5 (6 constructors).
 data ChangeAction
-  = Create  -- ^ Tag 0.
-  | Modify  -- ^ Tag 1.
-  | Delete  -- ^ Tag 2.
-  | Restart  -- ^ Tag 3.
-  | Reload  -- ^ Tag 4.
-  | Skip  -- ^ Tag 5.
+  = Create  -- ^ Create (tag 0).
+  | Modify  -- ^ Modify (tag 1).
+  | Delete  -- ^ Delete (tag 2).
+  | Restart  -- ^ Restart (tag 3).
+  | Reload  -- ^ Reload (tag 4).
+  | Skip  -- ^ Skip (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ChangeAction' to its ABI tag value.
@@ -114,14 +111,14 @@ changeActionFromTag n
 -- DriftStatus
 -- ---------------------------------------------------------------------------
 
--- | DriftStatus type matching the Idris2 ABI.
+-- | Configuration drift status.
 --
 -- Tags 0-3 (4 constructors).
 data DriftStatus
-  = InSync  -- ^ Tag 0.
-  | Drifted  -- ^ Tag 1.
-  | DUnknown  -- ^ Tag 2.
-  | Unmanaged  -- ^ Tag 3.
+  = InSync  -- ^ InSync (tag 0).
+  | Drifted  -- ^ Drifted (tag 1).
+  | DUnknown  -- ^ Unknown (tag 2).
+  | Unmanaged  -- ^ Unmanaged (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DriftStatus' to its ABI tag value.
@@ -138,13 +135,13 @@ driftStatusFromTag n
 -- ApplyMode
 -- ---------------------------------------------------------------------------
 
--- | ApplyMode type matching the Idris2 ABI.
+-- | Configuration apply modes.
 --
 -- Tags 0-2 (3 constructors).
 data ApplyMode
-  = Enforce  -- ^ Tag 0.
-  | DryRun  -- ^ Tag 1.
-  | Audit  -- ^ Tag 2.
+  = Enforce  -- ^ Enforce (tag 0).
+  | DryRun  -- ^ DryRun (tag 1).
+  | Audit  -- ^ Audit (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ApplyMode' to its ABI tag value.

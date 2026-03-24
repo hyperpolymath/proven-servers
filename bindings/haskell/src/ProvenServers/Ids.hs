@@ -1,33 +1,30 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | IDS protocol types for proven-servers.
+-- | Intrusion Detection System types for the proven-servers ABI.
 --
--- Intrusion Detection System types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Ids
-  ( -- * ADT types matching Idris2 ABI
-      AlertSeverity(..)
-    , DetectionMethod(..)
-    , IdsProtocol(..)
-    , IdsAction(..)
-    , Direction(..)
-    , ThreatLevel(..)
-    , alertSeverityToTag
-    , alertSeverityFromTag
-    , detectionMethodToTag
-    , detectionMethodFromTag
-    , idsProtocolToTag
-    , idsProtocolFromTag
-    , idsActionToTag
-    , idsActionFromTag
-    , directionToTag
-    , directionFromTag
-    , threatLevelToTag
-    , threatLevelFromTag
+  (
+    AlertSeverity(..)
+  , alertSeverityToTag
+  , alertSeverityFromTag
+  , DetectionMethod(..)
+  , detectionMethodToTag
+  , detectionMethodFromTag
+  , IdsProtocol(..)
+  , idsProtocolToTag
+  , idsProtocolFromTag
+  , IdsAction(..)
+  , idsActionToTag
+  , idsActionFromTag
+  , Direction(..)
+  , directionToTag
+  , directionFromTag
+  , ThreatLevel(..)
+  , threatLevelToTag
+  , threatLevelFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,14 +33,14 @@ import Data.Word (Word8)
 -- AlertSeverity
 -- ---------------------------------------------------------------------------
 
--- | AlertSeverity type matching the Idris2 ABI.
+-- | Alert severity levels.
 --
 -- Tags 0-3 (4 constructors).
 data AlertSeverity
-  = AlertSeverity_Low  -- ^ Tag 0.
-  | AlertSeverity_Medium  -- ^ Tag 1.
-  | AlertSeverity_High  -- ^ Tag 2.
-  | AlertSeverity_Critical  -- ^ Tag 3.
+  = Low  -- ^ Low (tag 0).
+  | Medium  -- ^ Medium (tag 1).
+  | High  -- ^ High (tag 2).
+  | Critical  -- ^ Critical (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AlertSeverity' to its ABI tag value.
@@ -60,14 +57,14 @@ alertSeverityFromTag n
 -- DetectionMethod
 -- ---------------------------------------------------------------------------
 
--- | DetectionMethod type matching the Idris2 ABI.
+-- | Intrusion detection methods.
 --
 -- Tags 0-3 (4 constructors).
 data DetectionMethod
-  = Signature  -- ^ Tag 0.
-  | Anomaly  -- ^ Tag 1.
-  | Stateful  -- ^ Tag 2.
-  | Heuristic  -- ^ Tag 3.
+  = Signature  -- ^ Signature (tag 0).
+  | Anomaly  -- ^ Anomaly (tag 1).
+  | Stateful  -- ^ Stateful (tag 2).
+  | Heuristic  -- ^ Heuristic (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DetectionMethod' to its ABI tag value.
@@ -84,17 +81,17 @@ detectionMethodFromTag n
 -- IdsProtocol
 -- ---------------------------------------------------------------------------
 
--- | IdsProtocol type matching the Idris2 ABI.
+-- | Monitored network protocols.
 --
 -- Tags 0-6 (7 constructors).
 data IdsProtocol
-  = Tcp  -- ^ Tag 0.
-  | Udp  -- ^ Tag 1.
-  | Icmp  -- ^ Tag 2.
-  | Dns  -- ^ Tag 3.
-  | Http  -- ^ Tag 4.
-  | Tls  -- ^ Tag 5.
-  | Ssh  -- ^ Tag 6.
+  = Tcp  -- ^ TCP (tag 0).
+  | Udp  -- ^ UDP (tag 1).
+  | Icmp  -- ^ ICMP (tag 2).
+  | Dns  -- ^ DNS (tag 3).
+  | Http  -- ^ HTTP (tag 4).
+  | Tls  -- ^ TLS (tag 5).
+  | Ssh  -- ^ SSH (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'IdsProtocol' to its ABI tag value.
@@ -111,15 +108,15 @@ idsProtocolFromTag n
 -- IdsAction
 -- ---------------------------------------------------------------------------
 
--- | IdsAction type matching the Idris2 ABI.
+-- | IDS response actions.
 --
 -- Tags 0-4 (5 constructors).
 data IdsAction
-  = Alert  -- ^ Tag 0.
-  | Drop  -- ^ Tag 1.
-  | Log  -- ^ Tag 2.
-  | Block  -- ^ Tag 3.
-  | Pass  -- ^ Tag 4.
+  = Alert  -- ^ Alert (tag 0).
+  | Drop  -- ^ Drop (tag 1).
+  | Log  -- ^ Log (tag 2).
+  | Block  -- ^ Block (tag 3).
+  | Pass  -- ^ Pass (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'IdsAction' to its ABI tag value.
@@ -136,13 +133,13 @@ idsActionFromTag n
 -- Direction
 -- ---------------------------------------------------------------------------
 
--- | Direction type matching the Idris2 ABI.
+-- | Traffic direction.
 --
 -- Tags 0-2 (3 constructors).
 data Direction
-  = Inbound  -- ^ Tag 0.
-  | Outbound  -- ^ Tag 1.
-  | Both  -- ^ Tag 2.
+  = Inbound  -- ^ Inbound (tag 0).
+  | Outbound  -- ^ Outbound (tag 1).
+  | Both  -- ^ Both (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Direction' to its ABI tag value.
@@ -159,15 +156,15 @@ directionFromTag n
 -- ThreatLevel
 -- ---------------------------------------------------------------------------
 
--- | ThreatLevel type matching the Idris2 ABI.
+-- | Threat assessment levels.
 --
 -- Tags 0-4 (5 constructors).
 data ThreatLevel
-  = Info  -- ^ Tag 0.
-  | ThreatLevel_Low  -- ^ Tag 1.
-  | ThreatLevel_Medium  -- ^ Tag 2.
-  | ThreatLevel_High  -- ^ Tag 3.
-  | ThreatLevel_Critical  -- ^ Tag 4.
+  = Info  -- ^ Info (tag 0).
+  | Low  -- ^ Low (tag 1).
+  | Medium  -- ^ Medium (tag 2).
+  | High  -- ^ High (tag 3).
+  | Critical  -- ^ Critical (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ThreatLevel' to its ABI tag value.

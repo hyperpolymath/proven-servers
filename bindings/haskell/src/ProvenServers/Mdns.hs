@@ -1,47 +1,49 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | mDNS protocol types for proven-servers.
+-- | mDNS types for the proven-servers ABI.
 --
--- mDNS (multicast DNS, RFC 6762) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Mdns
-  ( -- * ADT types matching Idris2 ABI
-      MdnsRecordType(..)
-    , QueryType(..)
-    , ConflictAction(..)
-    , ServiceFlag(..)
-    , ResponderState(..)
-    , mdnsRecordTypeToTag
-    , mdnsRecordTypeFromTag
-    , queryTypeToTag
-    , queryTypeFromTag
-    , conflictActionToTag
-    , conflictActionFromTag
-    , serviceFlagToTag
-    , serviceFlagFromTag
-    , responderStateToTag
-    , responderStateFromTag
+  (
+    mdnsPort
+  , MdnsRecordType(..)
+  , mdnsRecordTypeToTag
+  , mdnsRecordTypeFromTag
+  , QueryType(..)
+  , queryTypeToTag
+  , queryTypeFromTag
+  , ConflictAction(..)
+  , conflictActionToTag
+  , conflictActionFromTag
+  , ServiceFlag(..)
+  , serviceFlagToTag
+  , serviceFlagFromTag
+  , ResponderState(..)
+  , responderStateToTag
+  , responderStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard mDNS port.
+mdnsPort :: Word16
+mdnsPort = 5353
 
 -- ---------------------------------------------------------------------------
 -- MdnsRecordType
 -- ---------------------------------------------------------------------------
 
--- | MdnsRecordType type matching the Idris2 ABI.
+-- | Standard mDNS port.
 --
 -- Tags 0-4 (5 constructors).
 data MdnsRecordType
-  = A  -- ^ Tag 0.
-  | Aaaa  -- ^ Tag 1.
-  | Ptr  -- ^ Tag 2.
-  | Srv  -- ^ Tag 3.
-  | Txt  -- ^ Tag 4.
+  = A  -- ^ IPv4 address (tag 0).
+  | Aaaa  -- ^ IPv6 address (tag 1).
+  | Ptr  -- ^ Pointer (tag 2).
+  | Srv  -- ^ Service (tag 3).
+  | Txt  -- ^ Text (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MdnsRecordType' to its ABI tag value.
@@ -58,13 +60,13 @@ mdnsRecordTypeFromTag n
 -- QueryType
 -- ---------------------------------------------------------------------------
 
--- | QueryType type matching the Idris2 ABI.
+-- | mDNS query types.
 --
 -- Tags 0-2 (3 constructors).
 data QueryType
-  = Standard  -- ^ Tag 0.
-  | OneShot  -- ^ Tag 1.
-  | Continuous  -- ^ Tag 2.
+  = Standard  -- ^ Standard (tag 0).
+  | OneShot  -- ^ OneShot (tag 1).
+  | Continuous  -- ^ Continuous (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'QueryType' to its ABI tag value.
@@ -81,13 +83,13 @@ queryTypeFromTag n
 -- ConflictAction
 -- ---------------------------------------------------------------------------
 
--- | ConflictAction type matching the Idris2 ABI.
+-- | mDNS conflict resolution actions.
 --
 -- Tags 0-2 (3 constructors).
 data ConflictAction
-  = Probe  -- ^ Tag 0.
-  | Defend  -- ^ Tag 1.
-  | Withdraw  -- ^ Tag 2.
+  = Probe  -- ^ Probe (tag 0).
+  | Defend  -- ^ Defend (tag 1).
+  | Withdraw  -- ^ Withdraw (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ConflictAction' to its ABI tag value.
@@ -104,12 +106,12 @@ conflictActionFromTag n
 -- ServiceFlag
 -- ---------------------------------------------------------------------------
 
--- | ServiceFlag type matching the Idris2 ABI.
+-- | mDNS service flags.
 --
 -- Tags 0-1 (2 constructors).
 data ServiceFlag
-  = Unique  -- ^ Tag 0.
-  | Shared  -- ^ Tag 1.
+  = Unique  -- ^ Unique (tag 0).
+  | Shared  -- ^ Shared (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ServiceFlag' to its ABI tag value.
@@ -126,15 +128,15 @@ serviceFlagFromTag n
 -- ResponderState
 -- ---------------------------------------------------------------------------
 
--- | ResponderState type matching the Idris2 ABI.
+-- | mDNS responder states.
 --
 -- Tags 0-4 (5 constructors).
 data ResponderState
-  = Idle  -- ^ Tag 0.
-  | Probing  -- ^ Tag 1.
-  | Announcing  -- ^ Tag 2.
-  | Running  -- ^ Tag 3.
-  | ShuttingDown  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Probing  -- ^ Probing (tag 1).
+  | Announcing  -- ^ Announcing (tag 2).
+  | Running  -- ^ Running (tag 3).
+  | ShuttingDown  -- ^ ShuttingDown (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ResponderState' to its ABI tag value.

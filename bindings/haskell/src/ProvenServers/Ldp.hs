@@ -1,30 +1,27 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | LDP protocol types for proven-servers.
+-- | LDP types for the proven-servers ABI.
 --
--- Linked Data Platform types (W3C LDP), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Ldp
-  ( -- * ADT types matching Idris2 ABI
-      ContainerType(..)
-    , LdpResourceType(..)
-    , Preference(..)
-    , InteractionModel(..)
-    , ConstraintViolation(..)
-    , containerTypeToTag
-    , containerTypeFromTag
-    , ldpResourceTypeToTag
-    , ldpResourceTypeFromTag
-    , preferenceToTag
-    , preferenceFromTag
-    , interactionModelToTag
-    , interactionModelFromTag
-    , constraintViolationToTag
-    , constraintViolationFromTag
+  (
+    ContainerType(..)
+  , containerTypeToTag
+  , containerTypeFromTag
+  , LdpResourceType(..)
+  , ldpResourceTypeToTag
+  , ldpResourceTypeFromTag
+  , Preference(..)
+  , preferenceToTag
+  , preferenceFromTag
+  , InteractionModel(..)
+  , interactionModelToTag
+  , interactionModelFromTag
+  , ConstraintViolation(..)
+  , constraintViolationToTag
+  , constraintViolationFromTag
   ) where
 
 import Data.Word (Word8)
@@ -33,13 +30,13 @@ import Data.Word (Word8)
 -- ContainerType
 -- ---------------------------------------------------------------------------
 
--- | ContainerType type matching the Idris2 ABI.
+-- | LDP container types.
 --
 -- Tags 0-2 (3 constructors).
 data ContainerType
-  = Basic  -- ^ Tag 0.
-  | Direct  -- ^ Tag 1.
-  | Indirect  -- ^ Tag 2.
+  = Basic  -- ^ Basic (tag 0).
+  | Direct  -- ^ Direct (tag 1).
+  | Indirect  -- ^ Indirect (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ContainerType' to its ABI tag value.
@@ -56,13 +53,13 @@ containerTypeFromTag n
 -- LdpResourceType
 -- ---------------------------------------------------------------------------
 
--- | LdpResourceType type matching the Idris2 ABI.
+-- | LDP resource types.
 --
 -- Tags 0-2 (3 constructors).
 data LdpResourceType
-  = RdfSource  -- ^ Tag 0.
-  | NonRdfSource  -- ^ Tag 1.
-  | Container  -- ^ Tag 2.
+  = RdfSource  -- ^ RdfSource (tag 0).
+  | NonRdfSource  -- ^ NonRdfSource (tag 1).
+  | Container  -- ^ Container (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'LdpResourceType' to its ABI tag value.
@@ -79,15 +76,15 @@ ldpResourceTypeFromTag n
 -- Preference
 -- ---------------------------------------------------------------------------
 
--- | Preference type matching the Idris2 ABI.
+-- | LDP prefer header values.
 --
 -- Tags 0-4 (5 constructors).
 data Preference
-  = MinimalContainer  -- ^ Tag 0.
-  | IncludeContainment  -- ^ Tag 1.
-  | IncludeMembership  -- ^ Tag 2.
-  | OmitContainment  -- ^ Tag 3.
-  | OmitMembership  -- ^ Tag 4.
+  = MinimalContainer  -- ^ MinimalContainer (tag 0).
+  | IncludeContainment  -- ^ IncludeContainment (tag 1).
+  | IncludeMembership  -- ^ IncludeMembership (tag 2).
+  | OmitContainment  -- ^ OmitContainment (tag 3).
+  | OmitMembership  -- ^ OmitMembership (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Preference' to its ABI tag value.
@@ -104,15 +101,15 @@ preferenceFromTag n
 -- InteractionModel
 -- ---------------------------------------------------------------------------
 
--- | InteractionModel type matching the Idris2 ABI.
+-- | LDP interaction models.
 --
 -- Tags 0-4 (5 constructors).
 data InteractionModel
-  = Ldpr  -- ^ Tag 0.
-  | Ldpc  -- ^ Tag 1.
-  | LdpBasicContainer  -- ^ Tag 2.
-  | LdpDirectContainer  -- ^ Tag 3.
-  | LdpIndirectContainer  -- ^ Tag 4.
+  = Ldpr  -- ^ LDP Resource (tag 0).
+  | Ldpc  -- ^ LDP Container (tag 1).
+  | LdpBasicContainer  -- ^ LdpBasicContainer (tag 2).
+  | LdpDirectContainer  -- ^ LdpDirectContainer (tag 3).
+  | LdpIndirectContainer  -- ^ LdpIndirectContainer (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'InteractionModel' to its ABI tag value.
@@ -129,14 +126,14 @@ interactionModelFromTag n
 -- ConstraintViolation
 -- ---------------------------------------------------------------------------
 
--- | ConstraintViolation type matching the Idris2 ABI.
+-- | LDP constraint violations.
 --
 -- Tags 0-3 (4 constructors).
 data ConstraintViolation
-  = MembershipConstant  -- ^ Tag 0.
-  | ContainsTriplesModified  -- ^ Tag 1.
-  | ServerManaged  -- ^ Tag 2.
-  | TypeConflict  -- ^ Tag 3.
+  = MembershipConstant  -- ^ MembershipConstant (tag 0).
+  | ContainsTriplesModified  -- ^ ContainsTriplesModified (tag 1).
+  | ServerManaged  -- ^ ServerManaged (tag 2).
+  | TypeConflict  -- ^ TypeConflict (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ConstraintViolation' to its ABI tag value.

@@ -1,243 +1,170 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Firewall protocol bindings for proven-servers.
+-- | Firewall types for the proven-servers ABI.
 --
--- Wraps the C-ABI functions from
--- @protocols\/proven-firewall\/ffi\/zig\/src\/firewall.zig@.
--- Provides Haskell ADTs for firewall actions, packet lifecycle states,
--- and connection tracking states.
-
-{-# LANGUAGE ForeignFunctionInterface #-}
+-- All tag values match the Idris2 ABI discriminants exactly.
 
 module ProvenServers.Firewall
-  ( -- * ADTs matching Idris2 ABI
-    FirewallAction(..)
-  , PacketState(..)
-  , ConntrackState(..)
-    -- * Context lifecycle
-  , abiVersion
-  , createContext
-  , destroyContext
-    -- * State queries
-  , packetState
-  , conntrackState
-  , getDecision
-  , ruleCount
-  , packetProto
-  , packetChain
-  , packetSrcIp
-  , packetDstIp
-  , packetSrcPort
-  , packetDstPort
-    -- * Packet classification
-  , classifyPacket
-    -- * Chain evaluation
-  , beginChain
-  , addRule
-  , setDefaultAction
-  , evaluateRules
-  , commit
-    -- * Connection tracking
-  , beginTracking
-  , completeTracking
-  , expireConn
-    -- * Transition queries
-  , canTransition
-  , canConntrackTransition
+  (
+    Action(..)
+  , actionToTag
+  , actionFromTag
+  , isPermissive
+  , Protocol(..)
+  , protocolToTag
+  , protocolFromTag
+  , ChainType(..)
+  , chainTypeToTag
+  , chainTypeFromTag
+  , RuleMatchType(..)
+  , ruleMatchTypeToTag
+  , ruleMatchTypeFromTag
+  , ConnState(..)
+  , connStateToTag
+  , connStateFromTag
   ) where
 
-import Data.Word (Word8, Word16, Word32)
-import Foreign.C.Types (CInt(..))
-import ProvenServers.Error (ProvenError, fromSlot, fromStatus)
+import Data.Word (Word8)
 
 -- ---------------------------------------------------------------------------
--- ADTs matching Idris2 ABI enums
+-- Action
 -- ---------------------------------------------------------------------------
 
--- | Firewall rule actions matching @Action@ in firewall.zig.
-data FirewallAction
-  = FwAccept     -- ^ Accept the packet.
-  | FwDrop       -- ^ Silently drop the packet.
-  | FwReject     -- ^ Reject with ICMP error.
-  | FwLog        -- ^ Log and continue processing.
-  | FwRedirect   -- ^ Redirect to a different destination.
-  | FwDnat       -- ^ Destination NAT.
-  | FwSnat       -- ^ Source NAT.
-  | FwMasquerade -- ^ IP masquerading.
+-- | Firewall rule actions.
+--
+-- Tags 0-7 (8 constructors).
+data Action
+  = Accept  -- ^ Accept (tag 0).
+  | Drop  -- ^ Drop (tag 1).
+  | Reject  -- ^ Reject (tag 2).
+  | Log  -- ^ Log (tag 3).
+  | Redirect  -- ^ Redirect (tag 4).
+  | Dnat  -- ^ DNAT (tag 5).
+  | Snat  -- ^ SNAT (tag 6).
+  | Masquerade  -- ^ Masquerade (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
-fwActionToTag :: FirewallAction -> Word8
-fwActionToTag = fromIntegral . fromEnum
+-- | Convert a 'Action' to its ABI tag value.
+actionToTag :: Action -> Word8
+actionToTag = fromIntegral . fromEnum
 
-fwActionFromTag :: Word8 -> Maybe FirewallAction
-fwActionFromTag n
-  | n <= fromIntegral (fromEnum (maxBound :: FirewallAction)) = Just (toEnum (fromIntegral n))
+-- | Decode a 'Action' from its ABI tag value.
+actionFromTag :: Word8 -> Maybe Action
+actionFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: Action)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
--- | Firewall packet lifecycle states.
-data PacketState
-  = PktIdle       -- ^ No packet classified yet.
-  | PktClassified -- ^ Packet classified (protocol, IPs, ports set).
-  | PktEvaluating -- ^ Chain evaluation in progress.
-  | PktDecided    -- ^ Decision made.
-  | PktCommitted  -- ^ Committed (final).
+-- | Whether this action allows traffic.
+isPermissive :: Action -> Bool
+isPermissive Accept = True
+isPermissive Redirect = True
+isPermissive Dnat = True
+isPermissive Snat = True
+isPermissive Masquerade = True
+isPermissive _ = False
+
+-- ---------------------------------------------------------------------------
+-- Protocol
+-- ---------------------------------------------------------------------------
+
+-- | Network protocols.
+--
+-- Tags 0-7 (8 constructors).
+data Protocol
+  = Tcp  -- ^ TCP (tag 0).
+  | Udp  -- ^ UDP (tag 1).
+  | Icmp  -- ^ ICMP (tag 2).
+  | Icmpv6  -- ^ ICMPv6 (tag 3).
+  | Gre  -- ^ GRE (tag 4).
+  | Esp  -- ^ ESP (tag 5).
+  | Ah  -- ^ AH (tag 6).
+  | Any  -- ^ Any (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
-pktStateToTag :: PacketState -> Word8
-pktStateToTag = fromIntegral . fromEnum
+-- | Convert a 'Protocol' to its ABI tag value.
+protocolToTag :: Protocol -> Word8
+protocolToTag = fromIntegral . fromEnum
 
-pktStateFromTag :: Word8 -> Maybe PacketState
-pktStateFromTag n
-  | n <= fromIntegral (fromEnum (maxBound :: PacketState)) = Just (toEnum (fromIntegral n))
+-- | Decode a 'Protocol' from its ABI tag value.
+protocolFromTag :: Word8 -> Maybe Protocol
+protocolFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: Protocol)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- ---------------------------------------------------------------------------
+-- ChainType
+-- ---------------------------------------------------------------------------
+
+-- | Firewall chain types (netfilter).
+--
+-- Tags 0-4 (5 constructors).
+data ChainType
+  = Input  -- ^ Input (tag 0).
+  | Output  -- ^ Output (tag 1).
+  | Forward  -- ^ Forward (tag 2).
+  | PreRouting  -- ^ PreRouting (tag 3).
+  | PostRouting  -- ^ PostRouting (tag 4).
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+-- | Convert a 'ChainType' to its ABI tag value.
+chainTypeToTag :: ChainType -> Word8
+chainTypeToTag = fromIntegral . fromEnum
+
+-- | Decode a 'ChainType' from its ABI tag value.
+chainTypeFromTag :: Word8 -> Maybe ChainType
+chainTypeFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: ChainType)) = Just (toEnum (fromIntegral n))
+  | otherwise = Nothing
+
+-- ---------------------------------------------------------------------------
+-- RuleMatchType
+-- ---------------------------------------------------------------------------
+
+-- | Firewall rule match criteria.
+--
+-- Tags 0-7 (8 constructors).
+data RuleMatchType
+  = SourceIp  -- ^ SourceIp (tag 0).
+  | DestIp  -- ^ DestIp (tag 1).
+  | SourcePort  -- ^ SourcePort (tag 2).
+  | DestPort  -- ^ DestPort (tag 3).
+  | MatchProto  -- ^ Protocol match (tag 4).
+  | Interface  -- ^ Interface (tag 5).
+  | State  -- ^ State (tag 6).
+  | Mark  -- ^ Mark (tag 7).
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+-- | Convert a 'RuleMatchType' to its ABI tag value.
+ruleMatchTypeToTag :: RuleMatchType -> Word8
+ruleMatchTypeToTag = fromIntegral . fromEnum
+
+-- | Decode a 'RuleMatchType' from its ABI tag value.
+ruleMatchTypeFromTag :: Word8 -> Maybe RuleMatchType
+ruleMatchTypeFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: RuleMatchType)) = Just (toEnum (fromIntegral n))
+  | otherwise = Nothing
+
+-- ---------------------------------------------------------------------------
+-- ConnState
+-- ---------------------------------------------------------------------------
 
 -- | Connection tracking states.
-data ConntrackState
-  = CtNone        -- ^ No connection tracking.
-  | CtTracking    -- ^ Tracking in progress.
-  | CtEstablished -- ^ Connection established.
-  | CtRelated     -- ^ Related connection.
-  | CtExpired     -- ^ Connection expired.
+--
+-- Tags 0-3 (4 constructors).
+data ConnState
+  = New  -- ^ New (tag 0).
+  | Established  -- ^ Established (tag 1).
+  | Related  -- ^ Related (tag 2).
+  | Invalid  -- ^ Invalid (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
-ctStateToTag :: ConntrackState -> Word8
-ctStateToTag = fromIntegral . fromEnum
+-- | Convert a 'ConnState' to its ABI tag value.
+connStateToTag :: ConnState -> Word8
+connStateToTag = fromIntegral . fromEnum
 
-ctStateFromTag :: Word8 -> Maybe ConntrackState
-ctStateFromTag n
-  | n <= fromIntegral (fromEnum (maxBound :: ConntrackState)) = Just (toEnum (fromIntegral n))
+-- | Decode a 'ConnState' from its ABI tag value.
+connStateFromTag :: Word8 -> Maybe ConnState
+connStateFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: ConnState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
-
--- ---------------------------------------------------------------------------
--- Foreign imports
--- ---------------------------------------------------------------------------
-
-foreign import ccall unsafe "fw_abi_version"           c_fw_abi_version           :: IO Word32
-foreign import ccall unsafe "fw_create_context"        c_fw_create_context        :: IO CInt
-foreign import ccall unsafe "fw_destroy_context"       c_fw_destroy_context       :: CInt -> IO ()
-foreign import ccall unsafe "fw_packet_state"          c_fw_packet_state          :: CInt -> IO Word8
-foreign import ccall unsafe "fw_conntrack_state"       c_fw_conntrack_state       :: CInt -> IO Word8
-foreign import ccall unsafe "fw_get_decision"          c_fw_get_decision          :: CInt -> IO Word8
-foreign import ccall unsafe "fw_rule_count"            c_fw_rule_count            :: CInt -> IO Word16
-foreign import ccall unsafe "fw_packet_proto"          c_fw_packet_proto          :: CInt -> IO Word8
-foreign import ccall unsafe "fw_packet_chain"          c_fw_packet_chain          :: CInt -> IO Word8
-foreign import ccall unsafe "fw_packet_src_ip"         c_fw_packet_src_ip         :: CInt -> IO Word32
-foreign import ccall unsafe "fw_packet_dst_ip"         c_fw_packet_dst_ip         :: CInt -> IO Word32
-foreign import ccall unsafe "fw_packet_src_port"       c_fw_packet_src_port       :: CInt -> IO Word16
-foreign import ccall unsafe "fw_packet_dst_port"       c_fw_packet_dst_port       :: CInt -> IO Word16
-foreign import ccall unsafe "fw_classify_packet"       c_fw_classify_packet       :: CInt -> Word8 -> Word8 -> Word32 -> Word32 -> Word16 -> Word16 -> IO Word8
-foreign import ccall unsafe "fw_begin_chain"           c_fw_begin_chain           :: CInt -> IO Word8
-foreign import ccall unsafe "fw_add_rule"              c_fw_add_rule              :: CInt -> Word8 -> Word32 -> Word8 -> Word16 -> IO Word8
-foreign import ccall unsafe "fw_set_default_action"    c_fw_set_default_action    :: CInt -> Word8 -> IO Word8
-foreign import ccall unsafe "fw_evaluate_rules"        c_fw_evaluate_rules        :: CInt -> IO Word8
-foreign import ccall unsafe "fw_commit"                c_fw_commit                :: CInt -> IO Word8
-foreign import ccall unsafe "fw_begin_tracking"        c_fw_begin_tracking        :: CInt -> IO Word8
-foreign import ccall unsafe "fw_complete_tracking"     c_fw_complete_tracking     :: CInt -> Word8 -> IO Word8
-foreign import ccall unsafe "fw_expire_conn"           c_fw_expire_conn           :: CInt -> IO Word8
-foreign import ccall unsafe "fw_can_transition"        c_fw_can_transition        :: Word8 -> Word8 -> IO Word8
-foreign import ccall unsafe "fw_can_conntrack_transition" c_fw_can_conntrack_transition :: Word8 -> Word8 -> IO Word8
-
--- ---------------------------------------------------------------------------
--- Safe wrappers
--- ---------------------------------------------------------------------------
-
--- | Return the ABI version.
-abiVersion :: IO Word32
-abiVersion = c_fw_abi_version
-
--- | Create a new firewall context.
-createContext :: IO (Either ProvenError CInt)
-createContext = fromSlot . fromIntegral <$> c_fw_create_context
-
--- | Destroy a firewall context.
-destroyContext :: CInt -> IO ()
-destroyContext = c_fw_destroy_context
-
--- | Get the current packet lifecycle state.
-packetState :: CInt -> IO (Maybe PacketState)
-packetState slot = pktStateFromTag <$> c_fw_packet_state slot
-
--- | Get the current connection tracking state.
-conntrackState :: CInt -> IO (Maybe ConntrackState)
-conntrackState slot = ctStateFromTag <$> c_fw_conntrack_state slot
-
--- | Get the decision action (only meaningful after evaluation).
-getDecision :: CInt -> IO (Maybe FirewallAction)
-getDecision slot = fwActionFromTag <$> c_fw_get_decision slot
-
--- | Get the number of rules in the chain.
-ruleCount :: CInt -> IO Word16
-ruleCount = c_fw_rule_count
-
--- | Get the classified packet protocol tag.
-packetProto :: CInt -> IO Word8
-packetProto = c_fw_packet_proto
-
--- | Get the classified packet chain tag.
-packetChain :: CInt -> IO Word8
-packetChain = c_fw_packet_chain
-
--- | Get the source IP (as a raw u32 in network order).
-packetSrcIp :: CInt -> IO Word32
-packetSrcIp = c_fw_packet_src_ip
-
--- | Get the destination IP.
-packetDstIp :: CInt -> IO Word32
-packetDstIp = c_fw_packet_dst_ip
-
--- | Get the source port.
-packetSrcPort :: CInt -> IO Word16
-packetSrcPort = c_fw_packet_src_port
-
--- | Get the destination port.
-packetDstPort :: CInt -> IO Word16
-packetDstPort = c_fw_packet_dst_port
-
--- | Classify a packet. Transitions Idle -> Classified.
-classifyPacket :: CInt -> Word8 -> Word8 -> Word32 -> Word32 -> Word16 -> Word16 -> IO (Either ProvenError ())
-classifyPacket slot proto chain srcIp dstIp srcPort dstPort =
-  fromStatus <$> c_fw_classify_packet slot proto chain srcIp dstIp srcPort dstPort
-
--- | Begin chain evaluation. Transitions Classified -> Evaluating.
-beginChain :: CInt -> IO (Either ProvenError ())
-beginChain slot = fromStatus <$> c_fw_begin_chain slot
-
--- | Add a rule to the evaluation chain.
-addRule :: CInt -> Word8 -> Word32 -> FirewallAction -> Word16 -> IO (Either ProvenError ())
-addRule slot matchType matchValue action priority =
-  fromStatus <$> c_fw_add_rule slot matchType matchValue (fwActionToTag action) priority
-
--- | Set the default action (applied when no rules match).
-setDefaultAction :: CInt -> FirewallAction -> IO (Either ProvenError ())
-setDefaultAction slot action = fromStatus <$> c_fw_set_default_action slot (fwActionToTag action)
-
--- | Evaluate rules against the classified packet. Transitions Evaluating -> Decided.
-evaluateRules :: CInt -> IO (Either ProvenError ())
-evaluateRules slot = fromStatus <$> c_fw_evaluate_rules slot
-
--- | Commit the decision. Transitions Decided -> Committed.
-commit :: CInt -> IO (Either ProvenError ())
-commit slot = fromStatus <$> c_fw_commit slot
-
--- | Begin connection tracking. Transitions None -> Tracking.
-beginTracking :: CInt -> IO (Either ProvenError ())
-beginTracking slot = fromStatus <$> c_fw_begin_tracking slot
-
--- | Complete connection tracking with a state.
-completeTracking :: CInt -> ConntrackState -> IO (Either ProvenError ())
-completeTracking slot connState = fromStatus <$> c_fw_complete_tracking slot (ctStateToTag connState)
-
--- | Expire a connection. Transitions Established\/Related -> Expired.
-expireConn :: CInt -> IO (Either ProvenError ())
-expireConn slot = fromStatus <$> c_fw_expire_conn slot
-
--- | Stateless query: check whether a packet state transition is valid.
-canTransition :: PacketState -> PacketState -> IO Bool
-canTransition from to =
-  (== 1) <$> c_fw_can_transition (pktStateToTag from) (pktStateToTag to)
-
--- | Stateless query: check whether a conntrack state transition is valid.
-canConntrackTransition :: ConntrackState -> ConntrackState -> IO Bool
-canConntrackTransition from to =
-  (== 1) <$> c_fw_can_conntrack_transition (ctStateToTag from) (ctStateToTag to)

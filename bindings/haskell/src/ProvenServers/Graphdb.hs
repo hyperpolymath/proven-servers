@@ -1,50 +1,52 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Graph DB protocol types for proven-servers.
+-- | Graph Database types for the proven-servers ABI.
 --
--- Graph database types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Graphdb
-  ( -- * ADT types matching Idris2 ABI
-      ElementType(..)
-    , QueryLanguage(..)
-    , TraversalStrategy(..)
-    , Consistency(..)
-    , ErrorCode(..)
-    , SessionState(..)
-    , elementTypeToTag
-    , elementTypeFromTag
-    , queryLanguageToTag
-    , queryLanguageFromTag
-    , traversalStrategyToTag
-    , traversalStrategyFromTag
-    , consistencyToTag
-    , consistencyFromTag
-    , errorCodeToTag
-    , errorCodeFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    graphdbPort
+  , ElementType(..)
+  , elementTypeToTag
+  , elementTypeFromTag
+  , QueryLanguage(..)
+  , queryLanguageToTag
+  , queryLanguageFromTag
+  , TraversalStrategy(..)
+  , traversalStrategyToTag
+  , traversalStrategyFromTag
+  , Consistency(..)
+  , consistencyToTag
+  , consistencyFromTag
+  , ErrorCode(..)
+  , errorCodeToTag
+  , errorCodeFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard Bolt protocol port.
+graphdbPort :: Word16
+graphdbPort = 7687
 
 -- ---------------------------------------------------------------------------
 -- ElementType
 -- ---------------------------------------------------------------------------
 
--- | ElementType type matching the Idris2 ABI.
+-- | Standard Bolt protocol port.
 --
 -- Tags 0-4 (5 constructors).
 data ElementType
-  = Node  -- ^ Tag 0.
-  | Edge  -- ^ Tag 1.
-  | Property  -- ^ Tag 2.
-  | Label  -- ^ Tag 3.
-  | Index  -- ^ Tag 4.
+  = Node  -- ^ Node (tag 0).
+  | Edge  -- ^ Edge (tag 1).
+  | Property  -- ^ Property (tag 2).
+  | Label  -- ^ Label (tag 3).
+  | Index  -- ^ Index (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ElementType' to its ABI tag value.
@@ -61,14 +63,14 @@ elementTypeFromTag n
 -- QueryLanguage
 -- ---------------------------------------------------------------------------
 
--- | QueryLanguage type matching the Idris2 ABI.
+-- | Graph query languages.
 --
 -- Tags 0-3 (4 constructors).
 data QueryLanguage
-  = Cypher  -- ^ Tag 0.
-  | Gremlin  -- ^ Tag 1.
-  | Sparql  -- ^ Tag 2.
-  | GraphQl  -- ^ Tag 3.
+  = Cypher  -- ^ Cypher (tag 0).
+  | Gremlin  -- ^ Gremlin (tag 1).
+  | Sparql  -- ^ SPARQL (tag 2).
+  | GraphQl  -- ^ GraphQL (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'QueryLanguage' to its ABI tag value.
@@ -85,15 +87,15 @@ queryLanguageFromTag n
 -- TraversalStrategy
 -- ---------------------------------------------------------------------------
 
--- | TraversalStrategy type matching the Idris2 ABI.
+-- | Graph traversal strategies.
 --
 -- Tags 0-4 (5 constructors).
 data TraversalStrategy
-  = Bfs  -- ^ Tag 0.
-  | Dfs  -- ^ Tag 1.
-  | Dijkstra  -- ^ Tag 2.
-  | AStar  -- ^ Tag 3.
-  | Random  -- ^ Tag 4.
+  = Bfs  -- ^ Breadth-first search (tag 0).
+  | Dfs  -- ^ Depth-first search (tag 1).
+  | Dijkstra  -- ^ Dijkstra (tag 2).
+  | AStar  -- ^ A* (tag 3).
+  | Random  -- ^ Random (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'TraversalStrategy' to its ABI tag value.
@@ -110,14 +112,14 @@ traversalStrategyFromTag n
 -- Consistency
 -- ---------------------------------------------------------------------------
 
--- | Consistency type matching the Idris2 ABI.
+-- | Consistency levels.
 --
 -- Tags 0-3 (4 constructors).
 data Consistency
-  = Strong  -- ^ Tag 0.
-  | Eventual  -- ^ Tag 1.
-  | Session  -- ^ Tag 2.
-  | Causal  -- ^ Tag 3.
+  = Strong  -- ^ Strong (tag 0).
+  | Eventual  -- ^ Eventual (tag 1).
+  | Session  -- ^ Session (tag 2).
+  | Causal  -- ^ Causal (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Consistency' to its ABI tag value.
@@ -134,17 +136,17 @@ consistencyFromTag n
 -- ErrorCode
 -- ---------------------------------------------------------------------------
 
--- | ErrorCode type matching the Idris2 ABI.
+-- | Graph database error codes.
 --
 -- Tags 0-6 (7 constructors).
 data ErrorCode
-  = SyntaxError  -- ^ Tag 0.
-  | NodeNotFound  -- ^ Tag 1.
-  | EdgeNotFound  -- ^ Tag 2.
-  | ConstraintViolation  -- ^ Tag 3.
-  | IndexExists  -- ^ Tag 4.
-  | TransactionConflict  -- ^ Tag 5.
-  | OutOfMemory  -- ^ Tag 6.
+  = SyntaxError  -- ^ SyntaxError (tag 0).
+  | NodeNotFound  -- ^ NodeNotFound (tag 1).
+  | EdgeNotFound  -- ^ EdgeNotFound (tag 2).
+  | ConstraintViolation  -- ^ ConstraintViolation (tag 3).
+  | IndexExists  -- ^ IndexExists (tag 4).
+  | TransactionConflict  -- ^ TransactionConflict (tag 5).
+  | OutOfMemory  -- ^ OutOfMemory (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorCode' to its ABI tag value.
@@ -161,15 +163,15 @@ errorCodeFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | Graph database session states.
 --
 -- Tags 0-4 (5 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | Connected  -- ^ Tag 1.
-  | Querying  -- ^ Tag 2.
-  | Traversing  -- ^ Tag 3.
-  | Disconnecting  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Connected  -- ^ Connected (tag 1).
+  | Querying  -- ^ Querying (tag 2).
+  | Traversing  -- ^ Traversing (tag 3).
+  | Disconnecting  -- ^ Disconnecting (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.

@@ -1,33 +1,31 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Zero Trust protocol types for proven-servers.
+-- | Zero Trust types for the proven-servers ABI.
 --
--- Zero Trust architecture types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Zerotrust
-  ( -- * ADT types matching Idris2 ABI
-      PolicyType(..)
-    , IdentityConfidence(..)
-    , DeviceTrustScore(..)
-    , AccessDecision(..)
-    , ContextSignalKind(..)
-    , AuthFactor(..)
-    , policyTypeToTag
-    , policyTypeFromTag
-    , identityConfidenceToTag
-    , identityConfidenceFromTag
-    , deviceTrustScoreToTag
-    , deviceTrustScoreFromTag
-    , accessDecisionToTag
-    , accessDecisionFromTag
-    , contextSignalKindToTag
-    , contextSignalKindFromTag
-    , authFactorToTag
-    , authFactorFromTag
+  (
+    PolicyType(..)
+  , policyTypeToTag
+  , policyTypeFromTag
+  , IdentityConfidence(..)
+  , identityConfidenceToTag
+  , identityConfidenceFromTag
+  , DeviceTrustScore(..)
+  , deviceTrustScoreToTag
+  , deviceTrustScoreFromTag
+  , AccessDecision(..)
+  , accessDecisionToTag
+  , accessDecisionFromTag
+  , isGranted
+  , ContextSignalKind(..)
+  , contextSignalKindToTag
+  , contextSignalKindFromTag
+  , AuthFactor(..)
+  , authFactorToTag
+  , authFactorFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,14 +34,14 @@ import Data.Word (Word8)
 -- PolicyType
 -- ---------------------------------------------------------------------------
 
--- | PolicyType type matching the Idris2 ABI.
+-- | Zero Trust policy types.
 --
 -- Tags 0-3 (4 constructors).
 data PolicyType
-  = AlwaysVerify  -- ^ Tag 0.
-  | NeverTrust  -- ^ Tag 1.
-  | LeastPrivilege  -- ^ Tag 2.
-  | MicroSegmentation  -- ^ Tag 3.
+  = AlwaysVerify  -- ^ AlwaysVerify (tag 0).
+  | NeverTrust  -- ^ NeverTrust (tag 1).
+  | LeastPrivilege  -- ^ LeastPrivilege (tag 2).
+  | MicroSegmentation  -- ^ MicroSegmentation (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PolicyType' to its ABI tag value.
@@ -60,15 +58,15 @@ policyTypeFromTag n
 -- IdentityConfidence
 -- ---------------------------------------------------------------------------
 
--- | IdentityConfidence type matching the Idris2 ABI.
+-- | Identity verification confidence.
 --
 -- Tags 0-4 (5 constructors).
 data IdentityConfidence
-  = Unverified  -- ^ Tag 0.
-  | BasicAuth  -- ^ Tag 1.
-  | MfaVerified  -- ^ Tag 2.
-  | StrongAuth  -- ^ Tag 3.
-  | ContinuousAuth  -- ^ Tag 4.
+  = Unverified  -- ^ Unverified (tag 0).
+  | BasicAuth  -- ^ BasicAuth (tag 1).
+  | MfaVerified  -- ^ MFA verified (tag 2).
+  | StrongAuth  -- ^ StrongAuth (tag 3).
+  | ContinuousAuth  -- ^ ContinuousAuth (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'IdentityConfidence' to its ABI tag value.
@@ -85,15 +83,15 @@ identityConfidenceFromTag n
 -- DeviceTrustScore
 -- ---------------------------------------------------------------------------
 
--- | DeviceTrustScore type matching the Idris2 ABI.
+-- | Device trust assessment.
 --
 -- Tags 0-4 (5 constructors).
 data DeviceTrustScore
-  = DeviceUnknown  -- ^ Tag 0.
-  | DevicePartial  -- ^ Tag 1.
-  | DeviceCompliant  -- ^ Tag 2.
-  | DeviceManaged  -- ^ Tag 3.
-  | DeviceHardened  -- ^ Tag 4.
+  = DeviceUnknown  -- ^ DeviceUnknown (tag 0).
+  | DevicePartial  -- ^ DevicePartial (tag 1).
+  | DeviceCompliant  -- ^ DeviceCompliant (tag 2).
+  | DeviceManaged  -- ^ DeviceManaged (tag 3).
+  | DeviceHardened  -- ^ DeviceHardened (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DeviceTrustScore' to its ABI tag value.
@@ -110,14 +108,14 @@ deviceTrustScoreFromTag n
 -- AccessDecision
 -- ---------------------------------------------------------------------------
 
--- | AccessDecision type matching the Idris2 ABI.
+-- | Zero Trust access decisions.
 --
 -- Tags 0-3 (4 constructors).
 data AccessDecision
-  = Allow  -- ^ Tag 0.
-  | Deny  -- ^ Tag 1.
-  | Challenge  -- ^ Tag 2.
-  | StepUp  -- ^ Tag 3.
+  = Allow  -- ^ Allow (tag 0).
+  | Deny  -- ^ Deny (tag 1).
+  | Challenge  -- ^ Challenge (tag 2).
+  | StepUp  -- ^ StepUp (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AccessDecision' to its ABI tag value.
@@ -130,19 +128,24 @@ accessDecisionFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: AccessDecision)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether access is granted.
+isGranted :: AccessDecision -> Bool
+isGranted Allow = True
+isGranted _ = False
+
 -- ---------------------------------------------------------------------------
 -- ContextSignalKind
 -- ---------------------------------------------------------------------------
 
--- | ContextSignalKind type matching the Idris2 ABI.
+-- | Context signals for trust evaluation.
 --
 -- Tags 0-4 (5 constructors).
 data ContextSignalKind
-  = Location  -- ^ Tag 0.
-  | Time  -- ^ Tag 1.
-  | Device  -- ^ Tag 2.
-  | Behavior  -- ^ Tag 3.
-  | Network  -- ^ Tag 4.
+  = Location  -- ^ Location (tag 0).
+  | Time  -- ^ Time (tag 1).
+  | Device  -- ^ Device (tag 2).
+  | Behavior  -- ^ Behavior (tag 3).
+  | Network  -- ^ Network (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ContextSignalKind' to its ABI tag value.
@@ -159,16 +162,16 @@ contextSignalKindFromTag n
 -- AuthFactor
 -- ---------------------------------------------------------------------------
 
--- | AuthFactor type matching the Idris2 ABI.
+-- | Authentication factor types.
 --
 -- Tags 0-5 (6 constructors).
 data AuthFactor
-  = Certificate  -- ^ Tag 0.
-  | Token  -- ^ Tag 1.
-  | Biometric  -- ^ Tag 2.
-  | Fido2  -- ^ Tag 3.
-  | Totp  -- ^ Tag 4.
-  | Push  -- ^ Tag 5.
+  = Certificate  -- ^ Certificate (tag 0).
+  | Token  -- ^ Token (tag 1).
+  | Biometric  -- ^ Biometric (tag 2).
+  | Fido2  -- ^ FIDO2 (tag 3).
+  | Totp  -- ^ TOTP (tag 4).
+  | Push  -- ^ Push (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AuthFactor' to its ABI tag value.

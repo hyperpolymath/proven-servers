@@ -1,210 +1,298 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | SMTP protocol bindings for proven-servers.
+-- | SMTP protocol types for the proven-servers ABI.
 --
--- Wraps the C-ABI functions from @protocols\/proven-smtp\/ffi\/zig\/src\/smtp.zig@.
--- Provides Haskell ADTs for SMTP session states and AUTH mechanisms.
-
-{-# LANGUAGE ForeignFunctionInterface #-}
+-- All tag values match the Idris2 ABI discriminants exactly.
 
 module ProvenServers.Smtp
-  ( -- * ADTs matching Idris2 ABI
-    SmtpSessionState(..)
+  (
+    smtpPort
+  , submissionPort
+  , smtpsPort
+  , SmtpCommand(..)
+  , smtpCommandToTag
+  , smtpCommandFromTag
+  , isEnvelope
+  , verb
+  , ReplyCategory(..)
+  , replyCategoryToTag
+  , replyCategoryFromTag
+  , isSuccess
+  , isError
+  , ReplyCode(..)
+  , replyCodeToTag
+  , replyCodeFromTag
   , AuthMechanism(..)
-    -- * Context lifecycle
-  , abiVersion
-  , createContext
-  , destroyContext
-    -- * State queries
-  , getState
-  , getReplyCode
-  , getRecipientCount
-  , getDataSize
-  , getAuthMechanism
-  , isAuthenticated
-  , isTlsActive
-    -- * Session commands
-  , greet
-  , authenticate
-  , authComplete
-  , setSender
-  , addRecipient
-  , startData
-  , appendData
-  , finishData
-  , reset
-  , quit
-  , enableTls
-    -- * Transition queries
-  , canTransition
+  , authMechanismToTag
+  , authMechanismFromTag
+  , requiresTls
+  , mechanismName
+  , SmtpExtension(..)
+  , smtpExtensionToTag
+  , smtpExtensionFromTag
+  , keyword
+  , SmtpSessionState(..)
+  , smtpSessionStateToTag
+  , smtpSessionStateFromTag
+  , smtpSessionStateCanTransitionTo
   ) where
 
-import Data.Word (Word8, Word32)
-import Foreign.C.Types (CInt(..))
-import ProvenServers.Error (ProvenError, fromSlot, fromStatus)
+import Data.Word (Word16, Word8)
+
+-- | Standard SMTP submission port.
+smtpPort :: Word16
+smtpPort = 25
+
+-- | SMTP submission port (RFC 6409).
+submissionPort :: Word16
+submissionPort = 587
+
+-- | SMTPS (implicit TLS) port.
+smtpsPort :: Word16
+smtpsPort = 465
 
 -- ---------------------------------------------------------------------------
--- ADTs matching Idris2 ABI enums
+-- SmtpCommand
 -- ---------------------------------------------------------------------------
 
--- | SMTP session states matching the Zig FFI.
-data SmtpSessionState
-  = SmtpConnected      -- ^ TCP connection established.
-  | SmtpGreeted        -- ^ HELO/EHLO completed.
-  | SmtpAuthStarted    -- ^ AUTH exchange in progress.
-  | SmtpAuthenticated  -- ^ Successfully authenticated.
-  | SmtpMailFrom       -- ^ MAIL FROM accepted.
-  | SmtpRcptTo         -- ^ RCPT TO accepted (at least one recipient).
-  | SmtpData           -- ^ DATA transfer in progress.
-  | SmtpMessageReceived -- ^ End-of-data received.
-  | SmtpQuit           -- ^ Session ended.
+-- | SMTP submission port (RFC 6409).
+--
+-- Tags 0-11 (12 constructors).
+data SmtpCommand
+  = Helo  -- ^ HELO — identify client (RFC 821) (tag 0).
+  | Ehlo  -- ^ EHLO — extended HELO (RFC 1869) (tag 1).
+  | MailFrom  -- ^ MAIL FROM — specify sender (tag 2).
+  | RcptTo  -- ^ RCPT TO — specify recipient (tag 3).
+  | Data  -- ^ DATA — begin message body (tag 4).
+  | Quit  -- ^ QUIT — close session (tag 5).
+  | Rset  -- ^ RSET — reset transaction (tag 6).
+  | Noop  -- ^ NOOP — no operation (tag 7).
+  | Vrfy  -- ^ VRFY — verify address (tag 8).
+  | Expn  -- ^ EXPN — expand mailing list (tag 9).
+  | Starttls  -- ^ STARTTLS — upgrade to TLS (RFC 3207) (tag 10).
+  | Auth  -- ^ AUTH — SASL authentication (RFC 4954) (tag 11).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
--- | Convert to ABI tag.
-smtpStateToTag :: SmtpSessionState -> Word8
-smtpStateToTag = fromIntegral . fromEnum
+-- | Convert a 'SmtpCommand' to its ABI tag value.
+smtpCommandToTag :: SmtpCommand -> Word8
+smtpCommandToTag = fromIntegral . fromEnum
 
--- | Decode from ABI tag.
-smtpStateFromTag :: Word8 -> Maybe SmtpSessionState
-smtpStateFromTag n
-  | n <= fromIntegral (fromEnum (maxBound :: SmtpSessionState)) = Just (toEnum (fromIntegral n))
+-- | Decode a 'SmtpCommand' from its ABI tag value.
+smtpCommandFromTag :: Word8 -> Maybe SmtpCommand
+smtpCommandFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: SmtpCommand)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
--- | SMTP AUTH mechanisms.
-data AuthMechanism
-  = AuthPlain     -- ^ PLAIN mechanism.
-  | AuthLogin     -- ^ LOGIN mechanism.
-  | AuthCramMd5   -- ^ CRAM-MD5 mechanism.
-  | AuthXOAuth2   -- ^ XOAUTH2 mechanism.
+-- | Whether this command is part of the mail transaction envelope.
+isEnvelope :: SmtpCommand -> Bool
+isEnvelope MailFrom = True
+isEnvelope RcptTo = True
+isEnvelope Data = True
+isEnvelope _ = False
+
+-- | The SMTP command verb as a string.
+verb :: SmtpCommand -> String
+verb Helo = "HELO"
+verb Ehlo = "EHLO"
+verb MailFrom = "MAIL FROM"
+verb RcptTo = "RCPT TO"
+verb Data = "DATA"
+verb Quit = "QUIT"
+verb Rset = "RSET"
+verb Noop = "NOOP"
+verb Vrfy = "VRFY"
+verb Expn = "EXPN"
+verb Starttls = "STARTTLS"
+verb Auth = "AUTH"
+
+-- ---------------------------------------------------------------------------
+-- ReplyCategory
+-- ---------------------------------------------------------------------------
+
+-- | SMTP reply severity categories (RFC 5321 Section 4.2).
+--
+-- Tags 0-3 (4 constructors).
+data ReplyCategory
+  = Positive  -- ^ Positive completion (2xx) (tag 0).
+  | Intermediate  -- ^ Positive intermediate (3xx) (tag 1).
+  | TransientNegative  -- ^ Transient negative (4xx) — retry may succeed (tag 2).
+  | PermanentNegative  -- ^ Permanent negative (5xx) — do not retry (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
--- | Convert to ABI tag.
-authMechToTag :: AuthMechanism -> Word8
-authMechToTag = fromIntegral . fromEnum
+-- | Convert a 'ReplyCategory' to its ABI tag value.
+replyCategoryToTag :: ReplyCategory -> Word8
+replyCategoryToTag = fromIntegral . fromEnum
 
--- | Decode from ABI tag.
-authMechFromTag :: Word8 -> Maybe AuthMechanism
-authMechFromTag n
+-- | Decode a 'ReplyCategory' from its ABI tag value.
+replyCategoryFromTag :: Word8 -> Maybe ReplyCategory
+replyCategoryFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: ReplyCategory)) = Just (toEnum (fromIntegral n))
+  | otherwise = Nothing
+
+-- | Whether this category indicates success.
+isSuccess :: ReplyCategory -> Bool
+isSuccess Positive = True
+isSuccess _ = False
+
+-- | Whether this category indicates an error.
+isError :: ReplyCategory -> Bool
+isError TransientNegative = True
+isError PermanentNegative = True
+isError _ = False
+
+-- ---------------------------------------------------------------------------
+-- ReplyCode
+-- ---------------------------------------------------------------------------
+
+-- | SMTP reply codes (RFC 5321).
+--
+-- Tags 0-16 (17 constructors).
+data ReplyCode
+  = ServiceReady  -- ^ 220 — Service ready (tag 0).
+  | ServiceClosing  -- ^ 221 — Service closing transmission channel (tag 1).
+  | ActionOk  -- ^ 250 — Requested action OK, completed (tag 2).
+  | WillForward  -- ^ 251 — User not local, will forward (tag 3).
+  | StartMailInput  -- ^ 354 — Start mail input (tag 4).
+  | ServiceUnavailable  -- ^ 421 — Service unavailable (tag 5).
+  | MailboxBusy  -- ^ 450 — Mailbox busy (tag 6).
+  | LocalError  -- ^ 451 — Local error in processing (tag 7).
+  | InsufficientStorage  -- ^ 452 — Insufficient storage (tag 8).
+  | SyntaxError  -- ^ 500 — Syntax error, command unrecognised (tag 9).
+  | ParamSyntaxError  -- ^ 501 — Syntax error in parameters (tag 10).
+  | NotImplemented  -- ^ 502 — Command not implemented (tag 11).
+  | BadSequence  -- ^ 503 — Bad sequence of commands (tag 12).
+  | ParamNotImplemented  -- ^ 504 — Parameter not implemented (tag 13).
+  | MailboxUnavailable  -- ^ 550 — Mailbox unavailable (tag 14).
+  | MailboxNameInvalid  -- ^ 553 — Mailbox name not allowed (tag 15).
+  | TransactionFailed  -- ^ 554 — Transaction failed (tag 16).
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+-- | Convert a 'ReplyCode' to its ABI tag value.
+replyCodeToTag :: ReplyCode -> Word8
+replyCodeToTag = fromIntegral . fromEnum
+
+-- | Decode a 'ReplyCode' from its ABI tag value.
+replyCodeFromTag :: Word8 -> Maybe ReplyCode
+replyCodeFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: ReplyCode)) = Just (toEnum (fromIntegral n))
+  | otherwise = Nothing
+
+-- ---------------------------------------------------------------------------
+-- AuthMechanism
+-- ---------------------------------------------------------------------------
+
+-- | SMTP SASL authentication mechanisms (RFC 4954).
+--
+-- Tags 0-3 (4 constructors).
+data AuthMechanism
+  = Plain  -- ^ PLAIN (RFC 4616) (tag 0).
+  | Login  -- ^ LOGIN (non-standard but widely used) (tag 1).
+  | CramMd5  -- ^ CRAM-MD5 (RFC 2195) (tag 2).
+  | Xoauth2  -- ^ XOAUTH2 (Google extension) (tag 3).
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+-- | Convert a 'AuthMechanism' to its ABI tag value.
+authMechanismToTag :: AuthMechanism -> Word8
+authMechanismToTag = fromIntegral . fromEnum
+
+-- | Decode a 'AuthMechanism' from its ABI tag value.
+authMechanismFromTag :: Word8 -> Maybe AuthMechanism
+authMechanismFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: AuthMechanism)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
--- ---------------------------------------------------------------------------
--- Foreign imports
--- ---------------------------------------------------------------------------
+-- | (requires TLS for security).
+requiresTls :: AuthMechanism -> Bool
+requiresTls Plain = True
+requiresTls Login = True
+requiresTls _ = False
 
-foreign import ccall unsafe "smtp_abi_version"       c_smtp_abi_version       :: IO Word32
-foreign import ccall unsafe "smtp_create_context"    c_smtp_create_context    :: IO CInt
-foreign import ccall unsafe "smtp_destroy_context"   c_smtp_destroy_context   :: CInt -> IO ()
-foreign import ccall unsafe "smtp_get_state"         c_smtp_get_state         :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_get_reply_code"    c_smtp_get_reply_code    :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_get_recipient_count" c_smtp_get_recipient_count :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_get_data_size"     c_smtp_get_data_size     :: CInt -> IO Word32
-foreign import ccall unsafe "smtp_get_auth_mechanism" c_smtp_get_auth_mechanism :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_is_authenticated"  c_smtp_is_authenticated  :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_is_tls_active"     c_smtp_is_tls_active     :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_greet"             c_smtp_greet             :: CInt -> Word8 -> IO Word8
-foreign import ccall unsafe "smtp_authenticate"      c_smtp_authenticate      :: CInt -> Word8 -> IO Word8
-foreign import ccall unsafe "smtp_auth_complete"     c_smtp_auth_complete     :: CInt -> Word8 -> IO Word8
-foreign import ccall unsafe "smtp_set_sender"        c_smtp_set_sender        :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_add_recipient"     c_smtp_add_recipient     :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_start_data"        c_smtp_start_data        :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_append_data"       c_smtp_append_data       :: CInt -> Word32 -> IO Word8
-foreign import ccall unsafe "smtp_finish_data"       c_smtp_finish_data       :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_reset"             c_smtp_reset             :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_quit"              c_smtp_quit              :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_enable_tls"        c_smtp_enable_tls        :: CInt -> IO Word8
-foreign import ccall unsafe "smtp_can_transition"    c_smtp_can_transition    :: Word8 -> Word8 -> IO Word8
+-- | The SASL mechanism name string.
+mechanismName :: AuthMechanism -> String
+mechanismName Plain = "PLAIN"
+mechanismName Login = "LOGIN"
+mechanismName CramMd5 = "CRAM-MD5"
+mechanismName Xoauth2 = "XOAUTH2"
 
 -- ---------------------------------------------------------------------------
--- Safe wrappers
+-- SmtpExtension
 -- ---------------------------------------------------------------------------
 
--- | Return the ABI version of the linked SMTP library.
-abiVersion :: IO Word32
-abiVersion = c_smtp_abi_version
+-- | ESMTP extensions advertised via EHLO response.
+--
+-- Tags 0-6 (7 constructors).
+data SmtpExtension
+  = Size  -- ^ SIZE — message size declaration (RFC 1870) (tag 0).
+  | Pipelining  -- ^ PIPELINING — command pipelining (RFC 2920) (tag 1).
+  | EightBitMime  -- ^ 8BITMIME — 8-bit MIME support (RFC 6152) (tag 2).
+  | Starttls  -- ^ STARTTLS — TLS upgrade (RFC 3207) (tag 3).
+  | Auth  -- ^ AUTH — SASL authentication (RFC 4954) (tag 4).
+  | Dsn  -- ^ DSN — delivery status notifications (RFC 3461) (tag 5).
+  | Chunking  -- ^ CHUNKING — binary data chunking (RFC 3030) (tag 6).
+  deriving (Show, Eq, Ord, Enum, Bounded)
 
--- | Create a new SMTP session in the Connected state.
-createContext :: IO (Either ProvenError CInt)
-createContext = fromSlot . fromIntegral <$> c_smtp_create_context
+-- | Convert a 'SmtpExtension' to its ABI tag value.
+smtpExtensionToTag :: SmtpExtension -> Word8
+smtpExtensionToTag = fromIntegral . fromEnum
 
--- | Destroy an SMTP context, releasing its slot.
-destroyContext :: CInt -> IO ()
-destroyContext = c_smtp_destroy_context
+-- | Decode a 'SmtpExtension' from its ABI tag value.
+smtpExtensionFromTag :: Word8 -> Maybe SmtpExtension
+smtpExtensionFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: SmtpExtension)) = Just (toEnum (fromIntegral n))
+  | otherwise = Nothing
 
--- | Get the current session state.
-getState :: CInt -> IO (Maybe SmtpSessionState)
-getState slot = smtpStateFromTag <$> c_smtp_get_state slot
+-- | The ESMTP keyword for this extension.
+keyword :: SmtpExtension -> String
+keyword Size = "SIZE"
+keyword Pipelining = "PIPELINING"
+keyword EightBitMime = "8BITMIME"
+keyword Starttls = "STARTTLS"
+keyword Auth = "AUTH"
+keyword Dsn = "DSN"
+keyword Chunking = "CHUNKING"
 
--- | Get the last reply code tag (0-16, maps to ReplyCode).
-getReplyCode :: CInt -> IO Word8
-getReplyCode = c_smtp_get_reply_code
+-- ---------------------------------------------------------------------------
+-- SmtpSessionState
+-- ---------------------------------------------------------------------------
 
--- | Get the number of recipients in the current transaction.
-getRecipientCount :: CInt -> IO Word8
-getRecipientCount = c_smtp_get_recipient_count
+-- | SMTP session state machine (RFC 5321).
+--
+-- Tags 0-8 (9 constructors).
+data SmtpSessionState
+  = Connected  -- ^ TCP connection established, awaiting greeting (tag 0).
+  | Greeted  -- ^ EHLO/HELO completed, session identified (tag 1).
+  | AuthStarted  -- ^ AUTH command sent, awaiting challenge/response (tag 2).
+  | Authenticated  -- ^ Authentication completed successfully (tag 3).
+  | MailFrom  -- ^ MAIL FROM accepted, sender specified (tag 4).
+  | RcptTo  -- ^ At least one RCPT TO accepted (tag 5).
+  | Data  -- ^ DATA command accepted, receiving message body (tag 6).
+  | MessageReceived  -- ^ Message body received and accepted (tag 7).
+  | Quit  -- ^ QUIT sent, session ending (tag 8).
+  deriving (Show, Eq, Ord, Enum, Bounded)
 
--- | Get the accumulated message data size in bytes.
-getDataSize :: CInt -> IO Word32
-getDataSize = c_smtp_get_data_size
+-- | Convert a 'SmtpSessionState' to its ABI tag value.
+smtpSessionStateToTag :: SmtpSessionState -> Word8
+smtpSessionStateToTag = fromIntegral . fromEnum
 
--- | Get the current AUTH mechanism (Nothing if unset).
-getAuthMechanism :: CInt -> IO (Maybe AuthMechanism)
-getAuthMechanism slot = authMechFromTag <$> c_smtp_get_auth_mechanism slot
+-- | Decode a 'SmtpSessionState' from its ABI tag value.
+smtpSessionStateFromTag :: Word8 -> Maybe SmtpSessionState
+smtpSessionStateFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: SmtpSessionState)) = Just (toEnum (fromIntegral n))
+  | otherwise = Nothing
 
--- | Check if the session is authenticated.
-isAuthenticated :: CInt -> IO Bool
-isAuthenticated slot = (== 1) <$> c_smtp_is_authenticated slot
-
--- | Check if TLS is active.
-isTlsActive :: CInt -> IO Bool
-isTlsActive slot = (== 1) <$> c_smtp_is_tls_active slot
-
--- | HELO\/EHLO: greet the server. @ehlo@ selects EHLO (True) vs HELO (False).
-greet :: CInt -> Bool -> IO (Either ProvenError ())
-greet slot ehlo = fromStatus <$> c_smtp_greet slot (if ehlo then 1 else 0)
-
--- | Begin AUTH exchange. Transitions Greeted -> AuthStarted.
-authenticate :: CInt -> AuthMechanism -> IO (Either ProvenError ())
-authenticate slot mech = fromStatus <$> c_smtp_authenticate slot (authMechToTag mech)
-
--- | Complete AUTH exchange. @success = True@ transitions to Authenticated.
-authComplete :: CInt -> Bool -> IO (Either ProvenError ())
-authComplete slot success = fromStatus <$> c_smtp_auth_complete slot (if success then 1 else 0)
-
--- | MAIL FROM: set the sender.
-setSender :: CInt -> IO (Either ProvenError ())
-setSender slot = fromStatus <$> c_smtp_set_sender slot
-
--- | RCPT TO: add a recipient.
-addRecipient :: CInt -> IO (Either ProvenError ())
-addRecipient slot = fromStatus <$> c_smtp_add_recipient slot
-
--- | DATA: begin message body transfer.
-startData :: CInt -> IO (Either ProvenError ())
-startData slot = fromStatus <$> c_smtp_start_data slot
-
--- | Append data bytes to the message.
-appendData :: CInt -> Word32 -> IO (Either ProvenError ())
-appendData slot len = fromStatus <$> c_smtp_append_data slot len
-
--- | Finish data transfer. Transitions Data -> MessageReceived.
-finishData :: CInt -> IO (Either ProvenError ())
-finishData slot = fromStatus <$> c_smtp_finish_data slot
-
--- | RSET: reset the mail transaction.
-reset :: CInt -> IO (Either ProvenError ())
-reset slot = fromStatus <$> c_smtp_reset slot
-
--- | QUIT: end the session.
-quit :: CInt -> IO (Either ProvenError ())
-quit slot = fromStatus <$> c_smtp_quit slot
-
--- | STARTTLS: enable TLS on the connection.
-enableTls :: CInt -> IO (Either ProvenError ())
-enableTls slot = fromStatus <$> c_smtp_enable_tls slot
-
--- | Stateless query: check whether a session state transition is valid.
-canTransition :: SmtpSessionState -> SmtpSessionState -> IO Bool
-canTransition from to =
-  (== 1) <$> c_smtp_can_transition (smtpStateToTag from) (smtpStateToTag to)
+-- | Validate whether a state transition is allowed in the SMTP state machine.
+smtpSessionStateCanTransitionTo :: SmtpSessionState -> SmtpSessionState -> Bool
+smtpSessionStateCanTransitionTo Connected Greeted = True
+smtpSessionStateCanTransitionTo Greeted AuthStarted = True
+smtpSessionStateCanTransitionTo Greeted MailFrom = True
+smtpSessionStateCanTransitionTo AuthStarted Authenticated = True
+smtpSessionStateCanTransitionTo AuthStarted Greeted = True
+smtpSessionStateCanTransitionTo Authenticated MailFrom = True
+smtpSessionStateCanTransitionTo MailFrom RcptTo = True
+smtpSessionStateCanTransitionTo RcptTo RcptTo = True
+smtpSessionStateCanTransitionTo RcptTo Data = True
+smtpSessionStateCanTransitionTo Data MessageReceived = True
+smtpSessionStateCanTransitionTo MessageReceived MailFrom = True
+smtpSessionStateCanTransitionTo _ Quit = True
+smtpSessionStateCanTransitionTo _ _ = False

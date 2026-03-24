@@ -1,50 +1,62 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | POP3 protocol types for proven-servers.
+-- | POP3 protocol types for the proven-servers ABI.
 --
--- POP3 (Post Office Protocol v3) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Pop3
-  ( -- * ADT types matching Idris2 ABI
-      Command(..)
-    , State(..)
-    , Response(..)
-    , Pop3Error(..)
-    , commandToTag
-    , commandFromTag
-    , stateToTag
-    , stateFromTag
-    , responseToTag
-    , responseFromTag
-    , pop3ErrorToTag
-    , pop3ErrorFromTag
+  (
+    pop3Port
+  , pop3sPort
+  , Command(..)
+  , commandToTag
+  , commandFromTag
+  , isWrite
+  , name
+  , State(..)
+  , stateToTag
+  , stateFromTag
+  , stateCanTransitionTo
+  , Response(..)
+  , responseToTag
+  , responseFromTag
+  , isSuccess
+  , prefix
+  , Pop3Error(..)
+  , pop3ErrorToTag
+  , pop3ErrorFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard POP3 port (RFC 1939).
+pop3Port :: Word16
+pop3Port = 110
+
+-- | Standard POP3S (POP3 over TLS) port.
+pop3sPort :: Word16
+pop3sPort = 995
 
 -- ---------------------------------------------------------------------------
 -- Command
 -- ---------------------------------------------------------------------------
 
--- | Command type matching the Idris2 ABI.
+-- | Standard POP3 port (RFC 1939).
 --
 -- Tags 0-10 (11 constructors).
 data Command
-  = User  -- ^ Tag 0.
-  | Pass  -- ^ Tag 1.
-  | Stat  -- ^ Tag 2.
-  | List  -- ^ Tag 3.
-  | Retr  -- ^ Tag 4.
-  | Dele  -- ^ Tag 5.
-  | Noop  -- ^ Tag 6.
-  | Rset  -- ^ Tag 7.
-  | Quit  -- ^ Tag 8.
-  | Top  -- ^ Tag 9.
-  | Uidl  -- ^ Tag 10.
+  = User  -- ^ USER — identify user for authentication (tag 0).
+  | Pass  -- ^ PASS — supply password for authentication (tag 1).
+  | Stat  -- ^ STAT — request mailbox status (tag 2).
+  | List  -- ^ LIST — list message sizes (tag 3).
+  | Retr  -- ^ RETR — retrieve a message (tag 4).
+  | Dele  -- ^ DELE — mark a message for deletion (tag 5).
+  | Noop  -- ^ NOOP — no operation (tag 6).
+  | Rset  -- ^ RSET — reset deletion marks (tag 7).
+  | Quit  -- ^ QUIT — end session (tag 8).
+  | Top  -- ^ TOP — retrieve message headers plus N lines (tag 9).
+  | Uidl  -- ^ UIDL — unique ID listing (tag 10).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Command' to its ABI tag value.
@@ -57,17 +69,37 @@ commandFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Command)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this command modifies mailbox state.
+isWrite :: Command -> Bool
+isWrite Dele = True
+isWrite Rset = True
+isWrite _ = False
+
+-- | The POP3 command name string.
+name :: Command -> String
+name User = "USER"
+name Pass = "PASS"
+name Stat = "STAT"
+name List = "LIST"
+name Retr = "RETR"
+name Dele = "DELE"
+name Noop = "NOOP"
+name Rset = "RSET"
+name Quit = "QUIT"
+name Top = "TOP"
+name Uidl = "UIDL"
+
 -- ---------------------------------------------------------------------------
 -- State
 -- ---------------------------------------------------------------------------
 
--- | State type matching the Idris2 ABI.
+-- | POP3 session state machine (RFC 1939 Section 5).
 --
 -- Tags 0-2 (3 constructors).
 data State
-  = Authorization  -- ^ Tag 0.
-  | Transaction  -- ^ Tag 1.
-  | Update  -- ^ Tag 2.
+  = Authorization  -- ^ Authorization — awaiting USER/PASS (tag 0).
+  | Transaction  -- ^ Transaction — mailbox open for commands (tag 1).
+  | Update  -- ^ Update — QUIT received, deletions being committed (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'State' to its ABI tag value.
@@ -80,16 +112,22 @@ stateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: State)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Validate whether a state transition is allowed.
+stateCanTransitionTo :: State -> State -> Bool
+stateCanTransitionTo Authorization Transaction = True
+stateCanTransitionTo Transaction Update = True
+stateCanTransitionTo _ _ = False
+
 -- ---------------------------------------------------------------------------
 -- Response
 -- ---------------------------------------------------------------------------
 
--- | Response type matching the Idris2 ABI.
+-- | POP3 response indicators (RFC 1939).
 --
 -- Tags 0-1 (2 constructors).
 data Response
-  = Response_Ok  -- ^ Tag 0.
-  | Err  -- ^ Tag 1.
+  = Ok  -- ^ +OK — command succeeded (tag 0).
+  | Err  -- ^ -ERR — command failed (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Response' to its ABI tag value.
@@ -102,20 +140,30 @@ responseFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Response)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this response indicates success.
+isSuccess :: Response -> Bool
+isSuccess Ok = True
+isSuccess _ = False
+
+-- | The POP3 response prefix string.
+prefix :: Response -> String
+prefix Ok = "+OK"
+prefix Err = "-ERR"
+
 -- ---------------------------------------------------------------------------
 -- Pop3Error
 -- ---------------------------------------------------------------------------
 
--- | Pop3Error type matching the Idris2 ABI.
+-- | POP3 FFI error codes.
 --
 -- Tags 0-5 (6 constructors).
 data Pop3Error
-  = Pop3Error_Ok  -- ^ Tag 0.
-  | InvalidSlot  -- ^ Tag 1.
-  | NotActive  -- ^ Tag 2.
-  | InvalidTransition  -- ^ Tag 3.
-  | InvalidCommand  -- ^ Tag 4.
-  | AuthFailed  -- ^ Tag 5.
+  = Ok  -- ^ No error (tag 0).
+  | InvalidSlot  -- ^ Invalid slot index (tag 1).
+  | NotActive  -- ^ Session not active (tag 2).
+  | InvalidTransition  -- ^ Invalid state transition (tag 3).
+  | InvalidCommand  -- ^ Command not allowed in current state (tag 4).
+  | AuthFailed  -- ^ Authentication failed (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Pop3Error' to its ABI tag value.
@@ -127,3 +175,8 @@ pop3ErrorFromTag :: Word8 -> Maybe Pop3Error
 pop3ErrorFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Pop3Error)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Whether this error code indicates success.
+isSuccess :: Pop3Error -> Bool
+isSuccess Ok = True
+isSuccess _ = False

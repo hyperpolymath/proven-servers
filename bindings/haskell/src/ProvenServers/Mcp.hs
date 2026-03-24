@@ -1,33 +1,30 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | MCP protocol types for proven-servers.
+-- | MCP types for the proven-servers ABI.
 --
--- Model Context Protocol types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Mcp
-  ( -- * ADT types matching Idris2 ABI
-      McpMessageType(..)
-    , Transport(..)
-    , McpContentType(..)
-    , McpErrorCode(..)
-    , McpCapability(..)
-    , SessionState(..)
-    , mcpMessageTypeToTag
-    , mcpMessageTypeFromTag
-    , transportToTag
-    , transportFromTag
-    , mcpContentTypeToTag
-    , mcpContentTypeFromTag
-    , mcpErrorCodeToTag
-    , mcpErrorCodeFromTag
-    , mcpCapabilityToTag
-    , mcpCapabilityFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    McpMessageType(..)
+  , mcpMessageTypeToTag
+  , mcpMessageTypeFromTag
+  , Transport(..)
+  , transportToTag
+  , transportFromTag
+  , McpContentType(..)
+  , mcpContentTypeToTag
+  , mcpContentTypeFromTag
+  , McpErrorCode(..)
+  , mcpErrorCodeToTag
+  , mcpErrorCodeFromTag
+  , McpCapability(..)
+  , mcpCapabilityToTag
+  , mcpCapabilityFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,24 +33,24 @@ import Data.Word (Word8)
 -- McpMessageType
 -- ---------------------------------------------------------------------------
 
--- | McpMessageType type matching the Idris2 ABI.
+-- | MCP message types.
 --
 -- Tags 0-13 (14 constructors).
 data McpMessageType
-  = Initialize  -- ^ Tag 0.
-  | Initialized  -- ^ Tag 1.
-  | Ping  -- ^ Tag 2.
-  | CallTool  -- ^ Tag 3.
-  | ToolResult  -- ^ Tag 4.
-  | ListTools  -- ^ Tag 5.
-  | ListResources  -- ^ Tag 6.
-  | ReadResource  -- ^ Tag 7.
-  | ListPrompts  -- ^ Tag 8.
-  | GetPrompt  -- ^ Tag 9.
-  | Subscribe  -- ^ Tag 10.
-  | Unsubscribe  -- ^ Tag 11.
-  | Notification  -- ^ Tag 12.
-  | Cancel  -- ^ Tag 13.
+  = Initialize  -- ^ Initialize (tag 0).
+  | Initialized  -- ^ Initialized (tag 1).
+  | Ping  -- ^ Ping (tag 2).
+  | CallTool  -- ^ CallTool (tag 3).
+  | ToolResult  -- ^ ToolResult (tag 4).
+  | ListTools  -- ^ ListTools (tag 5).
+  | ListResources  -- ^ ListResources (tag 6).
+  | ReadResource  -- ^ ReadResource (tag 7).
+  | ListPrompts  -- ^ ListPrompts (tag 8).
+  | GetPrompt  -- ^ GetPrompt (tag 9).
+  | Subscribe  -- ^ Subscribe (tag 10).
+  | Unsubscribe  -- ^ Unsubscribe (tag 11).
+  | Notification  -- ^ Notification (tag 12).
+  | Cancel  -- ^ Cancel (tag 13).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'McpMessageType' to its ABI tag value.
@@ -70,14 +67,14 @@ mcpMessageTypeFromTag n
 -- Transport
 -- ---------------------------------------------------------------------------
 
--- | Transport type matching the Idris2 ABI.
+-- | MCP transport types.
 --
 -- Tags 0-3 (4 constructors).
 data Transport
-  = Stdio  -- ^ Tag 0.
-  | Sse  -- ^ Tag 1.
-  | WebSocket  -- ^ Tag 2.
-  | StreamableHttp  -- ^ Tag 3.
+  = Stdio  -- ^ Stdio (tag 0).
+  | Sse  -- ^ SSE (tag 1).
+  | WebSocket  -- ^ WebSocket (tag 2).
+  | StreamableHttp  -- ^ Streamable HTTP (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Transport' to its ABI tag value.
@@ -94,14 +91,14 @@ transportFromTag n
 -- McpContentType
 -- ---------------------------------------------------------------------------
 
--- | McpContentType type matching the Idris2 ABI.
+-- | MCP content types.
 --
 -- Tags 0-3 (4 constructors).
 data McpContentType
-  = Text  -- ^ Tag 0.
-  | Image  -- ^ Tag 1.
-  | Resource  -- ^ Tag 2.
-  | Embedding  -- ^ Tag 3.
+  = Text  -- ^ Text (tag 0).
+  | Image  -- ^ Image (tag 1).
+  | Resource  -- ^ Resource (tag 2).
+  | Embedding  -- ^ Embedding (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'McpContentType' to its ABI tag value.
@@ -118,16 +115,16 @@ mcpContentTypeFromTag n
 -- McpErrorCode
 -- ---------------------------------------------------------------------------
 
--- | McpErrorCode type matching the Idris2 ABI.
+-- | MCP error codes.
 --
 -- Tags 0-5 (6 constructors).
 data McpErrorCode
-  = ParseError  -- ^ Tag 0.
-  | InvalidRequest  -- ^ Tag 1.
-  | MethodNotFound  -- ^ Tag 2.
-  | InvalidParams  -- ^ Tag 3.
-  | InternalError  -- ^ Tag 4.
-  | Timeout  -- ^ Tag 5.
+  = ParseError  -- ^ ParseError (tag 0).
+  | InvalidRequest  -- ^ InvalidRequest (tag 1).
+  | MethodNotFound  -- ^ MethodNotFound (tag 2).
+  | InvalidParams  -- ^ InvalidParams (tag 3).
+  | InternalError  -- ^ InternalError (tag 4).
+  | Timeout  -- ^ Timeout (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'McpErrorCode' to its ABI tag value.
@@ -144,15 +141,15 @@ mcpErrorCodeFromTag n
 -- McpCapability
 -- ---------------------------------------------------------------------------
 
--- | McpCapability type matching the Idris2 ABI.
+-- | MCP server capabilities.
 --
 -- Tags 0-4 (5 constructors).
 data McpCapability
-  = Tools  -- ^ Tag 0.
-  | Resources  -- ^ Tag 1.
-  | Prompts  -- ^ Tag 2.
-  | Logging  -- ^ Tag 3.
-  | Sampling  -- ^ Tag 4.
+  = Tools  -- ^ Tools (tag 0).
+  | Resources  -- ^ Resources (tag 1).
+  | Prompts  -- ^ Prompts (tag 2).
+  | Logging  -- ^ Logging (tag 3).
+  | Sampling  -- ^ Sampling (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'McpCapability' to its ABI tag value.
@@ -169,15 +166,15 @@ mcpCapabilityFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | MCP session lifecycle states.
 --
 -- Tags 0-4 (5 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | Connecting  -- ^ Tag 1.
-  | Ready  -- ^ Tag 2.
-  | Processing  -- ^ Tag 3.
-  | Disconnecting  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Connecting  -- ^ Connecting (tag 1).
+  | Ready  -- ^ Ready (tag 2).
+  | Processing  -- ^ Processing (tag 3).
+  | Disconnecting  -- ^ Disconnecting (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.

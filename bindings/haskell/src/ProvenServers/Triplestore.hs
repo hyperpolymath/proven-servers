@@ -1,33 +1,30 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Triplestore protocol types for proven-servers.
+-- | Triple Store types for the proven-servers ABI.
 --
--- RDF triple store types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Triplestore
-  ( -- * ADT types matching Idris2 ABI
-      Statement(..)
-    , IndexOrder(..)
-    , StorageBackend(..)
-    , ImportFormat(..)
-    , TransactionIsolation(..)
-    , StoreState(..)
-    , statementToTag
-    , statementFromTag
-    , indexOrderToTag
-    , indexOrderFromTag
-    , storageBackendToTag
-    , storageBackendFromTag
-    , importFormatToTag
-    , importFormatFromTag
-    , transactionIsolationToTag
-    , transactionIsolationFromTag
-    , storeStateToTag
-    , storeStateFromTag
+  (
+    Statement(..)
+  , statementToTag
+  , statementFromTag
+  , IndexOrder(..)
+  , indexOrderToTag
+  , indexOrderFromTag
+  , StorageBackend(..)
+  , storageBackendToTag
+  , storageBackendFromTag
+  , ImportFormat(..)
+  , importFormatToTag
+  , importFormatFromTag
+  , TransactionIsolation(..)
+  , transactionIsolationToTag
+  , transactionIsolationFromTag
+  , StoreState(..)
+  , storeStateToTag
+  , storeStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,12 +33,12 @@ import Data.Word (Word8)
 -- Statement
 -- ---------------------------------------------------------------------------
 
--- | Statement type matching the Idris2 ABI.
+-- | RDF statement types.
 --
 -- Tags 0-1 (2 constructors).
 data Statement
-  = Triple  -- ^ Tag 0.
-  | Quad  -- ^ Tag 1.
+  = Triple  -- ^ Triple (tag 0).
+  | Quad  -- ^ Quad (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Statement' to its ABI tag value.
@@ -58,16 +55,16 @@ statementFromTag n
 -- IndexOrder
 -- ---------------------------------------------------------------------------
 
--- | IndexOrder type matching the Idris2 ABI.
+-- | Triple index orderings.
 --
 -- Tags 0-5 (6 constructors).
 data IndexOrder
-  = Spo  -- ^ Tag 0.
-  | Pos  -- ^ Tag 1.
-  | Osp  -- ^ Tag 2.
-  | Gspo  -- ^ Tag 3.
-  | Gpos  -- ^ Tag 4.
-  | Gosp  -- ^ Tag 5.
+  = Spo  -- ^ SPO (tag 0).
+  | Pos  -- ^ POS (tag 1).
+  | Osp  -- ^ OSP (tag 2).
+  | Gspo  -- ^ GSPO (tag 3).
+  | Gpos  -- ^ GPOS (tag 4).
+  | Gosp  -- ^ GOSP (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'IndexOrder' to its ABI tag value.
@@ -84,14 +81,14 @@ indexOrderFromTag n
 -- StorageBackend
 -- ---------------------------------------------------------------------------
 
--- | StorageBackend type matching the Idris2 ABI.
+-- | Triple store storage backends.
 --
 -- Tags 0-3 (4 constructors).
 data StorageBackend
-  = InMemory  -- ^ Tag 0.
-  | BTree  -- ^ Tag 1.
-  | Lsm  -- ^ Tag 2.
-  | Persistent  -- ^ Tag 3.
+  = InMemory  -- ^ InMemory (tag 0).
+  | BTree  -- ^ BTree (tag 1).
+  | Lsm  -- ^ LSM (tag 2).
+  | Persistent  -- ^ Persistent (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StorageBackend' to its ABI tag value.
@@ -108,16 +105,16 @@ storageBackendFromTag n
 -- ImportFormat
 -- ---------------------------------------------------------------------------
 
--- | ImportFormat type matching the Idris2 ABI.
+-- | RDF import formats.
 --
 -- Tags 0-5 (6 constructors).
 data ImportFormat
-  = NTriples  -- ^ Tag 0.
-  | Turtle  -- ^ Tag 1.
-  | RdfXml  -- ^ Tag 2.
-  | JsonLd  -- ^ Tag 3.
-  | NQuads  -- ^ Tag 4.
-  | Trig  -- ^ Tag 5.
+  = NTriples  -- ^ NTriples (tag 0).
+  | Turtle  -- ^ Turtle (tag 1).
+  | RdfXml  -- ^ RDF/XML (tag 2).
+  | JsonLd  -- ^ JSON-LD (tag 3).
+  | NQuads  -- ^ NQuads (tag 4).
+  | Trig  -- ^ Trig (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ImportFormat' to its ABI tag value.
@@ -134,13 +131,13 @@ importFormatFromTag n
 -- TransactionIsolation
 -- ---------------------------------------------------------------------------
 
--- | TransactionIsolation type matching the Idris2 ABI.
+-- | Triple store transaction isolation.
 --
 -- Tags 0-2 (3 constructors).
 data TransactionIsolation
-  = ReadCommitted  -- ^ Tag 0.
-  | Serializable  -- ^ Tag 1.
-  | Snapshot  -- ^ Tag 2.
+  = ReadCommitted  -- ^ ReadCommitted (tag 0).
+  | Serializable  -- ^ Serializable (tag 1).
+  | Snapshot  -- ^ Snapshot (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'TransactionIsolation' to its ABI tag value.
@@ -157,15 +154,15 @@ transactionIsolationFromTag n
 -- StoreState
 -- ---------------------------------------------------------------------------
 
--- | StoreState type matching the Idris2 ABI.
+-- | Triple store states.
 --
 -- Tags 0-4 (5 constructors).
 data StoreState
-  = Idle  -- ^ Tag 0.
-  | Ready  -- ^ Tag 1.
-  | InTransaction  -- ^ Tag 2.
-  | Importing  -- ^ Tag 3.
-  | Closing  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Ready  -- ^ Ready (tag 1).
+  | InTransaction  -- ^ In transaction (tag 2).
+  | Importing  -- ^ Importing (tag 3).
+  | Closing  -- ^ Closing (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StoreState' to its ABI tag value.

@@ -1,54 +1,64 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | NFS protocol types for proven-servers.
+-- | NFS (Network File System) types for the proven-servers ABI.
 --
--- NFS (Network File System) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Nfs
-  ( -- * ADT types matching Idris2 ABI
-      Operation(..)
-    , FileType(..)
-    , Status(..)
-    , NfsState(..)
-    , operationToTag
-    , operationFromTag
-    , fileTypeToTag
-    , fileTypeFromTag
-    , statusToTag
-    , statusFromTag
-    , nfsStateToTag
-    , nfsStateFromTag
+  (
+    nfsPort
+  , Operation(..)
+  , operationToTag
+  , operationFromTag
+  , isWrite
+  , isRead
+  , FileType(..)
+  , fileTypeToTag
+  , fileTypeFromTag
+  , isRegular
+  , isDevice
+  , Status(..)
+  , statusToTag
+  , statusFromTag
+  , isOk
+  , isAccessError
+  , isRetryable
+  , NfsState(..)
+  , nfsStateToTag
+  , nfsStateFromTag
+  , isMounted
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard NFS port (RFC 7530).
+nfsPort :: Word16
+nfsPort = 2049
 
 -- ---------------------------------------------------------------------------
 -- Operation
 -- ---------------------------------------------------------------------------
 
--- | Operation type matching the Idris2 ABI.
+-- | Standard NFS port (RFC 7530).
 --
 -- Tags 0-14 (15 constructors).
 data Operation
-  = Operation_Access  -- ^ Tag 0.
-  | Close  -- ^ Tag 1.
-  | Commit  -- ^ Tag 2.
-  | Create  -- ^ Tag 3.
-  | GetAttr  -- ^ Tag 4.
-  | Operation_Link  -- ^ Tag 5.
-  | Lock  -- ^ Tag 6.
-  | Lookup  -- ^ Tag 7.
-  | Open  -- ^ Tag 8.
-  | Read  -- ^ Tag 9.
-  | ReadDir  -- ^ Tag 10.
-  | Remove  -- ^ Tag 11.
-  | Rename  -- ^ Tag 12.
-  | SetAttr  -- ^ Tag 13.
-  | Write  -- ^ Tag 14.
+  = Access  -- ^ Check access permissions (tag 0).
+  | Close  -- ^ Close a stateful file handle (tag 1).
+  | Commit  -- ^ Commit cached data to stable storage (tag 2).
+  | Create  -- ^ Create a file or directory (tag 3).
+  | GetAttr  -- ^ Get file attributes (tag 4).
+  | Link  -- ^ Create a hard link (tag 5).
+  | Lock  -- ^ Lock a byte range (tag 6).
+  | Lookup  -- ^ Look up a name in a directory (tag 7).
+  | Open  -- ^ Open a file (tag 8).
+  | Read  -- ^ Read file data (tag 9).
+  | ReadDir  -- ^ List directory entries (tag 10).
+  | Remove  -- ^ Remove a file or directory (tag 11).
+  | Rename  -- ^ Rename a file or directory (tag 12).
+  | SetAttr  -- ^ Set file attributes (tag 13).
+  | Write  -- ^ Write file data (tag 14).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Operation' to its ABI tag value.
@@ -61,21 +71,41 @@ operationFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Operation)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this operation modifies the filesystem.
+isWrite :: Operation -> Bool
+isWrite Create = True
+isWrite Link = True
+isWrite Remove = True
+isWrite Rename = True
+isWrite SetAttr = True
+isWrite Write = True
+isWrite Commit = True
+isWrite _ = False
+
+-- | Whether this operation is read-only.
+isRead :: Operation -> Bool
+isRead Access = True
+isRead GetAttr = True
+isRead Lookup = True
+isRead Read = True
+isRead ReadDir = True
+isRead _ = False
+
 -- ---------------------------------------------------------------------------
 -- FileType
 -- ---------------------------------------------------------------------------
 
--- | FileType type matching the Idris2 ABI.
+-- | NFS file types (RFC 7530 Section 5.8).
 --
 -- Tags 0-6 (7 constructors).
 data FileType
-  = Regular  -- ^ Tag 0.
-  | Directory  -- ^ Tag 1.
-  | BlockDevice  -- ^ Tag 2.
-  | CharDevice  -- ^ Tag 3.
-  | FileType_Link  -- ^ Tag 4.
-  | Socket  -- ^ Tag 5.
-  | Fifo  -- ^ Tag 6.
+  = Regular  -- ^ Regular file (tag 0).
+  | Directory  -- ^ Directory (tag 1).
+  | BlockDevice  -- ^ Block device (tag 2).
+  | CharDevice  -- ^ Character device (tag 3).
+  | Link  -- ^ Symbolic link (tag 4).
+  | Socket  -- ^ Unix domain socket (tag 5).
+  | Fifo  -- ^ Named pipe / FIFO (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'FileType' to its ABI tag value.
@@ -88,28 +118,39 @@ fileTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: FileType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this file type is a regular data file.
+isRegular :: FileType -> Bool
+isRegular Regular = True
+isRegular _ = False
+
+-- | Whether this file type is a special device node.
+isDevice :: FileType -> Bool
+isDevice BlockDevice = True
+isDevice CharDevice = True
+isDevice _ = False
+
 -- ---------------------------------------------------------------------------
 -- Status
 -- ---------------------------------------------------------------------------
 
--- | Status type matching the Idris2 ABI.
+-- | NFS status codes (RFC 7530 Section 13).
 --
 -- Tags 0-13 (14 constructors).
 data Status
-  = Ok  -- ^ Tag 0.
-  | Perm  -- ^ Tag 1.
-  | NoEnt  -- ^ Tag 2.
-  | Io  -- ^ Tag 3.
-  | NxIo  -- ^ Tag 4.
-  | Status_Access  -- ^ Tag 5.
-  | Exist  -- ^ Tag 6.
-  | NotDir  -- ^ Tag 7.
-  | IsDir  -- ^ Tag 8.
-  | FBig  -- ^ Tag 9.
-  | NoSpc  -- ^ Tag 10.
-  | ROfs  -- ^ Tag 11.
-  | NotEmpty  -- ^ Tag 12.
-  | Stale  -- ^ Tag 13.
+  = Ok  -- ^ Success (tag 0).
+  | Perm  -- ^ Permission denied (tag 1).
+  | NoEnt  -- ^ No such file or directory (tag 2).
+  | Io  -- ^ I/O error (tag 3).
+  | NxIo  -- ^ No such device or address (tag 4).
+  | Access  -- ^ Access denied (tag 5).
+  | Exist  -- ^ File or directory already exists (tag 6).
+  | NotDir  -- ^ Not a directory (tag 7).
+  | IsDir  -- ^ Is a directory (tag 8).
+  | FBig  -- ^ File too large (tag 9).
+  | NoSpc  -- ^ No space left on device (tag 10).
+  | ROfs  -- ^ Read-only file system (tag 11).
+  | NotEmpty  -- ^ Directory not empty (tag 12).
+  | Stale  -- ^ Stale file handle (tag 13).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Status' to its ABI tag value.
@@ -122,20 +163,39 @@ statusFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Status)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this status indicates success.
+isOk :: Status -> Bool
+isOk Ok = True
+isOk _ = False
+
+-- | Whether this error relates to access control.
+isAccessError :: Status -> Bool
+isAccessError Perm = True
+isAccessError Access = True
+isAccessError ROfs = True
+isAccessError _ = False
+
+-- | Whether this error is likely transient and retryable.
+isRetryable :: Status -> Bool
+isRetryable Io = True
+isRetryable NxIo = True
+isRetryable Stale = True
+isRetryable _ = False
+
 -- ---------------------------------------------------------------------------
 -- NfsState
 -- ---------------------------------------------------------------------------
 
--- | NfsState type matching the Idris2 ABI.
+-- | NFS server lifecycle states for the FFI layer.
 --
 -- Tags 0-5 (6 constructors).
 data NfsState
-  = Idle  -- ^ Tag 0.
-  | Mounted  -- ^ Tag 1.
-  | FileOpen  -- ^ Tag 2.
-  | Locked  -- ^ Tag 3.
-  | Busy  -- ^ Tag 4.
-  | Unmounting  -- ^ Tag 5.
+  = Idle  -- ^ Not mounted (tag 0).
+  | Mounted  -- ^ Connected to server, mount established (tag 1).
+  | FileOpen  -- ^ File handle is open (tag 2).
+  | Locked  -- ^ Lock held on a file region (tag 3).
+  | Busy  -- ^ I/O in progress (tag 4).
+  | Unmounting  -- ^ Unmounting (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NfsState' to its ABI tag value.
@@ -147,3 +207,9 @@ nfsStateFromTag :: Word8 -> Maybe NfsState
 nfsStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: NfsState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Whether the NFS mount is active.
+isMounted :: NfsState -> Bool
+isMounted Idle = False
+isMounted Unmounting = False
+isMounted _ = True

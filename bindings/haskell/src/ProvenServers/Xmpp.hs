@@ -1,45 +1,67 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | XMPP protocol types for proven-servers.
+-- | XMPP (Extensible Messaging and Presence Protocol) types for the
 --
--- XMPP (Extensible Messaging and Presence Protocol) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Xmpp
-  ( -- * ADT types matching Idris2 ABI
-      StanzaType(..)
-    , MessageType(..)
-    , PresenceType(..)
-    , IqType(..)
-    , StreamError(..)
-    , stanzaTypeToTag
-    , stanzaTypeFromTag
-    , messageTypeToTag
-    , messageTypeFromTag
-    , presenceTypeToTag
-    , presenceTypeFromTag
-    , iqTypeToTag
-    , iqTypeFromTag
-    , streamErrorToTag
-    , streamErrorFromTag
+  (
+    xmppClientPort
+  , xmppServerPort
+  , xmppsPort
+  , StanzaType(..)
+  , stanzaTypeToTag
+  , stanzaTypeFromTag
+  , elementName
+  , MessageType(..)
+  , messageTypeToTag
+  , messageTypeFromTag
+  , expectsReply
+  , isMultiParty
+  , PresenceType(..)
+  , presenceTypeToTag
+  , presenceTypeFromTag
+  , isOnline
+  , isAvailable
+  , IqType(..)
+  , iqTypeToTag
+  , iqTypeFromTag
+  , isRequest
+  , isResponse
+  , StreamError(..)
+  , streamErrorToTag
+  , streamErrorFromTag
+  , isSecurityError
+  , isRetryable
+  , conditionName
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard XMPP client-to-server port (RFC 6120).
+xmppClientPort :: Word16
+xmppClientPort = 5222
+
+-- | Standard XMPP server-to-server port (RFC 6120).
+xmppServerPort :: Word16
+xmppServerPort = 5269
+
+-- | XMPP over TLS (XMPPS) port for direct TLS connections.
+xmppsPort :: Word16
+xmppsPort = 5223
 
 -- ---------------------------------------------------------------------------
 -- StanzaType
 -- ---------------------------------------------------------------------------
 
--- | StanzaType type matching the Idris2 ABI.
+-- | XMPP over TLS (XMPPS) port for direct TLS connections.
 --
 -- Tags 0-2 (3 constructors).
 data StanzaType
-  = Message  -- ^ Tag 0.
-  | Presence  -- ^ Tag 1.
-  | Iq  -- ^ Tag 2.
+  = Message  -- ^ Message stanza — asynchronous messaging (tag 0).
+  | Presence  -- ^ Presence stanza — availability broadcasting (tag 1).
+  | Iq  -- ^ IQ (Info/Query) stanza — request/response (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StanzaType' to its ABI tag value.
@@ -52,19 +74,25 @@ stanzaTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: StanzaType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | The XML element name for this stanza type.
+elementName :: StanzaType -> String
+elementName Message = "message"
+elementName Presence = "presence"
+elementName Iq = "iq"
+
 -- ---------------------------------------------------------------------------
 -- MessageType
 -- ---------------------------------------------------------------------------
 
--- | MessageType type matching the Idris2 ABI.
+-- | XMPP message types (RFC 6121 Section 5.2.2).
 --
 -- Tags 0-4 (5 constructors).
 data MessageType
-  = Chat  -- ^ Tag 0.
-  | MessageType_Error  -- ^ Tag 1.
-  | Groupchat  -- ^ Tag 2.
-  | Headline  -- ^ Tag 3.
-  | Normal  -- ^ Tag 4.
+  = Chat  -- ^ One-to-one chat message (tag 0).
+  | Error  -- ^ Error message (tag 1).
+  | Groupchat  -- ^ Multi-user chat / groupchat message (tag 2).
+  | Headline  -- ^ Headline / news message (tag 3).
+  | Normal  -- ^ Normal (standalone) message — default type (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MessageType' to its ABI tag value.
@@ -77,19 +105,30 @@ messageTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: MessageType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this message type expects a reply.
+expectsReply :: MessageType -> Bool
+expectsReply Chat = True
+expectsReply Normal = True
+expectsReply _ = False
+
+-- | Whether this message type is for multi-party communication.
+isMultiParty :: MessageType -> Bool
+isMultiParty Groupchat = True
+isMultiParty _ = False
+
 -- ---------------------------------------------------------------------------
 -- PresenceType
 -- ---------------------------------------------------------------------------
 
--- | PresenceType type matching the Idris2 ABI.
+-- | XMPP presence show values (RFC 6121 Section 4.7.2.1).
 --
 -- Tags 0-4 (5 constructors).
 data PresenceType
-  = Available  -- ^ Tag 0.
-  | Away  -- ^ Tag 1.
-  | Dnd  -- ^ Tag 2.
-  | Xa  -- ^ Tag 3.
-  | Unavailable  -- ^ Tag 4.
+  = Available  -- ^ Available — online and ready to communicate (tag 0).
+  | Away  -- ^ Away — temporarily absent (tag 1).
+  | Dnd  -- ^ Do Not Disturb — busy, should not be interrupted (tag 2).
+  | Xa  -- ^ Extended Away — away for a longer period (tag 3).
+  | Unavailable  -- ^ Unavailable — offline (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PresenceType' to its ABI tag value.
@@ -102,18 +141,28 @@ presenceTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: PresenceType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether the entity is online (any form of availability).
+isOnline :: PresenceType -> Bool
+isOnline Unavailable = False
+isOnline _ = True
+
+-- | Whether the entity is actively available for communication.
+isAvailable :: PresenceType -> Bool
+isAvailable Available = True
+isAvailable _ = False
+
 -- ---------------------------------------------------------------------------
 -- IqType
 -- ---------------------------------------------------------------------------
 
--- | IqType type matching the Idris2 ABI.
+-- | XMPP IQ (Info/Query) stanza types (RFC 6120 Section 8.2.3).
 --
 -- Tags 0-3 (4 constructors).
 data IqType
-  = Get  -- ^ Tag 0.
-  | Set  -- ^ Tag 1.
-  | Result  -- ^ Tag 2.
-  | IqType_Error  -- ^ Tag 3.
+  = Get  -- ^ Get — request information (tag 0).
+  | Set  -- ^ Set — provide information or make a request (tag 1).
+  | Result  -- ^ Result — successful response (tag 2).
+  | Error  -- ^ Error — error response (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'IqType' to its ABI tag value.
@@ -126,23 +175,35 @@ iqTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: IqType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this IQ type is a request (requires a response).
+isRequest :: IqType -> Bool
+isRequest Get = True
+isRequest Set = True
+isRequest _ = False
+
+-- | Whether this IQ type is a response.
+isResponse :: IqType -> Bool
+isResponse Result = True
+isResponse Error = True
+isResponse _ = False
+
 -- ---------------------------------------------------------------------------
 -- StreamError
 -- ---------------------------------------------------------------------------
 
--- | StreamError type matching the Idris2 ABI.
+-- | XMPP stream-level error conditions (RFC 6120 Section 4.9.3).
 --
 -- Tags 0-8 (9 constructors).
 data StreamError
-  = BadFormat  -- ^ Tag 0.
-  | Conflict  -- ^ Tag 1.
-  | ConnectionTimeout  -- ^ Tag 2.
-  | HostGone  -- ^ Tag 3.
-  | HostUnknown  -- ^ Tag 4.
-  | NotAuthorized  -- ^ Tag 5.
-  | PolicyViolation  -- ^ Tag 6.
-  | ResourceConstraint  -- ^ Tag 7.
-  | SystemShutdown  -- ^ Tag 8.
+  = BadFormat  -- ^ Malformed XML or protocol violation (tag 0).
+  | Conflict  -- ^ Resource conflict (tag 1).
+  | ConnectionTimeout  -- ^ Connection timed out (tag 2).
+  | HostGone  -- ^ Remote host is no longer available (tag 3).
+  | HostUnknown  -- ^ Remote host is unknown (tag 4).
+  | NotAuthorized  -- ^ Entity is not authorised (tag 5).
+  | PolicyViolation  -- ^ Policy violation (tag 6).
+  | ResourceConstraint  -- ^ Server resource constraint (tag 7).
+  | SystemShutdown  -- ^ System is shutting down (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StreamError' to its ABI tag value.
@@ -154,3 +215,28 @@ streamErrorFromTag :: Word8 -> Maybe StreamError
 streamErrorFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: StreamError)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Whether this error is related to security/authorisation.
+isSecurityError :: StreamError -> Bool
+isSecurityError NotAuthorized = True
+isSecurityError PolicyViolation = True
+isSecurityError _ = False
+
+-- | Whether this error is likely transient and the connection can be retried.
+isRetryable :: StreamError -> Bool
+isRetryable ConnectionTimeout = True
+isRetryable ResourceConstraint = True
+isRetryable SystemShutdown = True
+isRetryable _ = False
+
+-- | The XMPP defined-condition element name.
+conditionName :: StreamError -> String
+conditionName BadFormat = "bad-format"
+conditionName Conflict = "conflict"
+conditionName ConnectionTimeout = "connection-timeout"
+conditionName HostGone = "host-gone"
+conditionName HostUnknown = "host-unknown"
+conditionName NotAuthorized = "not-authorized"
+conditionName PolicyViolation = "policy-violation"
+conditionName ResourceConstraint = "resource-constraint"
+conditionName SystemShutdown = "system-shutdown"

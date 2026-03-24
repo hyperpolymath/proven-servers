@@ -1,53 +1,64 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | DHCP protocol types for proven-servers.
+-- | DHCP protocol types for the proven-servers ABI.
 --
--- DHCP (Dynamic Host Configuration Protocol) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Dhcp
-  ( -- * ADT types matching Idris2 ABI
-      MessageType(..)
-    , OptionCode(..)
-    , HardwareType(..)
-    , DhcpState(..)
-    , LeaseState(..)
-    , RelaySubOption(..)
-    , messageTypeToTag
-    , messageTypeFromTag
-    , optionCodeToTag
-    , optionCodeFromTag
-    , hardwareTypeToTag
-    , hardwareTypeFromTag
-    , dhcpStateToTag
-    , dhcpStateFromTag
-    , leaseStateToTag
-    , leaseStateFromTag
-    , relaySubOptionToTag
-    , relaySubOptionFromTag
+  (
+    dhcpServerPort
+  , dhcpClientPort
+  , MessageType(..)
+  , messageTypeToTag
+  , messageTypeFromTag
+  , isClientMessage
+  , isServerMessage
+  , OptionCode(..)
+  , optionCodeToTag
+  , optionCodeFromTag
+  , HardwareType(..)
+  , hardwareTypeToTag
+  , hardwareTypeFromTag
+  , DhcpState(..)
+  , dhcpStateToTag
+  , dhcpStateFromTag
+  , dhcpStateCanTransitionTo
+  , LeaseState(..)
+  , leaseStateToTag
+  , leaseStateFromTag
+  , isActive
+  , RelaySubOption(..)
+  , relaySubOptionToTag
+  , relaySubOptionFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard DHCP server port (RFC 2131).
+dhcpServerPort :: Word16
+dhcpServerPort = 67
+
+-- | Standard DHCP client port (RFC 2131).
+dhcpClientPort :: Word16
+dhcpClientPort = 68
 
 -- ---------------------------------------------------------------------------
 -- MessageType
 -- ---------------------------------------------------------------------------
 
--- | MessageType type matching the Idris2 ABI.
+-- | Standard DHCP client port (RFC 2131).
 --
 -- Tags 0-7 (8 constructors).
 data MessageType
-  = Discover  -- ^ Tag 0.
-  | Offer  -- ^ Tag 1.
-  | Request  -- ^ Tag 2.
-  | Ack  -- ^ Tag 3.
-  | Nak  -- ^ Tag 4.
-  | Release  -- ^ Tag 5.
-  | Inform  -- ^ Tag 6.
-  | Decline  -- ^ Tag 7.
+  = Discover  -- ^ DHCPDISCOVER — client broadcasts to find servers (tag 0).
+  | Offer  -- ^ DHCPOFFER — server response with address offer (tag 1).
+  | Request  -- ^ DHCPREQUEST — client requests offered address (tag 2).
+  | Ack  -- ^ DHCPACK — server confirms address assignment (tag 3).
+  | Nak  -- ^ DHCPNAK — server rejects request (tag 4).
+  | Release  -- ^ DHCPRELEASE — client releases address (tag 5).
+  | Inform  -- ^ DHCPINFORM — client requests config without address (tag 6).
+  | Decline  -- ^ DHCPDECLINE — client rejects offered address (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MessageType' to its ABI tag value.
@@ -60,22 +71,38 @@ messageTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: MessageType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this message is sent by a client.
+isClientMessage :: MessageType -> Bool
+isClientMessage Discover = True
+isClientMessage Request = True
+isClientMessage Release = True
+isClientMessage Inform = True
+isClientMessage Decline = True
+isClientMessage _ = False
+
+-- | Whether this message is sent by a server.
+isServerMessage :: MessageType -> Bool
+isServerMessage Offer = True
+isServerMessage Ack = True
+isServerMessage Nak = True
+isServerMessage _ = False
+
 -- ---------------------------------------------------------------------------
 -- OptionCode
 -- ---------------------------------------------------------------------------
 
--- | OptionCode type matching the Idris2 ABI.
+-- | DHCP option codes (RFC 2132).
 --
 -- Tags 0-7 (8 constructors).
 data OptionCode
-  = SubnetMask  -- ^ Tag 0.
-  | Router  -- ^ Tag 1.
-  | Dns  -- ^ Tag 2.
-  | DomainName  -- ^ Tag 3.
-  | LeaseTime  -- ^ Tag 4.
-  | ServerId  -- ^ Tag 5.
-  | RequestedIp  -- ^ Tag 6.
-  | MsgType  -- ^ Tag 7.
+  = SubnetMask  -- ^ Subnet Mask (option 1) (tag 0).
+  | Router  -- ^ Router (option 3) (tag 1).
+  | Dns  -- ^ DNS Server (option 6) (tag 2).
+  | DomainName  -- ^ Domain Name (option 15) (tag 3).
+  | LeaseTime  -- ^ IP Address Lease Time (option 51) (tag 4).
+  | ServerId  -- ^ Server Identifier (option 54) (tag 5).
+  | RequestedIp  -- ^ Requested IP Address (option 50) (tag 6).
+  | MsgType  -- ^ DHCP Message Type (option 53) (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'OptionCode' to its ABI tag value.
@@ -92,14 +119,14 @@ optionCodeFromTag n
 -- HardwareType
 -- ---------------------------------------------------------------------------
 
--- | HardwareType type matching the Idris2 ABI.
+-- | Hardware address types (RFC 1700).
 --
 -- Tags 0-3 (4 constructors).
 data HardwareType
-  = Ethernet  -- ^ Tag 0.
-  | Ieee802  -- ^ Tag 1.
-  | Arcnet  -- ^ Tag 2.
-  | FrameRelay  -- ^ Tag 3.
+  = Ethernet  -- ^ Ethernet (10Mb) (tag 0).
+  | Ieee802  -- ^ IEEE 802 Networks (tag 1).
+  | Arcnet  -- ^ ARCNET (tag 2).
+  | FrameRelay  -- ^ Frame Relay (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HardwareType' to its ABI tag value.
@@ -116,16 +143,16 @@ hardwareTypeFromTag n
 -- DhcpState
 -- ---------------------------------------------------------------------------
 
--- | DhcpState type matching the Idris2 ABI.
+-- | DHCP server state machine.
 --
 -- Tags 0-5 (6 constructors).
 data DhcpState
-  = Idle  -- ^ Tag 0.
-  | DiscoverReceived  -- ^ Tag 1.
-  | OfferSent  -- ^ Tag 2.
-  | RequestReceived  -- ^ Tag 3.
-  | AckSent  -- ^ Tag 4.
-  | NakSent  -- ^ Tag 5.
+  = Idle  -- ^ Idle — awaiting DHCPDISCOVER (tag 0).
+  | DiscoverReceived  -- ^ DHCPDISCOVER received (tag 1).
+  | OfferSent  -- ^ DHCPOFFER sent (tag 2).
+  | RequestReceived  -- ^ DHCPREQUEST received (tag 3).
+  | AckSent  -- ^ DHCPACK sent (tag 4).
+  | NakSent  -- ^ DHCPNAK sent (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DhcpState' to its ABI tag value.
@@ -138,20 +165,31 @@ dhcpStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: DhcpState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Validate whether a state transition is allowed.
+dhcpStateCanTransitionTo :: DhcpState -> DhcpState -> Bool
+dhcpStateCanTransitionTo Idle DiscoverReceived = True
+dhcpStateCanTransitionTo DiscoverReceived OfferSent = True
+dhcpStateCanTransitionTo OfferSent RequestReceived = True
+dhcpStateCanTransitionTo RequestReceived AckSent = True
+dhcpStateCanTransitionTo RequestReceived NakSent = True
+dhcpStateCanTransitionTo AckSent Idle = True
+dhcpStateCanTransitionTo NakSent Idle = True
+dhcpStateCanTransitionTo _ _ = False
+
 -- ---------------------------------------------------------------------------
 -- LeaseState
 -- ---------------------------------------------------------------------------
 
--- | LeaseState type matching the Idris2 ABI.
+-- | DHCP lease lifecycle states.
 --
 -- Tags 0-5 (6 constructors).
 data LeaseState
-  = Available  -- ^ Tag 0.
-  | Offered  -- ^ Tag 1.
-  | Bound  -- ^ Tag 2.
-  | Renewing  -- ^ Tag 3.
-  | Rebinding  -- ^ Tag 4.
-  | Expired  -- ^ Tag 5.
+  = Available  -- ^ Available in pool (tag 0).
+  | Offered  -- ^ Offered to a client (tag 1).
+  | Bound  -- ^ Bound — client actively using (tag 2).
+  | Renewing  -- ^ Renewing — client requesting lease extension (tag 3).
+  | Rebinding  -- ^ Rebinding — broadcast renewal attempt (tag 4).
+  | Expired  -- ^ Expired — lease no longer valid (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'LeaseState' to its ABI tag value.
@@ -164,16 +202,23 @@ leaseStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: LeaseState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this state means the address is in use.
+isActive :: LeaseState -> Bool
+isActive Bound = True
+isActive Renewing = True
+isActive Rebinding = True
+isActive _ = False
+
 -- ---------------------------------------------------------------------------
 -- RelaySubOption
 -- ---------------------------------------------------------------------------
 
--- | RelaySubOption type matching the Idris2 ABI.
+-- | DHCP relay agent sub-options (RFC 3046).
 --
 -- Tags 0-1 (2 constructors).
 data RelaySubOption
-  = CircuitId  -- ^ Tag 0.
-  | RemoteId  -- ^ Tag 1.
+  = CircuitId  -- ^ Circuit ID — identifies the relay agent port (tag 0).
+  | RemoteId  -- ^ Remote ID — identifies the remote host (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RelaySubOption' to its ABI tag value.

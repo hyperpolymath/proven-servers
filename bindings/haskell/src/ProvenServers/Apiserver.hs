@@ -1,48 +1,50 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | API Server protocol types for proven-servers.
+-- | API Server types for the proven-servers ABI.
 --
--- API gateway/server types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Apiserver
-  ( -- * ADT types matching Idris2 ABI
-      AuthScheme(..)
-    , RateLimitStrategy(..)
-    , ApiVersion(..)
-    , ResponseFormat(..)
-    , GatewayError(..)
-    , authSchemeToTag
-    , authSchemeFromTag
-    , rateLimitStrategyToTag
-    , rateLimitStrategyFromTag
-    , apiVersionToTag
-    , apiVersionFromTag
-    , responseFormatToTag
-    , responseFormatFromTag
-    , gatewayErrorToTag
-    , gatewayErrorFromTag
+  (
+    apiPort
+  , AuthScheme(..)
+  , authSchemeToTag
+  , authSchemeFromTag
+  , RateLimitStrategy(..)
+  , rateLimitStrategyToTag
+  , rateLimitStrategyFromTag
+  , ApiVersion(..)
+  , apiVersionToTag
+  , apiVersionFromTag
+  , ResponseFormat(..)
+  , responseFormatToTag
+  , responseFormatFromTag
+  , GatewayError(..)
+  , gatewayErrorToTag
+  , gatewayErrorFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard API server port.
+apiPort :: Word16
+apiPort = 8080
 
 -- ---------------------------------------------------------------------------
 -- AuthScheme
 -- ---------------------------------------------------------------------------
 
--- | AuthScheme type matching the Idris2 ABI.
+-- | Standard API server port.
 --
 -- Tags 0-5 (6 constructors).
 data AuthScheme
-  = ApiKey  -- ^ Tag 0.
-  | Bearer  -- ^ Tag 1.
-  | Basic  -- ^ Tag 2.
-  | OAuth2  -- ^ Tag 3.
-  | Hmac  -- ^ Tag 4.
-  | Mtls  -- ^ Tag 5.
+  = ApiKey  -- ^ API Key (tag 0).
+  | Bearer  -- ^ Bearer (tag 1).
+  | Basic  -- ^ Basic (tag 2).
+  | OAuth2  -- ^ OAuth2 (tag 3).
+  | Hmac  -- ^ HMAC (tag 4).
+  | Mtls  -- ^ mTLS (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AuthScheme' to its ABI tag value.
@@ -59,14 +61,14 @@ authSchemeFromTag n
 -- RateLimitStrategy
 -- ---------------------------------------------------------------------------
 
--- | RateLimitStrategy type matching the Idris2 ABI.
+-- | API rate limiting strategies.
 --
 -- Tags 0-3 (4 constructors).
 data RateLimitStrategy
-  = FixedWindow  -- ^ Tag 0.
-  | SlidingWindow  -- ^ Tag 1.
-  | TokenBucket  -- ^ Tag 2.
-  | LeakyBucket  -- ^ Tag 3.
+  = FixedWindow  -- ^ FixedWindow (tag 0).
+  | SlidingWindow  -- ^ SlidingWindow (tag 1).
+  | TokenBucket  -- ^ TokenBucket (tag 2).
+  | LeakyBucket  -- ^ LeakyBucket (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RateLimitStrategy' to its ABI tag value.
@@ -83,15 +85,15 @@ rateLimitStrategyFromTag n
 -- ApiVersion
 -- ---------------------------------------------------------------------------
 
--- | ApiVersion type matching the Idris2 ABI.
+-- | API version identifiers.
 --
 -- Tags 0-4 (5 constructors).
 data ApiVersion
-  = V1  -- ^ Tag 0.
-  | V2  -- ^ Tag 1.
-  | V3  -- ^ Tag 2.
-  | Latest  -- ^ Tag 3.
-  | Deprecated  -- ^ Tag 4.
+  = V1  -- ^ V1 (tag 0).
+  | V2  -- ^ V2 (tag 1).
+  | V3  -- ^ V3 (tag 2).
+  | Latest  -- ^ Latest (tag 3).
+  | Deprecated  -- ^ Deprecated (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ApiVersion' to its ABI tag value.
@@ -108,14 +110,14 @@ apiVersionFromTag n
 -- ResponseFormat
 -- ---------------------------------------------------------------------------
 
--- | ResponseFormat type matching the Idris2 ABI.
+-- | API response formats.
 --
 -- Tags 0-3 (4 constructors).
 data ResponseFormat
-  = Json  -- ^ Tag 0.
-  | Xml  -- ^ Tag 1.
-  | Protobuf  -- ^ Tag 2.
-  | MessagePack  -- ^ Tag 3.
+  = Json  -- ^ JSON (tag 0).
+  | Xml  -- ^ XML (tag 1).
+  | Protobuf  -- ^ Protobuf (tag 2).
+  | MessagePack  -- ^ MessagePack (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ResponseFormat' to its ABI tag value.
@@ -132,16 +134,16 @@ responseFormatFromTag n
 -- GatewayError
 -- ---------------------------------------------------------------------------
 
--- | GatewayError type matching the Idris2 ABI.
+-- | API gateway error codes.
 --
 -- Tags 0-5 (6 constructors).
 data GatewayError
-  = Unauthorized  -- ^ Tag 0.
-  | RateLimited  -- ^ Tag 1.
-  | NotFound  -- ^ Tag 2.
-  | BadRequest  -- ^ Tag 3.
-  | ServiceUnavailable  -- ^ Tag 4.
-  | CircuitOpen  -- ^ Tag 5.
+  = Unauthorized  -- ^ Unauthorized (tag 0).
+  | RateLimited  -- ^ RateLimited (tag 1).
+  | NotFound  -- ^ NotFound (tag 2).
+  | BadRequest  -- ^ BadRequest (tag 3).
+  | ServiceUnavailable  -- ^ ServiceUnavailable (tag 4).
+  | CircuitOpen  -- ^ CircuitOpen (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'GatewayError' to its ABI tag value.

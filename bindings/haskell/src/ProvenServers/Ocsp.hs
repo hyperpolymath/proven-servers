@@ -1,42 +1,44 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | OCSP protocol types for proven-servers.
+-- | OCSP types for the proven-servers ABI.
 --
--- OCSP (Online Certificate Status Protocol, RFC 6960) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Ocsp
-  ( -- * ADT types matching Idris2 ABI
-      CertStatus(..)
-    , ResponseStatus(..)
-    , HashAlgorithm(..)
-    , ResponderState(..)
-    , certStatusToTag
-    , certStatusFromTag
-    , responseStatusToTag
-    , responseStatusFromTag
-    , hashAlgorithmToTag
-    , hashAlgorithmFromTag
-    , responderStateToTag
-    , responderStateFromTag
+  (
+    ocspPort
+  , CertStatus(..)
+  , certStatusToTag
+  , certStatusFromTag
+  , ResponseStatus(..)
+  , responseStatusToTag
+  , responseStatusFromTag
+  , HashAlgorithm(..)
+  , hashAlgorithmToTag
+  , hashAlgorithmFromTag
+  , ResponderState(..)
+  , responderStateToTag
+  , responderStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard OCSP HTTP port.
+ocspPort :: Word16
+ocspPort = 80
 
 -- ---------------------------------------------------------------------------
 -- CertStatus
 -- ---------------------------------------------------------------------------
 
--- | CertStatus type matching the Idris2 ABI.
+-- | Standard OCSP HTTP port.
 --
 -- Tags 0-2 (3 constructors).
 data CertStatus
-  = Good  -- ^ Tag 0.
-  | Revoked  -- ^ Tag 1.
-  | Unknown  -- ^ Tag 2.
+  = Good  -- ^ Good (tag 0).
+  | Revoked  -- ^ Revoked (tag 1).
+  | Unknown  -- ^ Unknown (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CertStatus' to its ABI tag value.
@@ -53,16 +55,16 @@ certStatusFromTag n
 -- ResponseStatus
 -- ---------------------------------------------------------------------------
 
--- | ResponseStatus type matching the Idris2 ABI.
+-- | OCSP response status.
 --
 -- Tags 0-5 (6 constructors).
 data ResponseStatus
-  = Successful  -- ^ Tag 0.
-  | MalformedRequest  -- ^ Tag 1.
-  | InternalError  -- ^ Tag 2.
-  | TryLater  -- ^ Tag 3.
-  | SigRequired  -- ^ Tag 4.
-  | Unauthorized  -- ^ Tag 5.
+  = Successful  -- ^ Successful (tag 0).
+  | MalformedRequest  -- ^ MalformedRequest (tag 1).
+  | InternalError  -- ^ InternalError (tag 2).
+  | TryLater  -- ^ TryLater (tag 3).
+  | SigRequired  -- ^ SigRequired (tag 4).
+  | Unauthorized  -- ^ Unauthorized (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ResponseStatus' to its ABI tag value.
@@ -79,14 +81,14 @@ responseStatusFromTag n
 -- HashAlgorithm
 -- ---------------------------------------------------------------------------
 
--- | HashAlgorithm type matching the Idris2 ABI.
+-- | OCSP hash algorithms.
 --
 -- Tags 0-3 (4 constructors).
 data HashAlgorithm
-  = Sha1  -- ^ Tag 0.
-  | Sha256  -- ^ Tag 1.
-  | Sha384  -- ^ Tag 2.
-  | Sha512  -- ^ Tag 3.
+  = Sha1  -- ^ SHA-1 (legacy) (tag 0).
+  | Sha256  -- ^ SHA-256 (tag 1).
+  | Sha384  -- ^ SHA-384 (tag 2).
+  | Sha512  -- ^ SHA-512 (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HashAlgorithm' to its ABI tag value.
@@ -103,15 +105,15 @@ hashAlgorithmFromTag n
 -- ResponderState
 -- ---------------------------------------------------------------------------
 
--- | ResponderState type matching the Idris2 ABI.
+-- | OCSP responder states.
 --
 -- Tags 0-4 (5 constructors).
 data ResponderState
-  = Idle  -- ^ Tag 0.
-  | Ready  -- ^ Tag 1.
-  | Processing  -- ^ Tag 2.
-  | Signing  -- ^ Tag 3.
-  | Closing  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Ready  -- ^ Ready (tag 1).
+  | Processing  -- ^ Processing (tag 2).
+  | Signing  -- ^ Signing (tag 3).
+  | Closing  -- ^ Closing (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ResponderState' to its ABI tag value.

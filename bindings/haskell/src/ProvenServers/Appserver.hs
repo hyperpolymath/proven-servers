@@ -1,46 +1,49 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | App Server protocol types for proven-servers.
+-- | Application Server types for the proven-servers ABI.
 --
--- Application server types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Appserver
-  ( -- * ADT types matching Idris2 ABI
-      RequestType(..)
-    , LifecycleState(..)
-    , HealthCheck(..)
-    , DeployStrategy(..)
-    , ErrorCategory(..)
-    , requestTypeToTag
-    , requestTypeFromTag
-    , lifecycleStateToTag
-    , lifecycleStateFromTag
-    , healthCheckToTag
-    , healthCheckFromTag
-    , deployStrategyToTag
-    , deployStrategyFromTag
-    , errorCategoryToTag
-    , errorCategoryFromTag
+  (
+    appPort
+  , RequestType(..)
+  , requestTypeToTag
+  , requestTypeFromTag
+  , LifecycleState(..)
+  , lifecycleStateToTag
+  , lifecycleStateFromTag
+  , isReady
+  , HealthCheck(..)
+  , healthCheckToTag
+  , healthCheckFromTag
+  , DeployStrategy(..)
+  , deployStrategyToTag
+  , deployStrategyFromTag
+  , ErrorCategory(..)
+  , errorCategoryToTag
+  , errorCategoryFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard application server port.
+appPort :: Word16
+appPort = 8080
 
 -- ---------------------------------------------------------------------------
 -- RequestType
 -- ---------------------------------------------------------------------------
 
--- | RequestType type matching the Idris2 ABI.
+-- | Standard application server port.
 --
 -- Tags 0-3 (4 constructors).
 data RequestType
-  = Http  -- ^ Tag 0.
-  | WebSocket  -- ^ Tag 1.
-  | Grpc  -- ^ Tag 2.
-  | GraphQl  -- ^ Tag 3.
+  = Http  -- ^ HTTP (tag 0).
+  | WebSocket  -- ^ WebSocket (tag 1).
+  | Grpc  -- ^ gRPC (tag 2).
+  | GraphQl  -- ^ GraphQL (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RequestType' to its ABI tag value.
@@ -57,16 +60,16 @@ requestTypeFromTag n
 -- LifecycleState
 -- ---------------------------------------------------------------------------
 
--- | LifecycleState type matching the Idris2 ABI.
+-- | Application lifecycle states.
 --
 -- Tags 0-5 (6 constructors).
 data LifecycleState
-  = Initializing  -- ^ Tag 0.
-  | Starting  -- ^ Tag 1.
-  | Running  -- ^ Tag 2.
-  | Draining  -- ^ Tag 3.
-  | Stopping  -- ^ Tag 4.
-  | Stopped  -- ^ Tag 5.
+  = Initializing  -- ^ Initializing (tag 0).
+  | Starting  -- ^ Starting (tag 1).
+  | Running  -- ^ Running (tag 2).
+  | Draining  -- ^ Draining (tag 3).
+  | Stopping  -- ^ Stopping (tag 4).
+  | Stopped  -- ^ Stopped (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'LifecycleState' to its ABI tag value.
@@ -79,17 +82,22 @@ lifecycleStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: LifecycleState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether the server is ready to handle requests.
+isReady :: LifecycleState -> Bool
+isReady Running = True
+isReady _ = False
+
 -- ---------------------------------------------------------------------------
 -- HealthCheck
 -- ---------------------------------------------------------------------------
 
--- | HealthCheck type matching the Idris2 ABI.
+-- | Health check types.
 --
 -- Tags 0-2 (3 constructors).
 data HealthCheck
-  = Liveness  -- ^ Tag 0.
-  | Readiness  -- ^ Tag 1.
-  | Startup  -- ^ Tag 2.
+  = Liveness  -- ^ Liveness (tag 0).
+  | Readiness  -- ^ Readiness (tag 1).
+  | Startup  -- ^ Startup (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HealthCheck' to its ABI tag value.
@@ -106,14 +114,14 @@ healthCheckFromTag n
 -- DeployStrategy
 -- ---------------------------------------------------------------------------
 
--- | DeployStrategy type matching the Idris2 ABI.
+-- | Deployment strategies.
 --
 -- Tags 0-3 (4 constructors).
 data DeployStrategy
-  = RollingUpdate  -- ^ Tag 0.
-  | BlueGreen  -- ^ Tag 1.
-  | Canary  -- ^ Tag 2.
-  | Recreate  -- ^ Tag 3.
+  = RollingUpdate  -- ^ RollingUpdate (tag 0).
+  | BlueGreen  -- ^ BlueGreen (tag 1).
+  | Canary  -- ^ Canary (tag 2).
+  | Recreate  -- ^ Recreate (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DeployStrategy' to its ABI tag value.
@@ -130,15 +138,15 @@ deployStrategyFromTag n
 -- ErrorCategory
 -- ---------------------------------------------------------------------------
 
--- | ErrorCategory type matching the Idris2 ABI.
+-- | Application error categories.
 --
 -- Tags 0-4 (5 constructors).
 data ErrorCategory
-  = ClientError  -- ^ Tag 0.
-  | ServerError  -- ^ Tag 1.
-  | Timeout  -- ^ Tag 2.
-  | CircuitOpen  -- ^ Tag 3.
-  | RateLimited  -- ^ Tag 4.
+  = ClientError  -- ^ ClientError (tag 0).
+  | ServerError  -- ^ ServerError (tag 1).
+  | Timeout  -- ^ Timeout (tag 2).
+  | CircuitOpen  -- ^ CircuitOpen (tag 3).
+  | RateLimited  -- ^ RateLimited (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorCategory' to its ABI tag value.

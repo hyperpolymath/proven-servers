@@ -1,24 +1,21 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Game Server protocol types for proven-servers.
+-- | Game Server types for the proven-servers ABI.
 --
--- Game server types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Gameserver
-  ( -- * ADT types matching Idris2 ABI
-      SessionType(..)
-    , PlayerState(..)
-    , MatchState(..)
-    , sessionTypeToTag
-    , sessionTypeFromTag
-    , playerStateToTag
-    , playerStateFromTag
-    , matchStateToTag
-    , matchStateFromTag
+  (
+    SessionType(..)
+  , sessionTypeToTag
+  , sessionTypeFromTag
+  , PlayerState(..)
+  , playerStateToTag
+  , playerStateFromTag
+  , MatchState(..)
+  , matchStateToTag
+  , matchStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -27,15 +24,15 @@ import Data.Word (Word8)
 -- SessionType
 -- ---------------------------------------------------------------------------
 
--- | SessionType type matching the Idris2 ABI.
+-- | Game session types.
 --
 -- Tags 0-4 (5 constructors).
 data SessionType
-  = Lobby  -- ^ Tag 0.
-  | Match  -- ^ Tag 1.
-  | Practice  -- ^ Tag 2.
-  | Spectator  -- ^ Tag 3.
-  | Tournament  -- ^ Tag 4.
+  = Lobby  -- ^ Lobby (tag 0).
+  | Match  -- ^ Match (tag 1).
+  | Practice  -- ^ Practice (tag 2).
+  | Spectator  -- ^ Spectator (tag 3).
+  | Tournament  -- ^ Tournament (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionType' to its ABI tag value.
@@ -52,16 +49,16 @@ sessionTypeFromTag n
 -- PlayerState
 -- ---------------------------------------------------------------------------
 
--- | PlayerState type matching the Idris2 ABI.
+-- | Game player states.
 --
 -- Tags 0-5 (6 constructors).
 data PlayerState
-  = Idle  -- ^ Tag 0.
-  | Queuing  -- ^ Tag 1.
-  | Loading  -- ^ Tag 2.
-  | Playing  -- ^ Tag 3.
-  | Spectating  -- ^ Tag 4.
-  | Disconnected  -- ^ Tag 5.
+  = Idle  -- ^ Idle (tag 0).
+  | Queuing  -- ^ Queuing (tag 1).
+  | Loading  -- ^ Loading (tag 2).
+  | Playing  -- ^ Playing (tag 3).
+  | Spectating  -- ^ Spectating (tag 4).
+  | Disconnected  -- ^ Disconnected (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PlayerState' to its ABI tag value.
@@ -78,16 +75,16 @@ playerStateFromTag n
 -- MatchState
 -- ---------------------------------------------------------------------------
 
--- | MatchState type matching the Idris2 ABI.
+-- | Game match states.
 --
 -- Tags 0-5 (6 constructors).
 data MatchState
-  = Waiting  -- ^ Tag 0.
-  | Starting  -- ^ Tag 1.
-  | InProgress  -- ^ Tag 2.
-  | Paused  -- ^ Tag 3.
-  | Ending  -- ^ Tag 4.
-  | Complete  -- ^ Tag 5.
+  = Waiting  -- ^ Waiting (tag 0).
+  | Starting  -- ^ Starting (tag 1).
+  | InProgress  -- ^ InProgress (tag 2).
+  | Paused  -- ^ Paused (tag 3).
+  | Ending  -- ^ Ending (tag 4).
+  | Complete  -- ^ Complete (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MatchState' to its ABI tag value.

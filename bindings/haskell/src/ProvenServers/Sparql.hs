@@ -1,27 +1,24 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | SPARQL protocol types for proven-servers.
+-- | SPARQL types for the proven-servers ABI.
 --
--- SPARQL endpoint types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Sparql
-  ( -- * ADT types matching Idris2 ABI
-      SparqlQueryType(..)
-    , UpdateType(..)
-    , ResultFormat(..)
-    , SparqlErrorType(..)
-    , sparqlQueryTypeToTag
-    , sparqlQueryTypeFromTag
-    , updateTypeToTag
-    , updateTypeFromTag
-    , resultFormatToTag
-    , resultFormatFromTag
-    , sparqlErrorTypeToTag
-    , sparqlErrorTypeFromTag
+  (
+    SparqlQueryType(..)
+  , sparqlQueryTypeToTag
+  , sparqlQueryTypeFromTag
+  , UpdateType(..)
+  , updateTypeToTag
+  , updateTypeFromTag
+  , ResultFormat(..)
+  , resultFormatToTag
+  , resultFormatFromTag
+  , SparqlErrorType(..)
+  , sparqlErrorTypeToTag
+  , sparqlErrorTypeFromTag
   ) where
 
 import Data.Word (Word8)
@@ -30,14 +27,14 @@ import Data.Word (Word8)
 -- SparqlQueryType
 -- ---------------------------------------------------------------------------
 
--- | SparqlQueryType type matching the Idris2 ABI.
+-- | SPARQL query types.
 --
 -- Tags 0-3 (4 constructors).
 data SparqlQueryType
-  = Select  -- ^ Tag 0.
-  | Construct  -- ^ Tag 1.
-  | Ask  -- ^ Tag 2.
-  | Describe  -- ^ Tag 3.
+  = Select  -- ^ Select (tag 0).
+  | Construct  -- ^ Construct (tag 1).
+  | Ask  -- ^ Ask (tag 2).
+  | Describe  -- ^ Describe (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SparqlQueryType' to its ABI tag value.
@@ -54,16 +51,16 @@ sparqlQueryTypeFromTag n
 -- UpdateType
 -- ---------------------------------------------------------------------------
 
--- | UpdateType type matching the Idris2 ABI.
+-- | SPARQL update types.
 --
 -- Tags 0-5 (6 constructors).
 data UpdateType
-  = Insert  -- ^ Tag 0.
-  | Delete  -- ^ Tag 1.
-  | Load  -- ^ Tag 2.
-  | Clear  -- ^ Tag 3.
-  | Create  -- ^ Tag 4.
-  | Drop  -- ^ Tag 5.
+  = Insert  -- ^ Insert (tag 0).
+  | Delete  -- ^ Delete (tag 1).
+  | Load  -- ^ Load (tag 2).
+  | Clear  -- ^ Clear (tag 3).
+  | Create  -- ^ Create (tag 4).
+  | Drop  -- ^ Drop (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'UpdateType' to its ABI tag value.
@@ -80,14 +77,14 @@ updateTypeFromTag n
 -- ResultFormat
 -- ---------------------------------------------------------------------------
 
--- | ResultFormat type matching the Idris2 ABI.
+-- | SPARQL result formats.
 --
 -- Tags 0-3 (4 constructors).
 data ResultFormat
-  = Xml  -- ^ Tag 0.
-  | Json  -- ^ Tag 1.
-  | Csv  -- ^ Tag 2.
-  | Tsv  -- ^ Tag 3.
+  = Xml  -- ^ XML (tag 0).
+  | Json  -- ^ JSON (tag 1).
+  | Csv  -- ^ CSV (tag 2).
+  | Tsv  -- ^ TSV (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ResultFormat' to its ABI tag value.
@@ -104,15 +101,15 @@ resultFormatFromTag n
 -- SparqlErrorType
 -- ---------------------------------------------------------------------------
 
--- | SparqlErrorType type matching the Idris2 ABI.
+-- | SPARQL error types.
 --
 -- Tags 0-4 (5 constructors).
 data SparqlErrorType
-  = ParseError  -- ^ Tag 0.
-  | QueryTimeout  -- ^ Tag 1.
-  | ResultsTooLarge  -- ^ Tag 2.
-  | UnknownGraph  -- ^ Tag 3.
-  | AccessDenied  -- ^ Tag 4.
+  = ParseError  -- ^ ParseError (tag 0).
+  | QueryTimeout  -- ^ QueryTimeout (tag 1).
+  | ResultsTooLarge  -- ^ ResultsTooLarge (tag 2).
+  | UnknownGraph  -- ^ UnknownGraph (tag 3).
+  | AccessDenied  -- ^ AccessDenied (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SparqlErrorType' to its ABI tag value.

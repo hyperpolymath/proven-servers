@@ -1,30 +1,27 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Log Collector protocol types for proven-servers.
+-- | Log Collector types for the proven-servers ABI.
 --
--- Log collection/pipeline types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Logcollector
-  ( -- * ADT types matching Idris2 ABI
-      LogLevel(..)
-    , InputFormat(..)
-    , OutputTarget(..)
-    , FilterOp(..)
-    , PipelineStage(..)
-    , logLevelToTag
-    , logLevelFromTag
-    , inputFormatToTag
-    , inputFormatFromTag
-    , outputTargetToTag
-    , outputTargetFromTag
-    , filterOpToTag
-    , filterOpFromTag
-    , pipelineStageToTag
-    , pipelineStageFromTag
+  (
+    LogLevel(..)
+  , logLevelToTag
+  , logLevelFromTag
+  , InputFormat(..)
+  , inputFormatToTag
+  , inputFormatFromTag
+  , OutputTarget(..)
+  , outputTargetToTag
+  , outputTargetFromTag
+  , FilterOp(..)
+  , filterOpToTag
+  , filterOpFromTag
+  , PipelineStage(..)
+  , pipelineStageToTag
+  , pipelineStageFromTag
   ) where
 
 import Data.Word (Word8)
@@ -33,16 +30,16 @@ import Data.Word (Word8)
 -- LogLevel
 -- ---------------------------------------------------------------------------
 
--- | LogLevel type matching the Idris2 ABI.
+-- | Log severity levels.
 --
 -- Tags 0-5 (6 constructors).
 data LogLevel
-  = Trace  -- ^ Tag 0.
-  | Debug  -- ^ Tag 1.
-  | Info  -- ^ Tag 2.
-  | Warn  -- ^ Tag 3.
-  | Err  -- ^ Tag 4.
-  | Fatal  -- ^ Tag 5.
+  = Trace  -- ^ Trace (tag 0).
+  | Debug  -- ^ Debug (tag 1).
+  | Info  -- ^ Info (tag 2).
+  | Warn  -- ^ Warn (tag 3).
+  | Err  -- ^ Error (tag 4).
+  | Fatal  -- ^ Fatal (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'LogLevel' to its ABI tag value.
@@ -59,16 +56,16 @@ logLevelFromTag n
 -- InputFormat
 -- ---------------------------------------------------------------------------
 
--- | InputFormat type matching the Idris2 ABI.
+-- | Log input formats.
 --
 -- Tags 0-5 (6 constructors).
 data InputFormat
-  = Json  -- ^ Tag 0.
-  | Logfmt  -- ^ Tag 1.
-  | Syslog  -- ^ Tag 2.
-  | Cef  -- ^ Tag 3.
-  | Gelf  -- ^ Tag 4.
-  | Raw  -- ^ Tag 5.
+  = Json  -- ^ JSON (tag 0).
+  | Logfmt  -- ^ Logfmt (tag 1).
+  | Syslog  -- ^ Syslog (tag 2).
+  | Cef  -- ^ CEF (tag 3).
+  | Gelf  -- ^ GELF (tag 4).
+  | Raw  -- ^ Raw (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'InputFormat' to its ABI tag value.
@@ -85,15 +82,15 @@ inputFormatFromTag n
 -- OutputTarget
 -- ---------------------------------------------------------------------------
 
--- | OutputTarget type matching the Idris2 ABI.
+-- | Log output targets.
 --
 -- Tags 0-4 (5 constructors).
 data OutputTarget
-  = File  -- ^ Tag 0.
-  | Elasticsearch  -- ^ Tag 1.
-  | S3  -- ^ Tag 2.
-  | Kafka  -- ^ Tag 3.
-  | Stdout  -- ^ Tag 4.
+  = File  -- ^ File (tag 0).
+  | Elasticsearch  -- ^ Elasticsearch (tag 1).
+  | S3  -- ^ S3 (tag 2).
+  | Kafka  -- ^ Kafka (tag 3).
+  | Stdout  -- ^ Stdout (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'OutputTarget' to its ABI tag value.
@@ -110,15 +107,15 @@ outputTargetFromTag n
 -- FilterOp
 -- ---------------------------------------------------------------------------
 
--- | FilterOp type matching the Idris2 ABI.
+-- | Log filter operations.
 --
 -- Tags 0-4 (5 constructors).
 data FilterOp
-  = Include  -- ^ Tag 0.
-  | Exclude  -- ^ Tag 1.
-  | Transform  -- ^ Tag 2.
-  | Redact  -- ^ Tag 3.
-  | Sample  -- ^ Tag 4.
+  = Include  -- ^ Include (tag 0).
+  | Exclude  -- ^ Exclude (tag 1).
+  | Transform  -- ^ Transform (tag 2).
+  | Redact  -- ^ Redact (tag 3).
+  | Sample  -- ^ Sample (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'FilterOp' to its ABI tag value.
@@ -135,15 +132,15 @@ filterOpFromTag n
 -- PipelineStage
 -- ---------------------------------------------------------------------------
 
--- | PipelineStage type matching the Idris2 ABI.
+-- | Log pipeline stages.
 --
 -- Tags 0-4 (5 constructors).
 data PipelineStage
-  = Input  -- ^ Tag 0.
-  | Parse  -- ^ Tag 1.
-  | Filter  -- ^ Tag 2.
-  | PipelineTransform  -- ^ Tag 3.
-  | Output  -- ^ Tag 4.
+  = Input  -- ^ Input (tag 0).
+  | Parse  -- ^ Parse (tag 1).
+  | Filter  -- ^ Filter (tag 2).
+  | PipelineTransform  -- ^ Transform (tag 3).
+  | Output  -- ^ Output (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PipelineStage' to its ABI tag value.

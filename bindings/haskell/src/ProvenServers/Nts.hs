@@ -1,51 +1,53 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | NTS protocol types for proven-servers.
+-- | Network Time Security types for the proven-servers ABI.
 --
--- Network Time Security types (RFC 8915), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Nts
-  ( -- * ADT types matching Idris2 ABI
-      RecordType(..)
-    , ErrorCode(..)
-    , AeadAlgorithm(..)
-    , HandshakeState(..)
-    , SessionState(..)
-    , recordTypeToTag
-    , recordTypeFromTag
-    , errorCodeToTag
-    , errorCodeFromTag
-    , aeadAlgorithmToTag
-    , aeadAlgorithmFromTag
-    , handshakeStateToTag
-    , handshakeStateFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    ntsKePort
+  , RecordType(..)
+  , recordTypeToTag
+  , recordTypeFromTag
+  , ErrorCode(..)
+  , errorCodeToTag
+  , errorCodeFromTag
+  , AeadAlgorithm(..)
+  , aeadAlgorithmToTag
+  , aeadAlgorithmFromTag
+  , HandshakeState(..)
+  , handshakeStateToTag
+  , handshakeStateFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard NTS-KE port.
+ntsKePort :: Word16
+ntsKePort = 4460
 
 -- ---------------------------------------------------------------------------
 -- RecordType
 -- ---------------------------------------------------------------------------
 
--- | RecordType type matching the Idris2 ABI.
+-- | Standard NTS-KE port.
 --
 -- Tags 0-8 (9 constructors).
 data RecordType
-  = EndOfMessage  -- ^ Tag 0.
-  | NextProtocol  -- ^ Tag 1.
-  | Error  -- ^ Tag 2.
-  | Warning  -- ^ Tag 3.
-  | AeadAlgorithm  -- ^ Tag 4.
-  | Cookie  -- ^ Tag 5.
-  | CookiePlaceholder  -- ^ Tag 6.
-  | NtskeServer  -- ^ Tag 7.
-  | NtskePort  -- ^ Tag 8.
+  = EndOfMessage  -- ^ EndOfMessage (tag 0).
+  | NextProtocol  -- ^ NextProtocol (tag 1).
+  | Error  -- ^ Error (tag 2).
+  | Warning  -- ^ Warning (tag 3).
+  | AeadAlgorithm  -- ^ AEAD algorithm negotiation (tag 4).
+  | Cookie  -- ^ Cookie (tag 5).
+  | CookiePlaceholder  -- ^ CookiePlaceholder (tag 6).
+  | NtskeServer  -- ^ NTS-KE server (tag 7).
+  | NtskePort  -- ^ NTS-KE port (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RecordType' to its ABI tag value.
@@ -62,13 +64,13 @@ recordTypeFromTag n
 -- ErrorCode
 -- ---------------------------------------------------------------------------
 
--- | ErrorCode type matching the Idris2 ABI.
+-- | NTS error codes.
 --
 -- Tags 0-2 (3 constructors).
 data ErrorCode
-  = UnrecognizedCritical  -- ^ Tag 0.
-  | BadRequest  -- ^ Tag 1.
-  | InternalError  -- ^ Tag 2.
+  = UnrecognizedCritical  -- ^ UnrecognizedCritical (tag 0).
+  | BadRequest  -- ^ BadRequest (tag 1).
+  | InternalError  -- ^ InternalError (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorCode' to its ABI tag value.
@@ -85,13 +87,13 @@ errorCodeFromTag n
 -- AeadAlgorithm
 -- ---------------------------------------------------------------------------
 
--- | AeadAlgorithm type matching the Idris2 ABI.
+-- | AEAD algorithms for NTS.
 --
 -- Tags 0-2 (3 constructors).
 data AeadAlgorithm
-  = AeadAes128Gcm  -- ^ Tag 0.
-  | AeadAes256Gcm  -- ^ Tag 1.
-  | AeadAesSivCmac256  -- ^ Tag 2.
+  = AeadAes128Gcm  -- ^ AEAD-AES-128-GCM (tag 0).
+  | AeadAes256Gcm  -- ^ AEAD-AES-256-GCM (tag 1).
+  | AeadAesSivCmac256  -- ^ AEAD-AES-SIV-CMAC-256 (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AeadAlgorithm' to its ABI tag value.
@@ -108,14 +110,14 @@ aeadAlgorithmFromTag n
 -- HandshakeState
 -- ---------------------------------------------------------------------------
 
--- | HandshakeState type matching the Idris2 ABI.
+-- | NTS handshake states.
 --
 -- Tags 0-3 (4 constructors).
 data HandshakeState
-  = Initial  -- ^ Tag 0.
-  | HandshakeState_Negotiating  -- ^ Tag 1.
-  | HandshakeState_Established  -- ^ Tag 2.
-  | Failed  -- ^ Tag 3.
+  = Initial  -- ^ Initial (tag 0).
+  | Negotiating  -- ^ Negotiating (tag 1).
+  | Established  -- ^ Established (tag 2).
+  | Failed  -- ^ Failed (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HandshakeState' to its ABI tag value.
@@ -132,15 +134,15 @@ handshakeStateFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | NTS session lifecycle states.
 --
 -- Tags 0-4 (5 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | Handshaking  -- ^ Tag 1.
-  | SessionState_Negotiating  -- ^ Tag 2.
-  | SessionState_Established  -- ^ Tag 3.
-  | Closing  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Handshaking  -- ^ Handshaking (tag 1).
+  | Negotiating  -- ^ Negotiating (tag 2).
+  | Established  -- ^ Established (tag 3).
+  | Closing  -- ^ Closing (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.

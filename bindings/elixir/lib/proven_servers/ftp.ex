@@ -200,4 +200,84 @@ defmodule ProvenServers.Ftp do
   @spec reply_category_error?(reply_category()) :: boolean()
   def reply_category_error?(cat) when cat in [:transient_neg, :permanent_neg], do: true
   def reply_category_error?(_cat), do: false
+
+  # ===========================================================================
+  # Command (tags 0-22)
+  # ===========================================================================
+
+  @typedoc "FTP protocol commands (RFC 959)."
+  @type command ::
+          :user | :pass | :acct | :cwd | :cdup | :quit | :pasv | :port
+          | :type_cmd | :retr | :stor | :dele | :rmd | :mkd | :pwd
+          | :list | :nlst | :syst | :stat | :noop | :rnfr | :rnto | :size
+
+  @command_tags %{
+    user: 0, pass: 1, acct: 2, cwd: 3, cdup: 4, quit: 5, pasv: 6, port: 7,
+    type_cmd: 8, retr: 9, stor: 10, dele: 11, rmd: 12, mkd: 13, pwd: 14,
+    list: 15, nlst: 16, syst: 17, stat: 18, noop: 19, rnfr: 20, rnto: 21,
+    size: 22
+  }
+
+  @tag_to_command Map.new(@command_tags, fn {k, v} -> {v, k} end)
+
+  @command_verbs %{
+    user: "USER", pass: "PASS", acct: "ACCT", cwd: "CWD", cdup: "CDUP",
+    quit: "QUIT", pasv: "PASV", port: "PORT", type_cmd: "TYPE",
+    retr: "RETR", stor: "STOR", dele: "DELE", rmd: "RMD", mkd: "MKD",
+    pwd: "PWD", list: "LIST", nlst: "NLST", syst: "SYST", stat: "STAT",
+    noop: "NOOP", rnfr: "RNFR", rnto: "RNTO", size: "SIZE"
+  }
+
+  @doc """
+  Decode from a C-ABI tag value.
+
+  ## Examples
+
+      iex> ProvenServers.Ftp.command_from_tag(0)
+      {:ok, :user}
+  """
+  @spec command_from_tag(non_neg_integer()) :: {:ok, command()} | :error
+  def command_from_tag(tag) when is_integer(tag) and tag >= 0 and tag <= 22 do
+    {:ok, Map.fetch!(@tag_to_command, tag)}
+  end
+  def command_from_tag(_tag), do: :error
+
+  @doc "Encode to the C-ABI tag value."
+  @spec command_to_tag(command()) :: non_neg_integer()
+  def command_to_tag(cmd) when is_map_key(@command_tags, cmd) do
+    Map.fetch!(@command_tags, cmd)
+  end
+
+  @doc """
+  The FTP command verb as a string.
+
+  ## Examples
+
+      iex> ProvenServers.Ftp.command_verb(:retr)
+      "RETR"
+  """
+  @spec command_verb(command()) :: String.t()
+  def command_verb(cmd) when is_map_key(@command_verbs, cmd) do
+    Map.fetch!(@command_verbs, cmd)
+  end
+
+  @doc "Whether this command initiates a data transfer."
+  @spec command_requires_data_connection?(command()) :: boolean()
+  def command_requires_data_connection?(cmd) when cmd in [:retr, :stor, :list, :nlst], do: true
+  def command_requires_data_connection?(_cmd), do: false
+
+  @doc "Whether this command requires authentication."
+  @spec command_requires_auth?(command()) :: boolean()
+  def command_requires_auth?(cmd) when cmd in [:user, :pass, :acct, :quit], do: false
+  def command_requires_auth?(_cmd), do: true
+
+  @doc "All supported FTP commands in tag order."
+  @spec all_commands() :: [command()]
+  def all_commands do
+    [
+      :user, :pass, :acct, :cwd, :cdup, :quit, :pasv, :port, :type_cmd,
+      :retr, :stor, :dele, :rmd, :mkd, :pwd, :list, :nlst, :syst,
+      :stat, :noop, :rnfr, :rnto, :size
+    ]
+  end
 end

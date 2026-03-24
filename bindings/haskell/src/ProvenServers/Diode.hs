@@ -1,33 +1,30 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Data Diode protocol types for proven-servers.
+-- | Data Diode types for the proven-servers ABI.
 --
--- Data diode (unidirectional network) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Diode
-  ( -- * ADT types matching Idris2 ABI
-      Direction(..)
-    , DiodeProtocol(..)
-    , TransferState(..)
-    , ValidationResult(..)
-    , IntegrityCheck(..)
-    , GatewayState(..)
-    , directionToTag
-    , directionFromTag
-    , diodeProtocolToTag
-    , diodeProtocolFromTag
-    , transferStateToTag
-    , transferStateFromTag
-    , validationResultToTag
-    , validationResultFromTag
-    , integrityCheckToTag
-    , integrityCheckFromTag
-    , gatewayStateToTag
-    , gatewayStateFromTag
+  (
+    Direction(..)
+  , directionToTag
+  , directionFromTag
+  , DiodeProtocol(..)
+  , diodeProtocolToTag
+  , diodeProtocolFromTag
+  , TransferState(..)
+  , transferStateToTag
+  , transferStateFromTag
+  , ValidationResult(..)
+  , validationResultToTag
+  , validationResultFromTag
+  , IntegrityCheck(..)
+  , integrityCheckToTag
+  , integrityCheckFromTag
+  , GatewayState(..)
+  , gatewayStateToTag
+  , gatewayStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,12 +33,12 @@ import Data.Word (Word8)
 -- Direction
 -- ---------------------------------------------------------------------------
 
--- | Direction type matching the Idris2 ABI.
+-- | Diode data flow direction.
 --
 -- Tags 0-1 (2 constructors).
 data Direction
-  = HighToLow  -- ^ Tag 0.
-  | LowToHigh  -- ^ Tag 1.
+  = HighToLow  -- ^ HighToLow (tag 0).
+  | LowToHigh  -- ^ LowToHigh (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Direction' to its ABI tag value.
@@ -58,15 +55,15 @@ directionFromTag n
 -- DiodeProtocol
 -- ---------------------------------------------------------------------------
 
--- | DiodeProtocol type matching the Idris2 ABI.
+-- | Diode transfer protocols.
 --
 -- Tags 0-4 (5 constructors).
 data DiodeProtocol
-  = Udp  -- ^ Tag 0.
-  | Tcp  -- ^ Tag 1.
-  | FileTransfer  -- ^ Tag 2.
-  | Syslog  -- ^ Tag 3.
-  | Snmp  -- ^ Tag 4.
+  = Udp  -- ^ UDP (tag 0).
+  | Tcp  -- ^ TCP (tag 1).
+  | FileTransfer  -- ^ FileTransfer (tag 2).
+  | Syslog  -- ^ Syslog (tag 3).
+  | Snmp  -- ^ SNMP (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'DiodeProtocol' to its ABI tag value.
@@ -83,15 +80,15 @@ diodeProtocolFromTag n
 -- TransferState
 -- ---------------------------------------------------------------------------
 
--- | TransferState type matching the Idris2 ABI.
+-- | Diode transfer states.
 --
 -- Tags 0-4 (5 constructors).
 data TransferState
-  = Queued  -- ^ Tag 0.
-  | Sending  -- ^ Tag 1.
-  | Confirming  -- ^ Tag 2.
-  | Complete  -- ^ Tag 3.
-  | Failed  -- ^ Tag 4.
+  = Queued  -- ^ Queued (tag 0).
+  | Sending  -- ^ Sending (tag 1).
+  | Confirming  -- ^ Confirming (tag 2).
+  | Complete  -- ^ Complete (tag 3).
+  | Failed  -- ^ Failed (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'TransferState' to its ABI tag value.
@@ -108,14 +105,14 @@ transferStateFromTag n
 -- ValidationResult
 -- ---------------------------------------------------------------------------
 
--- | ValidationResult type matching the Idris2 ABI.
+-- | Data validation results.
 --
 -- Tags 0-3 (4 constructors).
 data ValidationResult
-  = Passed  -- ^ Tag 0.
-  | FormatError  -- ^ Tag 1.
-  | SizeExceeded  -- ^ Tag 2.
-  | PolicyBlocked  -- ^ Tag 3.
+  = Passed  -- ^ Passed (tag 0).
+  | FormatError  -- ^ FormatError (tag 1).
+  | SizeExceeded  -- ^ SizeExceeded (tag 2).
+  | PolicyBlocked  -- ^ PolicyBlocked (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ValidationResult' to its ABI tag value.
@@ -132,13 +129,13 @@ validationResultFromTag n
 -- IntegrityCheck
 -- ---------------------------------------------------------------------------
 
--- | IntegrityCheck type matching the Idris2 ABI.
+-- | Integrity verification methods.
 --
 -- Tags 0-2 (3 constructors).
 data IntegrityCheck
-  = Crc32  -- ^ Tag 0.
-  | Sha256  -- ^ Tag 1.
-  | Hmac  -- ^ Tag 2.
+  = Crc32  -- ^ CRC-32 (tag 0).
+  | Sha256  -- ^ SHA-256 (tag 1).
+  | Hmac  -- ^ HMAC (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'IntegrityCheck' to its ABI tag value.
@@ -155,15 +152,15 @@ integrityCheckFromTag n
 -- GatewayState
 -- ---------------------------------------------------------------------------
 
--- | GatewayState type matching the Idris2 ABI.
+-- | Diode gateway states.
 --
 -- Tags 0-4 (5 constructors).
 data GatewayState
-  = Idle  -- ^ Tag 0.
-  | Configured  -- ^ Tag 1.
-  | Transferring  -- ^ Tag 2.
-  | Validating  -- ^ Tag 3.
-  | Shutdown  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Configured  -- ^ Configured (tag 1).
+  | Transferring  -- ^ Transferring (tag 2).
+  | Validating  -- ^ Validating (tag 3).
+  | Shutdown  -- ^ Shutdown (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'GatewayState' to its ABI tag value.

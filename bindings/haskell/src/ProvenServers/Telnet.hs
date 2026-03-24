@@ -1,55 +1,58 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Telnet protocol types for proven-servers.
+-- | Telnet protocol types for the proven-servers ABI.
 --
--- Telnet protocol types (legacy/insecure), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Telnet
-  ( -- * ADT types matching Idris2 ABI
-      Command(..)
-    , TelnetOption(..)
-    , NegotiationState(..)
-    , SessionState(..)
-    , commandToTag
-    , commandFromTag
-    , telnetOptionToTag
-    , telnetOptionFromTag
-    , negotiationStateToTag
-    , negotiationStateFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    telnetPort
+  , Command(..)
+  , commandToTag
+  , commandFromTag
+  , isNegotiation
+  , TelnetOption(..)
+  , telnetOptionToTag
+  , telnetOptionFromTag
+  , NegotiationState(..)
+  , negotiationStateToTag
+  , negotiationStateFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard Telnet port (RFC 854).
+telnetPort :: Word16
+telnetPort = 23
 
 -- ---------------------------------------------------------------------------
 -- Command
 -- ---------------------------------------------------------------------------
 
--- | Command type matching the Idris2 ABI.
+-- | Standard Telnet port (RFC 854).
 --
 -- Tags 0-15 (16 constructors).
 data Command
-  = Se  -- ^ Tag 0.
-  | Nop  -- ^ Tag 1.
-  | DataMark  -- ^ Tag 2.
-  | Break  -- ^ Tag 3.
-  | InterruptProcess  -- ^ Tag 4.
-  | AbortOutput  -- ^ Tag 5.
-  | AreYouThere  -- ^ Tag 6.
-  | EraseChar  -- ^ Tag 7.
-  | EraseLine  -- ^ Tag 8.
-  | GoAhead  -- ^ Tag 9.
-  | Sb  -- ^ Tag 10.
-  | Will  -- ^ Tag 11.
-  | Wont  -- ^ Tag 12.
-  | Do  -- ^ Tag 13.
-  | Dont  -- ^ Tag 14.
-  | Iac  -- ^ Tag 15.
+  = Se  -- ^ SE — End of subnegotiation (tag 0).
+  | Nop  -- ^ NOP — No operation (tag 1).
+  | DataMark  -- ^ Data Mark (tag 2).
+  | Break  -- ^ Break (tag 3).
+  | InterruptProcess  -- ^ Interrupt Process (tag 4).
+  | AbortOutput  -- ^ Abort Output (tag 5).
+  | AreYouThere  -- ^ Are You There (tag 6).
+  | EraseChar  -- ^ Erase Character (tag 7).
+  | EraseLine  -- ^ Erase Line (tag 8).
+  | GoAhead  -- ^ Go Ahead (tag 9).
+  | Sb  -- ^ SB — Begin subnegotiation (tag 10).
+  | Will  -- ^ WILL — sender wants to enable option (tag 11).
+  | Wont  -- ^ WONT — sender refuses to enable option (tag 12).
+  | Do  -- ^ DO — sender wants receiver to enable option (tag 13).
+  | Dont  -- ^ DONT — sender wants receiver to disable option (tag 14).
+  | Iac  -- ^ IAC — Interpret As Command escape (tag 15).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Command' to its ABI tag value.
@@ -62,24 +65,32 @@ commandFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Command)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this command is a negotiation command (WILL/WONT/DO/DONT).
+isNegotiation :: Command -> Bool
+isNegotiation Will = True
+isNegotiation Wont = True
+isNegotiation Do = True
+isNegotiation Dont = True
+isNegotiation _ = False
+
 -- ---------------------------------------------------------------------------
 -- TelnetOption
 -- ---------------------------------------------------------------------------
 
--- | TelnetOption type matching the Idris2 ABI.
+-- | Telnet options (RFC 854, RFC 1091, RFC 1073, etc.).
 --
 -- Tags 0-9 (10 constructors).
 data TelnetOption
-  = Echo  -- ^ Tag 0.
-  | SuppressGoAhead  -- ^ Tag 1.
-  | Status  -- ^ Tag 2.
-  | TimingMark  -- ^ Tag 3.
-  | TerminalType  -- ^ Tag 4.
-  | WindowSize  -- ^ Tag 5.
-  | TerminalSpeed  -- ^ Tag 6.
-  | RemoteFlowControl  -- ^ Tag 7.
-  | Linemode  -- ^ Tag 8.
-  | Environment  -- ^ Tag 9.
+  = Echo  -- ^ Echo (tag 0).
+  | SuppressGoAhead  -- ^ Suppress Go Ahead (tag 1).
+  | Status  -- ^ Status (tag 2).
+  | TimingMark  -- ^ Timing Mark (tag 3).
+  | TerminalType  -- ^ Terminal Type (tag 4).
+  | WindowSize  -- ^ Window Size — NAWS (tag 5).
+  | TerminalSpeed  -- ^ Terminal Speed (tag 6).
+  | RemoteFlowControl  -- ^ Remote Flow Control (tag 7).
+  | Linemode  -- ^ Linemode (tag 8).
+  | Environment  -- ^ Environment Variables (tag 9).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'TelnetOption' to its ABI tag value.
@@ -96,14 +107,14 @@ telnetOptionFromTag n
 -- NegotiationState
 -- ---------------------------------------------------------------------------
 
--- | NegotiationState type matching the Idris2 ABI.
+-- | Telnet option negotiation state.
 --
 -- Tags 0-3 (4 constructors).
 data NegotiationState
-  = Inactive  -- ^ Tag 0.
-  | WillSent  -- ^ Tag 1.
-  | DoSent  -- ^ Tag 2.
-  | NegotiationState_Active  -- ^ Tag 3.
+  = Inactive  -- ^ Option inactive (tag 0).
+  | WillSent  -- ^ WILL sent, awaiting response (tag 1).
+  | DoSent  -- ^ DO sent, awaiting response (tag 2).
+  | Active  -- ^ Option active (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NegotiationState' to its ABI tag value.
@@ -120,15 +131,15 @@ negotiationStateFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | Telnet session lifecycle states.
 --
 -- Tags 0-4 (5 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | Negotiating  -- ^ Tag 1.
-  | SessionState_Active  -- ^ Tag 2.
-  | Subneg  -- ^ Tag 3.
-  | Closing  -- ^ Tag 4.
+  = Idle  -- ^ No connection (tag 0).
+  | Negotiating  -- ^ Connection established, negotiation in progress (tag 1).
+  | Active  -- ^ Negotiation complete, data transfer active (tag 2).
+  | Subneg  -- ^ Subnegotiation in progress (tag 3).
+  | Closing  -- ^ Connection closing (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.

@@ -1,33 +1,30 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | CT Log protocol types for proven-servers.
+-- | CT Log types for the proven-servers ABI.
 --
--- Certificate Transparency log types (RFC 6962), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Ctlog
-  ( -- * ADT types matching Idris2 ABI
-      LogEntryType(..)
-    , SignatureType(..)
-    , MerkleLeafType(..)
-    , SubmissionStatus(..)
-    , VerificationResult(..)
-    , ServerState(..)
-    , logEntryTypeToTag
-    , logEntryTypeFromTag
-    , signatureTypeToTag
-    , signatureTypeFromTag
-    , merkleLeafTypeToTag
-    , merkleLeafTypeFromTag
-    , submissionStatusToTag
-    , submissionStatusFromTag
-    , verificationResultToTag
-    , verificationResultFromTag
-    , serverStateToTag
-    , serverStateFromTag
+  (
+    LogEntryType(..)
+  , logEntryTypeToTag
+  , logEntryTypeFromTag
+  , SignatureType(..)
+  , signatureTypeToTag
+  , signatureTypeFromTag
+  , MerkleLeafType(..)
+  , merkleLeafTypeToTag
+  , merkleLeafTypeFromTag
+  , SubmissionStatus(..)
+  , submissionStatusToTag
+  , submissionStatusFromTag
+  , VerificationResult(..)
+  , verificationResultToTag
+  , verificationResultFromTag
+  , ServerState(..)
+  , serverStateToTag
+  , serverStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,12 +33,12 @@ import Data.Word (Word8)
 -- LogEntryType
 -- ---------------------------------------------------------------------------
 
--- | LogEntryType type matching the Idris2 ABI.
+-- | CT log entry types.
 --
 -- Tags 0-1 (2 constructors).
 data LogEntryType
-  = X509Entry  -- ^ Tag 0.
-  | PrecertEntry  -- ^ Tag 1.
+  = X509Entry  -- ^ X509Entry (tag 0).
+  | PrecertEntry  -- ^ PrecertEntry (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'LogEntryType' to its ABI tag value.
@@ -58,12 +55,12 @@ logEntryTypeFromTag n
 -- SignatureType
 -- ---------------------------------------------------------------------------
 
--- | SignatureType type matching the Idris2 ABI.
+-- | CT signature types.
 --
 -- Tags 0-1 (2 constructors).
 data SignatureType
-  = CertificateTimestamp  -- ^ Tag 0.
-  | TreeHash  -- ^ Tag 1.
+  = CertificateTimestamp  -- ^ CertificateTimestamp (tag 0).
+  | TreeHash  -- ^ TreeHash (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SignatureType' to its ABI tag value.
@@ -80,11 +77,11 @@ signatureTypeFromTag n
 -- MerkleLeafType
 -- ---------------------------------------------------------------------------
 
--- | MerkleLeafType type matching the Idris2 ABI.
+-- | Merkle tree leaf types.
 --
 -- Tags 0-0 (1 constructors).
 data MerkleLeafType
-  = TimestampedEntry  -- ^ Tag 0.
+  = TimestampedEntry  -- ^ TimestampedEntry (tag 0).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MerkleLeafType' to its ABI tag value.
@@ -101,16 +98,16 @@ merkleLeafTypeFromTag n
 -- SubmissionStatus
 -- ---------------------------------------------------------------------------
 
--- | SubmissionStatus type matching the Idris2 ABI.
+-- | Certificate submission status.
 --
 -- Tags 0-5 (6 constructors).
 data SubmissionStatus
-  = Accepted  -- ^ Tag 0.
-  | Duplicate  -- ^ Tag 1.
-  | RateLimited  -- ^ Tag 2.
-  | Rejected  -- ^ Tag 3.
-  | InvalidChain  -- ^ Tag 4.
-  | UnknownAnchor  -- ^ Tag 5.
+  = Accepted  -- ^ Accepted (tag 0).
+  | Duplicate  -- ^ Duplicate (tag 1).
+  | RateLimited  -- ^ RateLimited (tag 2).
+  | Rejected  -- ^ Rejected (tag 3).
+  | InvalidChain  -- ^ InvalidChain (tag 4).
+  | UnknownAnchor  -- ^ UnknownAnchor (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SubmissionStatus' to its ABI tag value.
@@ -127,14 +124,14 @@ submissionStatusFromTag n
 -- VerificationResult
 -- ---------------------------------------------------------------------------
 
--- | VerificationResult type matching the Idris2 ABI.
+-- | Proof verification results.
 --
 -- Tags 0-3 (4 constructors).
 data VerificationResult
-  = ValidProof  -- ^ Tag 0.
-  | InvalidProof  -- ^ Tag 1.
-  | InconsistentTree  -- ^ Tag 2.
-  | StaleSth  -- ^ Tag 3.
+  = ValidProof  -- ^ ValidProof (tag 0).
+  | InvalidProof  -- ^ InvalidProof (tag 1).
+  | InconsistentTree  -- ^ InconsistentTree (tag 2).
+  | StaleSth  -- ^ Stale STH (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'VerificationResult' to its ABI tag value.
@@ -151,15 +148,15 @@ verificationResultFromTag n
 -- ServerState
 -- ---------------------------------------------------------------------------
 
--- | ServerState type matching the Idris2 ABI.
+-- | CT log server states.
 --
 -- Tags 0-4 (5 constructors).
 data ServerState
-  = Idle  -- ^ Tag 0.
-  | Active  -- ^ Tag 1.
-  | Merging  -- ^ Tag 2.
-  | Signing  -- ^ Tag 3.
-  | Shutdown  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Active  -- ^ Active (tag 1).
+  | Merging  -- ^ Merging (tag 2).
+  | Signing  -- ^ Signing (tag 3).
+  | Shutdown  -- ^ Shutdown (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ServerState' to its ABI tag value.

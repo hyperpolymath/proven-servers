@@ -1,212 +1,205 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | GraphQL protocol bindings for proven-servers.
+-- | GraphQL protocol types for the proven-servers ABI.
 --
--- Wraps the C-ABI functions from
--- @protocols\/proven-graphql\/ffi\/zig\/src\/graphql.zig@.
--- Provides Haskell ADTs for GraphQL request phases and operation types.
-
-{-# LANGUAGE ForeignFunctionInterface #-}
+-- All tag values match the Idris2 ABI discriminants exactly.
 
 module ProvenServers.Graphql
-  ( -- * ADTs matching Idris2 ABI
-    GraphqlPhase(..)
-  , OperationType(..)
-    -- * Context lifecycle
-  , abiVersion
-  , create
-  , destroy
-    -- * State queries
-  , phase
-  , operationType
-  , errorCategory
-  , queryDepth
-  , complexity
-  , fieldsResolved
-    -- * Request operations
-  , advance
-  , abort
-  , setQueryDepth
-  , setComplexity
-  , resolveField
-    -- * Subscription operations
-  , subCreate
-  , subPhase
-  , subAdvance
-  , subEmitEvent
-  , subAbort
-  , subEventCount
-    -- * Introspection
-  , introspectionQuery
-    -- * Stateless checks
-  , canTransition
-  , checkDepth
-  , checkComplexity
+  (
+    OperationType(..)
+  , operationTypeToTag
+  , operationTypeFromTag
+  , asStr
+  , TypeKind(..)
+  , typeKindToTag
+  , typeKindFromTag
+  , isWrapper
+  , isComposite
+  , introspectionName
+  , DirectiveLocation(..)
+  , directiveLocationToTag
+  , directiveLocationFromTag
+  , isExecutable
+  , isTypeSystem
+  , ErrorCategory(..)
+  , errorCategoryToTag
+  , errorCategoryFromTag
+  , code
   ) where
 
-import Data.Word (Word8, Word16, Word32)
-import Foreign.C.Types (CInt(..))
-import ProvenServers.Error (ProvenError, fromSlot, fromStatus)
+import Data.Word (Word8)
 
 -- ---------------------------------------------------------------------------
--- ADTs matching Idris2 ABI enums
+-- OperationType
 -- ---------------------------------------------------------------------------
 
--- | GraphQL request lifecycle phases.
-data GraphqlPhase
-  = GqlReceived  -- ^ Request received, not yet parsed.
-  | GqlParsed    -- ^ Query parsed and validated.
-  | GqlExecuting -- ^ Execution in progress.
-  | GqlComplete  -- ^ Execution complete, response ready.
-  | GqlError     -- ^ Error occurred.
+-- | GraphQL root operation types.
+--
+-- Tags 0-2 (3 constructors).
+data OperationType
+  = Query  -- ^ A read-only fetch.
+  | Mutation  -- ^ A write followed by a fetch.
+  | Subscription  -- ^ A long-lived request yielding events.
   deriving (Show, Eq, Ord, Enum, Bounded)
 
-gqlPhaseToTag :: GraphqlPhase -> Word8
-gqlPhaseToTag = fromIntegral . fromEnum
+-- | Convert a 'OperationType' to its ABI tag value.
+operationTypeToTag :: OperationType -> Word8
+operationTypeToTag = fromIntegral . fromEnum
 
-gqlPhaseFromTag :: Word8 -> Maybe GraphqlPhase
-gqlPhaseFromTag n
-  | n <= fromIntegral (fromEnum (maxBound :: GraphqlPhase)) = Just (toEnum (fromIntegral n))
+-- | Decode a 'OperationType' from its ABI tag value.
+operationTypeFromTag :: Word8 -> Maybe OperationType
+operationTypeFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: OperationType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
--- | GraphQL operation types.
-data OperationType
-  = OpQuery        -- ^ Query operation.
-  | OpMutation     -- ^ Mutation operation.
-  | OpSubscription -- ^ Subscription operation.
+-- | GraphQL keyword for this operation type.
+asStr :: OperationType -> String
+asStr Query = "query"
+asStr Mutation = "mutation"
+asStr Subscription = "subscription"
+
+-- ---------------------------------------------------------------------------
+-- TypeKind
+-- ---------------------------------------------------------------------------
+
+-- | GraphQL type system kinds (introspection `__TypeKind`).
+--
+-- Tags 0-7 (8 constructors).
+data TypeKind
+  = Scalar  -- ^ Scalar type (e.g. `Int`, `String`, `Boolean`).
+  | Object  -- ^ Object type with fields.
+  | Interface  -- ^ Interface type.
+  | Union  -- ^ Union of object types.
+  | Enum  -- ^ Enum type.
+  | InputObject  -- ^ Input object type.
+  | List  -- ^ List wrapper type.
+  | NonNull  -- ^ Non-null wrapper type.
   deriving (Show, Eq, Ord, Enum, Bounded)
 
-opTypeToTag :: OperationType -> Word8
-opTypeToTag = fromIntegral . fromEnum
+-- | Convert a 'TypeKind' to its ABI tag value.
+typeKindToTag :: TypeKind -> Word8
+typeKindToTag = fromIntegral . fromEnum
+
+-- | Decode a 'TypeKind' from its ABI tag value.
+typeKindFromTag :: Word8 -> Maybe TypeKind
+typeKindFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: TypeKind)) = Just (toEnum (fromIntegral n))
+  | otherwise = Nothing
+
+-- | Whether this is a wrapper type (List or NonNull).
+isWrapper :: TypeKind -> Bool
+isWrapper List = True
+isWrapper NonNull = True
+isWrapper _ = False
+
+-- | Whether this is a composite type (Object, Interface, or Union).
+isComposite :: TypeKind -> Bool
+isComposite Object = True
+isComposite Interface = True
+isComposite Union = True
+isComposite _ = False
+
+-- | /// Matches the `Show` instance in `GraphQL.Types`.
+introspectionName :: TypeKind -> String
+introspectionName Scalar = "SCALAR"
+introspectionName Object = "OBJECT"
+introspectionName Interface = "INTERFACE"
+introspectionName Union = "UNION"
+introspectionName Enum = "ENUM"
+introspectionName InputObject = "INPUT_OBJECT"
+introspectionName List = "LIST"
+introspectionName NonNull = "NON_NULL"
 
 -- ---------------------------------------------------------------------------
--- Foreign imports
+-- DirectiveLocation
 -- ---------------------------------------------------------------------------
 
-foreign import ccall unsafe "graphql_abi_version"      c_graphql_abi_version      :: IO Word32
-foreign import ccall unsafe "graphql_create"           c_graphql_create           :: Word8 -> IO CInt
-foreign import ccall unsafe "graphql_destroy"          c_graphql_destroy          :: CInt -> IO ()
-foreign import ccall unsafe "graphql_phase"            c_graphql_phase            :: CInt -> IO Word8
-foreign import ccall unsafe "graphql_operation_type"   c_graphql_operation_type   :: CInt -> IO Word8
-foreign import ccall unsafe "graphql_error_category"   c_graphql_error_category   :: CInt -> IO Word8
-foreign import ccall unsafe "graphql_advance"          c_graphql_advance          :: CInt -> IO Word8
-foreign import ccall unsafe "graphql_abort"            c_graphql_abort            :: CInt -> Word8 -> IO Word8
-foreign import ccall unsafe "graphql_set_query_depth"  c_graphql_set_query_depth  :: CInt -> Word16 -> IO Word8
-foreign import ccall unsafe "graphql_query_depth"      c_graphql_query_depth      :: CInt -> IO Word16
-foreign import ccall unsafe "graphql_set_complexity"   c_graphql_set_complexity   :: CInt -> Word16 -> IO Word8
-foreign import ccall unsafe "graphql_complexity"       c_graphql_complexity       :: CInt -> IO Word16
-foreign import ccall unsafe "graphql_resolve_field"    c_graphql_resolve_field    :: CInt -> Word8 -> Word8 -> IO Word8
-foreign import ccall unsafe "graphql_fields_resolved"  c_graphql_fields_resolved  :: CInt -> IO Word16
-foreign import ccall unsafe "graphql_can_transition"   c_graphql_can_transition   :: Word8 -> Word8 -> IO Word8
-foreign import ccall unsafe "graphql_sub_create"       c_graphql_sub_create       :: CInt -> IO CInt
-foreign import ccall unsafe "graphql_sub_phase"        c_graphql_sub_phase        :: CInt -> IO Word8
-foreign import ccall unsafe "graphql_sub_advance"      c_graphql_sub_advance      :: CInt -> IO Word8
-foreign import ccall unsafe "graphql_sub_emit_event"   c_graphql_sub_emit_event   :: CInt -> IO Word8
-foreign import ccall unsafe "graphql_sub_abort"        c_graphql_sub_abort        :: CInt -> IO Word8
-foreign import ccall unsafe "graphql_sub_event_count"  c_graphql_sub_event_count  :: CInt -> IO Word32
-foreign import ccall unsafe "graphql_introspection_query" c_graphql_introspection_query :: CInt -> Word8 -> IO Word8
-foreign import ccall unsafe "graphql_check_depth"      c_graphql_check_depth      :: Word16 -> Word16 -> IO Word8
-foreign import ccall unsafe "graphql_check_complexity" c_graphql_check_complexity :: Word16 -> Word16 -> IO Word8
+-- | GraphQL directive locations (executable and type system).
+--
+-- Tags 0-17 (18 constructors).
+data DirectiveLocation
+  = Query  -- ^ On a query operation.
+  | Mutation  -- ^ On a mutation operation.
+  | Subscription  -- ^ On a subscription operation.
+  | Field  -- ^ On a field selection.
+  | FragmentDefinition  -- ^ On a fragment definition.
+  | FragmentSpread  -- ^ On a fragment spread.
+  | InlineFragment  -- ^ On an inline fragment.
+  | Schema  -- ^ On a schema definition.
+  | Scalar  -- ^ On a scalar type definition.
+  | Object  -- ^ On an object type definition.
+  | FieldDefinition  -- ^ On a field definition.
+  | ArgumentDefinition  -- ^ On an argument definition.
+  | Interface  -- ^ On an interface type definition.
+  | Union  -- ^ On a union type definition.
+  | Enum  -- ^ On an enum type definition.
+  | EnumValue  -- ^ On an enum value definition.
+  | InputObject  -- ^ On an input object type definition.
+  | InputFieldDefinition  -- ^ On an input field definition.
+  deriving (Show, Eq, Ord, Enum, Bounded)
+
+-- | Convert a 'DirectiveLocation' to its ABI tag value.
+directiveLocationToTag :: DirectiveLocation -> Word8
+directiveLocationToTag = fromIntegral . fromEnum
+
+-- | Decode a 'DirectiveLocation' from its ABI tag value.
+directiveLocationFromTag :: Word8 -> Maybe DirectiveLocation
+directiveLocationFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: DirectiveLocation)) = Just (toEnum (fromIntegral n))
+  | otherwise = Nothing
+
+-- | Whether this is an executable location (query/mutation/subscription/field/fragment).
+isExecutable :: DirectiveLocation -> Bool
+isExecutable Query = True
+isExecutable Mutation = True
+isExecutable Subscription = True
+isExecutable Field = True
+isExecutable FragmentDefinition = True
+isExecutable FragmentSpread = True
+isExecutable InlineFragment = True
+isExecutable _ = False
+
+-- | Whether this is a type system location.
+isTypeSystem :: DirectiveLocation -> Bool
+isTypeSystem Query = False
+isTypeSystem Mutation = False
+isTypeSystem Subscription = False
+isTypeSystem Field = False
+isTypeSystem FragmentDefinition = False
+isTypeSystem FragmentSpread = False
+isTypeSystem InlineFragment = False
+isTypeSystem _ = True
 
 -- ---------------------------------------------------------------------------
--- Safe wrappers
+-- ErrorCategory
 -- ---------------------------------------------------------------------------
 
--- | Return the ABI version.
-abiVersion :: IO Word32
-abiVersion = c_graphql_abi_version
+-- | GraphQL error categories for structured error reporting.
+--
+-- Tags 0-4 (5 constructors).
+data ErrorCategory
+  = ParseError  -- ^ Syntax error in the GraphQL query.
+  | ValidationError  -- ^ The query does not pass validation against the schema.
+  | ExecutionError  -- ^ An error occurred during query execution.
+  | AuthError  -- ^ Authentication/authorisation failure.
+  | RateLimited  -- ^ Request rate limit exceeded.
+  deriving (Show, Eq, Ord, Enum, Bounded)
 
--- | Create a new GraphQL request context.
--- @opType@: 0 = Query, 1 = Mutation, 2 = Subscription.
-create :: OperationType -> IO (Either ProvenError CInt)
-create opType = fromSlot . fromIntegral <$> c_graphql_create (opTypeToTag opType)
+-- | Convert a 'ErrorCategory' to its ABI tag value.
+errorCategoryToTag :: ErrorCategory -> Word8
+errorCategoryToTag = fromIntegral . fromEnum
 
--- | Destroy a GraphQL context.
-destroy :: CInt -> IO ()
-destroy = c_graphql_destroy
+-- | Decode a 'ErrorCategory' from its ABI tag value.
+errorCategoryFromTag :: Word8 -> Maybe ErrorCategory
+errorCategoryFromTag n
+  | n <= fromIntegral (fromEnum (maxBound :: ErrorCategory)) = Just (toEnum (fromIntegral n))
+  | otherwise = Nothing
 
--- | Get the current request phase.
-phase :: CInt -> IO (Maybe GraphqlPhase)
-phase slot = gqlPhaseFromTag <$> c_graphql_phase slot
-
--- | Get the operation type tag.
-operationType :: CInt -> IO Word8
-operationType = c_graphql_operation_type
-
--- | Get the error category tag (255 = no error).
-errorCategory :: CInt -> IO Word8
-errorCategory = c_graphql_error_category
-
--- | Advance to the next lifecycle phase.
-advance :: CInt -> IO (Either ProvenError ())
-advance slot = fromStatus <$> c_graphql_advance slot
-
--- | Abort the request with an error category.
-abort :: CInt -> Word8 -> IO (Either ProvenError ())
-abort slot errCat = fromStatus <$> c_graphql_abort slot errCat
-
--- | Set the query nesting depth (for depth limiting).
-setQueryDepth :: CInt -> Word16 -> IO (Either ProvenError ())
-setQueryDepth slot depth = fromStatus <$> c_graphql_set_query_depth slot depth
-
--- | Get the current query depth.
-queryDepth :: CInt -> IO Word16
-queryDepth = c_graphql_query_depth
-
--- | Set the query complexity score.
-setComplexity :: CInt -> Word16 -> IO (Either ProvenError ())
-setComplexity slot score = fromStatus <$> c_graphql_set_complexity slot score
-
--- | Get the current complexity score.
-complexity :: CInt -> IO Word16
-complexity = c_graphql_complexity
-
--- | Record a field resolution with type and scalar kind.
-resolveField :: CInt -> Word8 -> Word8 -> IO (Either ProvenError ())
-resolveField slot typeKind scalarKind = fromStatus <$> c_graphql_resolve_field slot typeKind scalarKind
-
--- | Get the number of fields resolved so far.
-fieldsResolved :: CInt -> IO Word16
-fieldsResolved = c_graphql_fields_resolved
-
--- | Stateless query: check whether a request phase transition is valid.
-canTransition :: GraphqlPhase -> GraphqlPhase -> IO Bool
-canTransition from to =
-  (== 1) <$> c_graphql_can_transition (gqlPhaseToTag from) (gqlPhaseToTag to)
-
--- | Create a subscription from a context in subscription operation type.
-subCreate :: CInt -> IO (Either ProvenError CInt)
-subCreate slot = fromSlot . fromIntegral <$> c_graphql_sub_create slot
-
--- | Get the subscription phase tag.
-subPhase :: CInt -> IO Word8
-subPhase = c_graphql_sub_phase
-
--- | Advance the subscription lifecycle.
-subAdvance :: CInt -> IO (Either ProvenError ())
-subAdvance slot = fromStatus <$> c_graphql_sub_advance slot
-
--- | Emit a subscription event.
-subEmitEvent :: CInt -> IO (Either ProvenError ())
-subEmitEvent slot = fromStatus <$> c_graphql_sub_emit_event slot
-
--- | Abort a subscription.
-subAbort :: CInt -> IO (Either ProvenError ())
-subAbort slot = fromStatus <$> c_graphql_sub_abort slot
-
--- | Get the subscription event count.
-subEventCount :: CInt -> IO Word32
-subEventCount = c_graphql_sub_event_count
-
--- | Run an introspection query on a specific field.
-introspectionQuery :: CInt -> Word8 -> IO (Either ProvenError ())
-introspectionQuery slot introField = fromStatus <$> c_graphql_introspection_query slot introField
-
--- | Stateless: check if a query depth is within limits.
-checkDepth :: Word16 -> Word16 -> IO Bool
-checkDepth depth maxDepth = (== 1) <$> c_graphql_check_depth depth maxDepth
-
--- | Stateless: check if a complexity score is within limits.
-checkComplexity :: Word16 -> Word16 -> IO Bool
-checkComplexity score maxComplexity = (== 1) <$> c_graphql_check_complexity score maxComplexity
+-- | /// Matches the `Show` instance in `GraphQL.Types`.
+code :: ErrorCategory -> String
+code ParseError = "PARSE_ERROR"
+code ValidationError = "VALIDATION_ERROR"
+code ExecutionError = "EXECUTION_ERROR"
+code AuthError = "AUTH_ERROR"
+code RateLimited = "RATE_LIMITED"

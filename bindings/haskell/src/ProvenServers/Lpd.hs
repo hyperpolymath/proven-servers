@@ -1,41 +1,43 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | LPD protocol types for proven-servers.
+-- | LPD types for the proven-servers ABI.
 --
--- Line Printer Daemon types (RFC 1179), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Lpd
-  ( -- * ADT types matching Idris2 ABI
-      CommandCode(..)
-    , SubCommandCode(..)
-    , JobStatus(..)
-    , commandCodeToTag
-    , commandCodeFromTag
-    , subCommandCodeToTag
-    , subCommandCodeFromTag
-    , jobStatusToTag
-    , jobStatusFromTag
+  (
+    lpdPort
+  , CommandCode(..)
+  , commandCodeToTag
+  , commandCodeFromTag
+  , SubCommandCode(..)
+  , subCommandCodeToTag
+  , subCommandCodeFromTag
+  , JobStatus(..)
+  , jobStatusToTag
+  , jobStatusFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard LPD port.
+lpdPort :: Word16
+lpdPort = 515
 
 -- ---------------------------------------------------------------------------
 -- CommandCode
 -- ---------------------------------------------------------------------------
 
--- | CommandCode type matching the Idris2 ABI.
+-- | Standard LPD port.
 --
--- Tags 1-5 (5 constructors).
+-- Tags 0-5 (5 constructors).
 data CommandCode
-  = PrintJob  -- ^ Tag 1.
-  | ReceiveJob  -- ^ Tag 2.
-  | ShortQueue  -- ^ Tag 3.
-  | LongQueue  -- ^ Tag 4.
-  | RemoveJobs  -- ^ Tag 5.
+  = PrintJob  -- ^ Print any waiting jobs  (tag 1).
+  | ReceiveJob  -- ^ Receive a print job  (tag 2).
+  | ShortQueue  -- ^ Short queue listing  (tag 3).
+  | LongQueue  -- ^ Long queue listing  (tag 4).
+  | RemoveJobs  -- ^ Remove jobs  (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CommandCode' to its ABI tag value.
@@ -52,13 +54,13 @@ commandCodeFromTag n
 -- SubCommandCode
 -- ---------------------------------------------------------------------------
 
--- | SubCommandCode type matching the Idris2 ABI.
+-- | LPD sub-command codes.
 --
--- Tags 1-3 (3 constructors).
+-- Tags 0-3 (3 constructors).
 data SubCommandCode
-  = AbortJob  -- ^ Tag 1.
-  | ControlFile  -- ^ Tag 2.
-  | DataFile  -- ^ Tag 3.
+  = AbortJob  -- ^ Abort job  (tag 1).
+  | ControlFile  -- ^ Receive control file  (tag 2).
+  | DataFile  -- ^ Receive data file  (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SubCommandCode' to its ABI tag value.
@@ -75,14 +77,14 @@ subCommandCodeFromTag n
 -- JobStatus
 -- ---------------------------------------------------------------------------
 
--- | JobStatus type matching the Idris2 ABI.
+-- | Print job status.
 --
 -- Tags 0-3 (4 constructors).
 data JobStatus
-  = Pending  -- ^ Tag 0.
-  | Printing  -- ^ Tag 1.
-  | Complete  -- ^ Tag 2.
-  | Failed  -- ^ Tag 3.
+  = Pending  -- ^ Pending (tag 0).
+  | Printing  -- ^ Printing (tag 1).
+  | Complete  -- ^ Complete (tag 2).
+  | Failed  -- ^ Failed (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'JobStatus' to its ABI tag value.

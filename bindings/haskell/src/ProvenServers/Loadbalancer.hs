@@ -1,30 +1,28 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Load Balancer protocol types for proven-servers.
+-- | Load Balancer types for the proven-servers ABI.
 --
--- Load balancer types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Loadbalancer
-  ( -- * ADT types matching Idris2 ABI
-      Algorithm(..)
-    , HealthCheckType(..)
-    , BackendState(..)
-    , SessionPersistence(..)
-    , LbProtocol(..)
-    , algorithmToTag
-    , algorithmFromTag
-    , healthCheckTypeToTag
-    , healthCheckTypeFromTag
-    , backendStateToTag
-    , backendStateFromTag
-    , sessionPersistenceToTag
-    , sessionPersistenceFromTag
-    , lbProtocolToTag
-    , lbProtocolFromTag
+  (
+    Algorithm(..)
+  , algorithmToTag
+  , algorithmFromTag
+  , HealthCheckType(..)
+  , healthCheckTypeToTag
+  , healthCheckTypeFromTag
+  , BackendState(..)
+  , backendStateToTag
+  , backendStateFromTag
+  , canReceiveTraffic
+  , SessionPersistence(..)
+  , sessionPersistenceToTag
+  , sessionPersistenceFromTag
+  , LbProtocol(..)
+  , lbProtocolToTag
+  , lbProtocolFromTag
   ) where
 
 import Data.Word (Word8)
@@ -33,16 +31,16 @@ import Data.Word (Word8)
 -- Algorithm
 -- ---------------------------------------------------------------------------
 
--- | Algorithm type matching the Idris2 ABI.
+-- | Load balancing algorithms.
 --
 -- Tags 0-5 (6 constructors).
 data Algorithm
-  = RoundRobin  -- ^ Tag 0.
-  | LeastConnections  -- ^ Tag 1.
-  | IpHash  -- ^ Tag 2.
-  | Random  -- ^ Tag 3.
-  | WeightedRoundRobin  -- ^ Tag 4.
-  | LeastResponseTime  -- ^ Tag 5.
+  = RoundRobin  -- ^ RoundRobin (tag 0).
+  | LeastConnections  -- ^ LeastConnections (tag 1).
+  | IpHash  -- ^ IpHash (tag 2).
+  | Random  -- ^ Random (tag 3).
+  | WeightedRoundRobin  -- ^ WeightedRoundRobin (tag 4).
+  | LeastResponseTime  -- ^ LeastResponseTime (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Algorithm' to its ABI tag value.
@@ -59,14 +57,14 @@ algorithmFromTag n
 -- HealthCheckType
 -- ---------------------------------------------------------------------------
 
--- | HealthCheckType type matching the Idris2 ABI.
+-- | Backend health check types.
 --
 -- Tags 0-3 (4 constructors).
 data HealthCheckType
-  = HealthCheckType_Http  -- ^ Tag 0.
-  | HealthCheckType_Tcp  -- ^ Tag 1.
-  | HealthCheckType_Grpc  -- ^ Tag 2.
-  | Script  -- ^ Tag 3.
+  = Http  -- ^ HTTP health check (tag 0).
+  | Tcp  -- ^ TCP health check (tag 1).
+  | Grpc  -- ^ gRPC health check (tag 2).
+  | Script  -- ^ Script (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HealthCheckType' to its ABI tag value.
@@ -83,14 +81,14 @@ healthCheckTypeFromTag n
 -- BackendState
 -- ---------------------------------------------------------------------------
 
--- | BackendState type matching the Idris2 ABI.
+-- | Backend server states.
 --
 -- Tags 0-3 (4 constructors).
 data BackendState
-  = Healthy  -- ^ Tag 0.
-  | Unhealthy  -- ^ Tag 1.
-  | Draining  -- ^ Tag 2.
-  | Disabled  -- ^ Tag 3.
+  = Healthy  -- ^ Healthy (tag 0).
+  | Unhealthy  -- ^ Unhealthy (tag 1).
+  | Draining  -- ^ Draining (tag 2).
+  | Disabled  -- ^ Disabled (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'BackendState' to its ABI tag value.
@@ -103,18 +101,23 @@ backendStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: BackendState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this backend can receive new connections.
+canReceiveTraffic :: BackendState -> Bool
+canReceiveTraffic Healthy = True
+canReceiveTraffic _ = False
+
 -- ---------------------------------------------------------------------------
 -- SessionPersistence
 -- ---------------------------------------------------------------------------
 
--- | SessionPersistence type matching the Idris2 ABI.
+-- | Session persistence strategies.
 --
 -- Tags 0-3 (4 constructors).
 data SessionPersistence
-  = None  -- ^ Tag 0.
-  | Cookie  -- ^ Tag 1.
-  | SourceIp  -- ^ Tag 2.
-  | Header  -- ^ Tag 3.
+  = None  -- ^ None (tag 0).
+  | Cookie  -- ^ Cookie (tag 1).
+  | SourceIp  -- ^ Source IP affinity (tag 2).
+  | Header  -- ^ Header (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionPersistence' to its ABI tag value.
@@ -131,15 +134,15 @@ sessionPersistenceFromTag n
 -- LbProtocol
 -- ---------------------------------------------------------------------------
 
--- | LbProtocol type matching the Idris2 ABI.
+-- | Load balancer protocols.
 --
 -- Tags 0-4 (5 constructors).
 data LbProtocol
-  = LbProtocol_Http  -- ^ Tag 0.
-  | Https  -- ^ Tag 1.
-  | LbProtocol_Tcp  -- ^ Tag 2.
-  | Udp  -- ^ Tag 3.
-  | LbProtocol_Grpc  -- ^ Tag 4.
+  = Http  -- ^ HTTP (tag 0).
+  | Https  -- ^ HTTPS (tag 1).
+  | Tcp  -- ^ TCP (tag 2).
+  | Udp  -- ^ UDP (tag 3).
+  | Grpc  -- ^ gRPC (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'LbProtocol' to its ABI tag value.

@@ -609,6 +609,68 @@ defmodule ProvenServers.Http do
   end
 
   # ===========================================================================
+  # Header Type (HTTPABI.Layout.HeaderType, tags 0-9)
+  # ===========================================================================
+
+  @typedoc """
+  Common HTTP header types for ABI interchange.
+
+  Tag values match `headerTypeToTag` in `HTTPABI.Layout`.
+  """
+  @type header_type ::
+          :content_type_header | :content_length | :host | :connection
+          | :accept | :user_agent | :server | :location
+          | :cache_control | :custom
+
+  @header_type_tags %{
+    content_type_header: 0, content_length: 1, host: 2, connection: 3,
+    accept: 4, user_agent: 5, server: 6, location: 7,
+    cache_control: 8, custom: 9
+  }
+
+  @tag_to_header_type Map.new(@header_type_tags, fn {k, v} -> {v, k} end)
+
+  @header_type_names %{
+    content_type_header: "Content-Type", content_length: "Content-Length",
+    host: "Host", connection: "Connection", accept: "Accept",
+    user_agent: "User-Agent", server: "Server", location: "Location",
+    cache_control: "Cache-Control", custom: "X-Custom"
+  }
+
+  @doc """
+  Decode from a C-ABI tag value.
+
+  ## Examples
+
+      iex> ProvenServers.Http.header_type_from_tag(0)
+      {:ok, :content_type_header}
+  """
+  @spec header_type_from_tag(non_neg_integer()) :: {:ok, header_type()} | :error
+  def header_type_from_tag(tag) when is_integer(tag) and tag >= 0 and tag <= 9 do
+    {:ok, Map.fetch!(@tag_to_header_type, tag)}
+  end
+  def header_type_from_tag(_tag), do: :error
+
+  @doc "Encode to the C-ABI tag value."
+  @spec header_type_to_tag(header_type()) :: non_neg_integer()
+  def header_type_to_tag(ht) when is_map_key(@header_type_tags, ht) do
+    Map.fetch!(@header_type_tags, ht)
+  end
+
+  @doc """
+  Canonical header name string.
+
+  ## Examples
+
+      iex> ProvenServers.Http.header_type_name(:user_agent)
+      "User-Agent"
+  """
+  @spec header_type_name(header_type()) :: String.t()
+  def header_type_name(ht) when is_map_key(@header_type_names, ht) do
+    Map.fetch!(@header_type_names, ht)
+  end
+
+  # ===========================================================================
   # Request Phase / Lifecycle (HTTPABI.Layout.RequestPhase, tags 0-6)
   # ===========================================================================
 

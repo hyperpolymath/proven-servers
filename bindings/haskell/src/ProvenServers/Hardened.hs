@@ -1,33 +1,30 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Hardened protocol types for proven-servers.
+-- | Hardened Server types for the proven-servers ABI.
 --
--- Hardened server types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Hardened
-  ( -- * ADT types matching Idris2 ABI
-      HardeningLevel(..)
-    , SecurityControl(..)
-    , ComplianceStandard(..)
-    , AuditEvent(..)
-    , HardenedHealthStatus(..)
-    , ServerState(..)
-    , hardeningLevelToTag
-    , hardeningLevelFromTag
-    , securityControlToTag
-    , securityControlFromTag
-    , complianceStandardToTag
-    , complianceStandardFromTag
-    , auditEventToTag
-    , auditEventFromTag
-    , hardenedHealthStatusToTag
-    , hardenedHealthStatusFromTag
-    , serverStateToTag
-    , serverStateFromTag
+  (
+    HardeningLevel(..)
+  , hardeningLevelToTag
+  , hardeningLevelFromTag
+  , SecurityControl(..)
+  , securityControlToTag
+  , securityControlFromTag
+  , ComplianceStandard(..)
+  , complianceStandardToTag
+  , complianceStandardFromTag
+  , AuditEvent(..)
+  , auditEventToTag
+  , auditEventFromTag
+  , HardenedHealthStatus(..)
+  , hardenedHealthStatusToTag
+  , hardenedHealthStatusFromTag
+  , ServerState(..)
+  , serverStateToTag
+  , serverStateFromTag
   ) where
 
 import Data.Word (Word8)
@@ -36,14 +33,14 @@ import Data.Word (Word8)
 -- HardeningLevel
 -- ---------------------------------------------------------------------------
 
--- | HardeningLevel type matching the Idris2 ABI.
+-- | System hardening levels.
 --
 -- Tags 0-3 (4 constructors).
 data HardeningLevel
-  = Minimal  -- ^ Tag 0.
-  | Standard  -- ^ Tag 1.
-  | High  -- ^ Tag 2.
-  | Maximum  -- ^ Tag 3.
+  = Minimal  -- ^ Minimal (tag 0).
+  | Standard  -- ^ Standard (tag 1).
+  | High  -- ^ High (tag 2).
+  | Maximum  -- ^ Maximum (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HardeningLevel' to its ABI tag value.
@@ -60,17 +57,17 @@ hardeningLevelFromTag n
 -- SecurityControl
 -- ---------------------------------------------------------------------------
 
--- | SecurityControl type matching the Idris2 ABI.
+-- | Security controls.
 --
 -- Tags 0-6 (7 constructors).
 data SecurityControl
-  = Aslr  -- ^ Tag 0.
-  | Dep  -- ^ Tag 1.
-  | StackCanary  -- ^ Tag 2.
-  | Cfi  -- ^ Tag 3.
-  | Sandboxing  -- ^ Tag 4.
-  | SecureBoot  -- ^ Tag 5.
-  | AuditLog  -- ^ Tag 6.
+  = Aslr  -- ^ ASLR (tag 0).
+  | Dep  -- ^ DEP (tag 1).
+  | StackCanary  -- ^ StackCanary (tag 2).
+  | Cfi  -- ^ CFI (tag 3).
+  | Sandboxing  -- ^ Sandboxing (tag 4).
+  | SecureBoot  -- ^ SecureBoot (tag 5).
+  | AuditLog  -- ^ AuditLog (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SecurityControl' to its ABI tag value.
@@ -87,15 +84,15 @@ securityControlFromTag n
 -- ComplianceStandard
 -- ---------------------------------------------------------------------------
 
--- | ComplianceStandard type matching the Idris2 ABI.
+-- | Security compliance standards.
 --
 -- Tags 0-4 (5 constructors).
 data ComplianceStandard
-  = Cis  -- ^ Tag 0.
-  | Stig  -- ^ Tag 1.
-  | Nist80053  -- ^ Tag 2.
-  | PciDss  -- ^ Tag 3.
-  | Fips140  -- ^ Tag 4.
+  = Cis  -- ^ CIS Benchmark (tag 0).
+  | Stig  -- ^ DISA STIG (tag 1).
+  | Nist80053  -- ^ NIST 800-53 (tag 2).
+  | PciDss  -- ^ PCI-DSS (tag 3).
+  | Fips140  -- ^ FIPS 140 (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ComplianceStandard' to its ABI tag value.
@@ -112,16 +109,16 @@ complianceStandardFromTag n
 -- AuditEvent
 -- ---------------------------------------------------------------------------
 
--- | AuditEvent type matching the Idris2 ABI.
+-- | Audit event types.
 --
 -- Tags 0-5 (6 constructors).
 data AuditEvent
-  = ProcessStart  -- ^ Tag 0.
-  | FileAccess  -- ^ Tag 1.
-  | NetworkConn  -- ^ Tag 2.
-  | PrivilegeEscalation  -- ^ Tag 3.
-  | ConfigChange  -- ^ Tag 4.
-  | AuthAttempt  -- ^ Tag 5.
+  = ProcessStart  -- ^ ProcessStart (tag 0).
+  | FileAccess  -- ^ FileAccess (tag 1).
+  | NetworkConn  -- ^ NetworkConn (tag 2).
+  | PrivilegeEscalation  -- ^ PrivilegeEscalation (tag 3).
+  | ConfigChange  -- ^ ConfigChange (tag 4).
+  | AuthAttempt  -- ^ AuthAttempt (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AuditEvent' to its ABI tag value.
@@ -138,14 +135,14 @@ auditEventFromTag n
 -- HardenedHealthStatus
 -- ---------------------------------------------------------------------------
 
--- | HardenedHealthStatus type matching the Idris2 ABI.
+-- | Hardened system health.
 --
 -- Tags 0-3 (4 constructors).
 data HardenedHealthStatus
-  = Healthy  -- ^ Tag 0.
-  | Degraded  -- ^ Tag 1.
-  | Compromised  -- ^ Tag 2.
-  | Unresponsive  -- ^ Tag 3.
+  = Healthy  -- ^ Healthy (tag 0).
+  | Degraded  -- ^ Degraded (tag 1).
+  | Compromised  -- ^ Compromised (tag 2).
+  | Unresponsive  -- ^ Unresponsive (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HardenedHealthStatus' to its ABI tag value.
@@ -162,15 +159,15 @@ hardenedHealthStatusFromTag n
 -- ServerState
 -- ---------------------------------------------------------------------------
 
--- | ServerState type matching the Idris2 ABI.
+-- | Hardened server states.
 --
 -- Tags 0-4 (5 constructors).
 data ServerState
-  = Idle  -- ^ Tag 0.
-  | Hardening  -- ^ Tag 1.
-  | Active  -- ^ Tag 2.
-  | Auditing  -- ^ Tag 3.
-  | Shutdown  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Hardening  -- ^ Hardening (tag 1).
+  | Active  -- ^ Active (tag 2).
+  | Auditing  -- ^ Auditing (tag 3).
+  | Shutdown  -- ^ Shutdown (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ServerState' to its ABI tag value.

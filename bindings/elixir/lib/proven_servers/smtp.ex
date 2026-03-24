@@ -241,6 +241,60 @@ defmodule ProvenServers.Smtp do
   def auth_mechanism_requires_tls?(_mech), do: false
 
   # ===========================================================================
+  # SmtpExtension (tags 0-6)
+  # ===========================================================================
+
+  @typedoc "SMTP ESMTP extensions (RFC 5321 Section 2.2)."
+  @type smtp_extension ::
+          :size | :pipelining | :eight_bit_mime | :starttls
+          | :auth_ext | :dsn | :chunking
+
+  @smtp_extension_tags %{
+    size: 0, pipelining: 1, eight_bit_mime: 2, starttls: 3,
+    auth_ext: 4, dsn: 5, chunking: 6
+  }
+
+  @tag_to_smtp_extension Map.new(@smtp_extension_tags, fn {k, v} -> {v, k} end)
+
+  @smtp_extension_keywords %{
+    size: "SIZE", pipelining: "PIPELINING", eight_bit_mime: "8BITMIME",
+    starttls: "STARTTLS", auth_ext: "AUTH", dsn: "DSN", chunking: "CHUNKING"
+  }
+
+  @doc """
+  Decode from a C-ABI tag value.
+
+  ## Examples
+
+      iex> ProvenServers.Smtp.smtp_extension_from_tag(0)
+      {:ok, :size}
+  """
+  @spec smtp_extension_from_tag(non_neg_integer()) :: {:ok, smtp_extension()} | :error
+  def smtp_extension_from_tag(tag) when is_integer(tag) and tag >= 0 and tag <= 6 do
+    {:ok, Map.fetch!(@tag_to_smtp_extension, tag)}
+  end
+  def smtp_extension_from_tag(_tag), do: :error
+
+  @doc "Encode to the C-ABI tag value."
+  @spec smtp_extension_to_tag(smtp_extension()) :: non_neg_integer()
+  def smtp_extension_to_tag(ext) when is_map_key(@smtp_extension_tags, ext) do
+    Map.fetch!(@smtp_extension_tags, ext)
+  end
+
+  @doc """
+  The ESMTP keyword string for this extension.
+
+  ## Examples
+
+      iex> ProvenServers.Smtp.smtp_extension_keyword(:pipelining)
+      "PIPELINING"
+  """
+  @spec smtp_extension_keyword(smtp_extension()) :: String.t()
+  def smtp_extension_keyword(ext) when is_map_key(@smtp_extension_keywords, ext) do
+    Map.fetch!(@smtp_extension_keywords, ext)
+  end
+
+  # ===========================================================================
   # SmtpSessionState (tags 0-8)
   # ===========================================================================
 

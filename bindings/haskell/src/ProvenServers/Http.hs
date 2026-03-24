@@ -1,36 +1,43 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | HTTP protocol types for proven-servers.
+-- | HTTP protocol types for the proven-servers ABI.
 --
--- HTTP protocol types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Http
-  ( -- * ADT types matching Idris2 ABI
-      Method(..)
-    , Version(..)
-    , StatusCategory(..)
-    , StatusCode(..)
-    , ContentType(..)
-    , HeaderType(..)
-    , RequestPhase(..)
-    , methodToTag
-    , methodFromTag
-    , versionToTag
-    , versionFromTag
-    , statusCategoryToTag
-    , statusCategoryFromTag
-    , statusCodeToTag
-    , statusCodeFromTag
-    , contentTypeToTag
-    , contentTypeFromTag
-    , headerTypeToTag
-    , headerTypeFromTag
-    , requestPhaseToTag
-    , requestPhaseFromTag
+  (
+    Method(..)
+  , methodToTag
+  , methodFromTag
+  , isSafe
+  , isIdempotent
+  , hasRequestBody
+  , asStr
+  , Version(..)
+  , versionToTag
+  , versionFromTag
+  , StatusCategory(..)
+  , statusCategoryToTag
+  , statusCategoryFromTag
+  , StatusCode(..)
+  , statusCodeToTag
+  , statusCodeFromTag
+  , isSuccess
+  , isError
+  , isRedirect
+  , reasonPhrase
+  , ContentType(..)
+  , contentTypeToTag
+  , contentTypeFromTag
+  , mime
+  , HeaderType(..)
+  , headerTypeToTag
+  , headerTypeFromTag
+  , name
+  , RequestPhase(..)
+  , requestPhaseToTag
+  , requestPhaseFromTag
   ) where
 
 import Data.Word (Word8)
@@ -39,19 +46,19 @@ import Data.Word (Word8)
 -- Method
 -- ---------------------------------------------------------------------------
 
--- | Method type matching the Idris2 ABI.
+-- | Standard HTTP request methods (RFC 7231 Section 4, RFC 5789).
 --
 -- Tags 0-8 (9 constructors).
 data Method
-  = Get  -- ^ Tag 0.
-  | Post  -- ^ Tag 1.
-  | Put  -- ^ Tag 2.
-  | Delete  -- ^ Tag 3.
-  | Patch  -- ^ Tag 4.
-  | Head  -- ^ Tag 5.
-  | Options  -- ^ Tag 6.
-  | Trace  -- ^ Tag 7.
-  | Connect  -- ^ Tag 8.
+  = Get  -- ^ Retrieve a representation of the target resource.
+  | Post  -- ^ Perform resource-specific processing on the request payload.
+  | Put  -- ^ Replace all current representations of the target resource.
+  | Delete  -- ^ Remove all current representations of the target resource.
+  | Patch  -- ^ Apply partial modifications to a resource (RFC 5789).
+  | Head  -- ^ Same as GET but only transfer status line and headers.
+  | Options  -- ^ Describe the communication options for the target resource.
+  | Trace  -- ^ Perform a message loop-back test along the path to the target.
+  | Connect  -- ^ Establish a tunnel to the server identified by the target resource.
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Method' to its ABI tag value.
@@ -64,18 +71,55 @@ methodFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Method)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Matches `isSafe` in `HTTP.Method`.
+isSafe :: Method -> Bool
+isSafe Get = True
+isSafe Head = True
+isSafe Options = True
+isSafe Trace = True
+isSafe _ = False
+
+-- | /// Matches `isIdempotent` in `HTTP.Method`.
+isIdempotent :: Method -> Bool
+isIdempotent Get = True
+isIdempotent Head = True
+isIdempotent Put = True
+isIdempotent Delete = True
+isIdempotent Options = True
+isIdempotent Trace = True
+isIdempotent _ = False
+
+-- | /// Matches `hasRequestBody` in `HTTP.Method`.
+hasRequestBody :: Method -> Bool
+hasRequestBody Post = True
+hasRequestBody Put = True
+hasRequestBody Patch = True
+hasRequestBody _ = False
+
+-- | Canonical string representation (e.g. `"GET"`).
+asStr :: Method -> String
+asStr Get = "GET"
+asStr Post = "POST"
+asStr Put = "PUT"
+asStr Delete = "DELETE"
+asStr Patch = "PATCH"
+asStr Head = "HEAD"
+asStr Options = "OPTIONS"
+asStr Trace = "TRACE"
+asStr Connect = "CONNECT"
+
 -- ---------------------------------------------------------------------------
 -- Version
 -- ---------------------------------------------------------------------------
 
--- | Version type matching the Idris2 ABI.
+-- | HTTP protocol versions.
 --
 -- Tags 0-3 (4 constructors).
 data Version
-  = Http10  -- ^ Tag 0.
-  | Http11  -- ^ Tag 1.
-  | Http20  -- ^ Tag 2.
-  | Http30  -- ^ Tag 3.
+  = Http10  -- ^ HTTP/1.0 (RFC 1945).
+  | Http11  -- ^ HTTP/1.1 (RFC 7230).
+  | Http20  -- ^ HTTP/2 (RFC 7540).
+  | Http30  -- ^ HTTP/3 (RFC 9114).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Version' to its ABI tag value.
@@ -88,19 +132,26 @@ versionFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Version)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Human-readable version string.
+asStr :: Version -> String
+asStr Http10 = "HTTP/1.0"
+asStr Http11 = "HTTP/1.1"
+asStr Http20 = "HTTP/2"
+asStr Http30 = "HTTP/3"
+
 -- ---------------------------------------------------------------------------
 -- StatusCategory
 -- ---------------------------------------------------------------------------
 
--- | StatusCategory type matching the Idris2 ABI.
+-- | HTTP response status code categories (RFC 7231 Section 6).
 --
 -- Tags 0-4 (5 constructors).
 data StatusCategory
-  = Informational  -- ^ Tag 0.
-  | Success  -- ^ Tag 1.
-  | Redirect  -- ^ Tag 2.
-  | ClientError  -- ^ Tag 3.
-  | ServerError  -- ^ Tag 4.
+  = Informational  -- ^ 1xx: request received, continuing process.
+  | Success  -- ^ 2xx: request successfully received, understood, and accepted.
+  | Redirect  -- ^ 3xx: further action needed to complete the request.
+  | ClientError  -- ^ 4xx: request contains bad syntax or cannot be fulfilled.
+  | ServerError  -- ^ 5xx: server failed to fulfil an apparently valid request.
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StatusCategory' to its ABI tag value.
@@ -117,39 +168,39 @@ statusCategoryFromTag n
 -- StatusCode
 -- ---------------------------------------------------------------------------
 
--- | StatusCode type matching the Idris2 ABI.
+-- | Common HTTP status codes (RFC 7231 and related RFCs).
 --
 -- Tags 0-28 (29 constructors).
 data StatusCode
-  = Continue  -- ^ Tag 0.
-  | SwitchingProtocols  -- ^ Tag 1.
-  | Ok  -- ^ Tag 2.
-  | Created  -- ^ Tag 3.
-  | Accepted  -- ^ Tag 4.
-  | NoContent  -- ^ Tag 5.
-  | MovedPermanently  -- ^ Tag 6.
-  | Found  -- ^ Tag 7.
-  | NotModified  -- ^ Tag 8.
-  | TemporaryRedirect  -- ^ Tag 9.
-  | PermanentRedirect  -- ^ Tag 10.
-  | BadRequest  -- ^ Tag 11.
-  | Unauthorized  -- ^ Tag 12.
-  | Forbidden  -- ^ Tag 13.
-  | NotFound  -- ^ Tag 14.
-  | MethodNotAllowed  -- ^ Tag 15.
-  | RequestTimeout  -- ^ Tag 16.
-  | Conflict  -- ^ Tag 17.
-  | Gone  -- ^ Tag 18.
-  | LengthRequired  -- ^ Tag 19.
-  | PayloadTooLarge  -- ^ Tag 20.
-  | UriTooLong  -- ^ Tag 21.
-  | UnsupportedMedia  -- ^ Tag 22.
-  | TooManyRequests  -- ^ Tag 23.
-  | InternalError  -- ^ Tag 24.
-  | NotImplemented  -- ^ Tag 25.
-  | BadGateway  -- ^ Tag 26.
-  | ServiceUnavailable  -- ^ Tag 27.
-  | GatewayTimeout  -- ^ Tag 28.
+  = Continue  -- ^ 100 Continue.
+  | SwitchingProtocols  -- ^ 101 Switching Protocols.
+  | Ok  -- ^ 200 OK.
+  | Created  -- ^ 201 Created.
+  | Accepted  -- ^ 202 Accepted.
+  | NoContent  -- ^ 204 No Content.
+  | MovedPermanently  -- ^ 301 Moved Permanently.
+  | Found  -- ^ 302 Found.
+  | NotModified  -- ^ 304 Not Modified.
+  | TemporaryRedirect  -- ^ 307 Temporary Redirect.
+  | PermanentRedirect  -- ^ 308 Permanent Redirect.
+  | BadRequest  -- ^ 400 Bad Request.
+  | Unauthorized  -- ^ 401 Unauthorized.
+  | Forbidden  -- ^ 403 Forbidden.
+  | NotFound  -- ^ 404 Not Found.
+  | MethodNotAllowed  -- ^ 405 Method Not Allowed.
+  | RequestTimeout  -- ^ 408 Request Timeout.
+  | Conflict  -- ^ 409 Conflict.
+  | Gone  -- ^ 410 Gone.
+  | LengthRequired  -- ^ 411 Length Required.
+  | PayloadTooLarge  -- ^ 413 Payload Too Large.
+  | UriTooLong  -- ^ 414 URI Too Long.
+  | UnsupportedMedia  -- ^ 415 Unsupported Media Type.
+  | TooManyRequests  -- ^ 429 Too Many Requests.
+  | InternalError  -- ^ 500 Internal Server Error.
+  | NotImplemented  -- ^ 501 Not Implemented.
+  | BadGateway  -- ^ 502 Bad Gateway.
+  | ServiceUnavailable  -- ^ 503 Service Unavailable.
+  | GatewayTimeout  -- ^ 504 Gateway Timeout.
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StatusCode' to its ABI tag value.
@@ -162,22 +213,66 @@ statusCodeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: StatusCode)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this is a success code (2xx).
+isSuccess :: StatusCode -> Bool
+isSuccess _ = False
+
+-- | Whether this is an error code (4xx or 5xx).
+isError :: StatusCode -> Bool
+isError _ = False
+
+-- | Whether this is a redirect code (3xx).
+isRedirect :: StatusCode -> Bool
+isRedirect _ = False
+
+-- | /// Matches `reasonPhrase` in `HTTP.Status`.
+reasonPhrase :: StatusCode -> String
+reasonPhrase Continue = "Continue"
+reasonPhrase SwitchingProtocols = "Switching Protocols"
+reasonPhrase Ok = "OK"
+reasonPhrase Created = "Created"
+reasonPhrase Accepted = "Accepted"
+reasonPhrase NoContent = "No Content"
+reasonPhrase MovedPermanently = "Moved Permanently"
+reasonPhrase Found = "Found"
+reasonPhrase NotModified = "Not Modified"
+reasonPhrase TemporaryRedirect = "Temporary Redirect"
+reasonPhrase PermanentRedirect = "Permanent Redirect"
+reasonPhrase BadRequest = "Bad Request"
+reasonPhrase Unauthorized = "Unauthorized"
+reasonPhrase Forbidden = "Forbidden"
+reasonPhrase NotFound = "Not Found"
+reasonPhrase MethodNotAllowed = "Method Not Allowed"
+reasonPhrase RequestTimeout = "Request Timeout"
+reasonPhrase Conflict = "Conflict"
+reasonPhrase Gone = "Gone"
+reasonPhrase LengthRequired = "Length Required"
+reasonPhrase PayloadTooLarge = "Payload Too Large"
+reasonPhrase UriTooLong = "URI Too Long"
+reasonPhrase UnsupportedMedia = "Unsupported Media Type"
+reasonPhrase TooManyRequests = "Too Many Requests"
+reasonPhrase InternalError = "Internal Server Error"
+reasonPhrase NotImplemented = "Not Implemented"
+reasonPhrase BadGateway = "Bad Gateway"
+reasonPhrase ServiceUnavailable = "Service Unavailable"
+reasonPhrase GatewayTimeout = "Gateway Timeout"
+
 -- ---------------------------------------------------------------------------
 -- ContentType
 -- ---------------------------------------------------------------------------
 
--- | ContentType type matching the Idris2 ABI.
+-- | Common HTTP content types for ABI interchange.
 --
 -- Tags 0-7 (8 constructors).
 data ContentType
-  = TextPlain  -- ^ Tag 0.
-  | TextHtml  -- ^ Tag 1.
-  | ApplicationJson  -- ^ Tag 2.
-  | ApplicationXml  -- ^ Tag 3.
-  | ApplicationForm  -- ^ Tag 4.
-  | MultipartForm  -- ^ Tag 5.
-  | OctetStream  -- ^ Tag 6.
-  | TextCss  -- ^ Tag 7.
+  = TextPlain  -- ^ `text/plain`.
+  | TextHtml  -- ^ `text/html`.
+  | ApplicationJson  -- ^ `application/json`.
+  | ApplicationXml  -- ^ `application/xml`.
+  | ApplicationForm  -- ^ `application/x-www-form-urlencoded`.
+  | MultipartForm  -- ^ `multipart/form-data`.
+  | OctetStream  -- ^ `application/octet-stream`.
+  | TextCss  -- ^ `text/css`.
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ContentType' to its ABI tag value.
@@ -190,24 +285,35 @@ contentTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: ContentType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | MIME type string.
+mime :: ContentType -> String
+mime TextPlain = "text/plain"
+mime TextHtml = "text/html"
+mime ApplicationJson = "application/json"
+mime ApplicationXml = "application/xml"
+mime ApplicationForm = "application/x-www-form-urlencoded"
+mime MultipartForm = "multipart/form-data"
+mime OctetStream = "application/octet-stream"
+mime TextCss = "text/css"
+
 -- ---------------------------------------------------------------------------
 -- HeaderType
 -- ---------------------------------------------------------------------------
 
--- | HeaderType type matching the Idris2 ABI.
+-- | Common HTTP header names as an enumeration for ABI interchange.
 --
 -- Tags 0-9 (10 constructors).
 data HeaderType
-  = ContentType  -- ^ Tag 0.
-  | ContentLength  -- ^ Tag 1.
-  | Host  -- ^ Tag 2.
-  | Connection  -- ^ Tag 3.
-  | Accept  -- ^ Tag 4.
-  | UserAgent  -- ^ Tag 5.
-  | Server  -- ^ Tag 6.
-  | Location  -- ^ Tag 7.
-  | CacheControl  -- ^ Tag 8.
-  | Custom  -- ^ Tag 9.
+  = ContentType  -- ^ `Content-Type`.
+  | ContentLength  -- ^ `Content-Length`.
+  | Host  -- ^ `Host`.
+  | Connection  -- ^ `Connection`.
+  | Accept  -- ^ `Accept`.
+  | UserAgent  -- ^ `User-Agent`.
+  | Server  -- ^ `Server`.
+  | Location  -- ^ `Location`.
+  | CacheControl  -- ^ `Cache-Control`.
+  | Custom  -- ^ Custom / unknown header.
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'HeaderType' to its ABI tag value.
@@ -220,21 +326,34 @@ headerTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: HeaderType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Canonical header name string.
+name :: HeaderType -> String
+name ContentType = "Content-Type"
+name ContentLength = "Content-Length"
+name Host = "Host"
+name Connection = "Connection"
+name Accept = "Accept"
+name UserAgent = "User-Agent"
+name Server = "Server"
+name Location = "Location"
+name CacheControl = "Cache-Control"
+name Custom = "X-Custom"
+
 -- ---------------------------------------------------------------------------
 -- RequestPhase
 -- ---------------------------------------------------------------------------
 
--- | RequestPhase type matching the Idris2 ABI.
+-- | Phases of the HTTP request processing lifecycle.
 --
 -- Tags 0-6 (7 constructors).
 data RequestPhase
-  = Idle  -- ^ Tag 0.
-  | Receiving  -- ^ Tag 1.
-  | HeadersParsed  -- ^ Tag 2.
-  | BodyReceiving  -- ^ Tag 3.
-  | Complete  -- ^ Tag 4.
-  | Responding  -- ^ Tag 5.
-  | Sent  -- ^ Tag 6.
+  = Idle  -- ^ Waiting for a new request.
+  | Receiving  -- ^ Receiving request data.
+  | HeadersParsed  -- ^ Request headers fully parsed.
+  | BodyReceiving  -- ^ Receiving request body.
+  | Complete  -- ^ Full request received.
+  | Responding  -- ^ Constructing response.
+  | Sent  -- ^ Response fully sent.
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RequestPhase' to its ABI tag value.

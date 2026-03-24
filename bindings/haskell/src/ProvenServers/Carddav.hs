@@ -1,51 +1,53 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | CardDAV protocol types for proven-servers.
+-- | CardDAV types for the proven-servers ABI.
 --
--- CardDAV types (RFC 6352), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Carddav
-  ( -- * ADT types matching Idris2 ABI
-      PropertyType(..)
-    , CardMethod(..)
-    , VCardVersion(..)
-    , CardError(..)
-    , ServerState(..)
-    , propertyTypeToTag
-    , propertyTypeFromTag
-    , cardMethodToTag
-    , cardMethodFromTag
-    , vCardVersionToTag
-    , vCardVersionFromTag
-    , cardErrorToTag
-    , cardErrorFromTag
-    , serverStateToTag
-    , serverStateFromTag
+  (
+    carddavPort
+  , PropertyType(..)
+  , propertyTypeToTag
+  , propertyTypeFromTag
+  , CardMethod(..)
+  , cardMethodToTag
+  , cardMethodFromTag
+  , VCardVersion(..)
+  , vCardVersionToTag
+  , vCardVersionFromTag
+  , CardError(..)
+  , cardErrorToTag
+  , cardErrorFromTag
+  , ServerState(..)
+  , serverStateToTag
+  , serverStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard CardDAV HTTPS port.
+carddavPort :: Word16
+carddavPort = 443
 
 -- ---------------------------------------------------------------------------
 -- PropertyType
 -- ---------------------------------------------------------------------------
 
--- | PropertyType type matching the Idris2 ABI.
+-- | Standard CardDAV HTTPS port.
 --
 -- Tags 0-8 (9 constructors).
 data PropertyType
-  = FnName  -- ^ Tag 0.
-  | N  -- ^ Tag 1.
-  | Email  -- ^ Tag 2.
-  | Tel  -- ^ Tag 3.
-  | Adr  -- ^ Tag 4.
-  | Org  -- ^ Tag 5.
-  | Photo  -- ^ Tag 6.
-  | Url  -- ^ Tag 7.
-  | Note  -- ^ Tag 8.
+  = FnName  -- ^ FN (full name) (tag 0).
+  | N  -- ^ Structured name (tag 1).
+  | Email  -- ^ Email (tag 2).
+  | Tel  -- ^ Telephone (tag 3).
+  | Adr  -- ^ Address (tag 4).
+  | Org  -- ^ Organization (tag 5).
+  | Photo  -- ^ Photo (tag 6).
+  | Url  -- ^ URL (tag 7).
+  | Note  -- ^ Note (tag 8).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PropertyType' to its ABI tag value.
@@ -62,17 +64,17 @@ propertyTypeFromTag n
 -- CardMethod
 -- ---------------------------------------------------------------------------
 
--- | CardMethod type matching the Idris2 ABI.
+-- | CardDAV methods.
 --
 -- Tags 0-6 (7 constructors).
 data CardMethod
-  = Get  -- ^ Tag 0.
-  | Put  -- ^ Tag 1.
-  | Delete  -- ^ Tag 2.
-  | Propfind  -- ^ Tag 3.
-  | Proppatch  -- ^ Tag 4.
-  | Report  -- ^ Tag 5.
-  | Mkcol  -- ^ Tag 6.
+  = Get  -- ^ Get (tag 0).
+  | Put  -- ^ Put (tag 1).
+  | Delete  -- ^ Delete (tag 2).
+  | Propfind  -- ^ PROPFIND (tag 3).
+  | Proppatch  -- ^ PROPPATCH (tag 4).
+  | Report  -- ^ REPORT (tag 5).
+  | Mkcol  -- ^ MKCOL (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CardMethod' to its ABI tag value.
@@ -89,12 +91,12 @@ cardMethodFromTag n
 -- VCardVersion
 -- ---------------------------------------------------------------------------
 
--- | VCardVersion type matching the Idris2 ABI.
+-- | vCard versions.
 --
 -- Tags 0-1 (2 constructors).
 data VCardVersion
-  = Vcard3  -- ^ Tag 0.
-  | Vcard4  -- ^ Tag 1.
+  = Vcard3  -- ^ vCard 3.0 (tag 0).
+  | Vcard4  -- ^ vCard 4.0 (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'VCardVersion' to its ABI tag value.
@@ -111,16 +113,16 @@ vCardVersionFromTag n
 -- CardError
 -- ---------------------------------------------------------------------------
 
--- | CardError type matching the Idris2 ABI.
+-- | CardDAV error codes.
 --
 -- Tags 0-5 (6 constructors).
 data CardError
-  = ValidAddressData  -- ^ Tag 0.
-  | NoResourceType  -- ^ Tag 1.
-  | MaxResourceSize  -- ^ Tag 2.
-  | UidConflict  -- ^ Tag 3.
-  | SupportedAddressData  -- ^ Tag 4.
-  | PreconditionFailed  -- ^ Tag 5.
+  = ValidAddressData  -- ^ ValidAddressData (tag 0).
+  | NoResourceType  -- ^ NoResourceType (tag 1).
+  | MaxResourceSize  -- ^ MaxResourceSize (tag 2).
+  | UidConflict  -- ^ UidConflict (tag 3).
+  | SupportedAddressData  -- ^ SupportedAddressData (tag 4).
+  | PreconditionFailed  -- ^ PreconditionFailed (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'CardError' to its ABI tag value.
@@ -137,14 +139,14 @@ cardErrorFromTag n
 -- ServerState
 -- ---------------------------------------------------------------------------
 
--- | ServerState type matching the Idris2 ABI.
+-- | CardDAV server lifecycle states.
 --
 -- Tags 0-3 (4 constructors).
 data ServerState
-  = Idle  -- ^ Tag 0.
-  | Bound  -- ^ Tag 1.
-  | Serving  -- ^ Tag 2.
-  | Shutdown  -- ^ Tag 3.
+  = Idle  -- ^ Idle (tag 0).
+  | Bound  -- ^ Bound (tag 1).
+  | Serving  -- ^ Serving (tag 2).
+  | Shutdown  -- ^ Shutdown (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ServerState' to its ABI tag value.

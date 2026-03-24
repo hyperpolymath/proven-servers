@@ -1,54 +1,58 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Object Store protocol types for proven-servers.
+-- | Object Store types for the proven-servers ABI.
 --
--- S3-compatible object store types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Objectstore
-  ( -- * ADT types matching Idris2 ABI
-      Operation(..)
-    , StorageClass(..)
-    , Acl(..)
-    , ErrorCode(..)
-    , SessionState(..)
-    , operationToTag
-    , operationFromTag
-    , storageClassToTag
-    , storageClassFromTag
-    , aclToTag
-    , aclFromTag
-    , errorCodeToTag
-    , errorCodeFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    objectstorePort
+  , Operation(..)
+  , operationToTag
+  , operationFromTag
+  , isBucketOp
+  , isMultipart
+  , StorageClass(..)
+  , storageClassToTag
+  , storageClassFromTag
+  , Acl(..)
+  , aclToTag
+  , aclFromTag
+  , ErrorCode(..)
+  , errorCodeToTag
+  , errorCodeFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard MinIO/S3 port.
+objectstorePort :: Word16
+objectstorePort = 9000
 
 -- ---------------------------------------------------------------------------
 -- Operation
 -- ---------------------------------------------------------------------------
 
--- | Operation type matching the Idris2 ABI.
+-- | Standard MinIO/S3 port.
 --
 -- Tags 0-11 (12 constructors).
 data Operation
-  = PutObject  -- ^ Tag 0.
-  | GetObject  -- ^ Tag 1.
-  | DeleteObject  -- ^ Tag 2.
-  | ListObjects  -- ^ Tag 3.
-  | HeadObject  -- ^ Tag 4.
-  | CopyObject  -- ^ Tag 5.
-  | CreateBucket  -- ^ Tag 6.
-  | DeleteBucket  -- ^ Tag 7.
-  | ListBuckets  -- ^ Tag 8.
-  | InitMultipartUpload  -- ^ Tag 9.
-  | UploadPart  -- ^ Tag 10.
-  | CompleteMultipartUpload  -- ^ Tag 11.
+  = PutObject  -- ^ PutObject (tag 0).
+  | GetObject  -- ^ GetObject (tag 1).
+  | DeleteObject  -- ^ DeleteObject (tag 2).
+  | ListObjects  -- ^ ListObjects (tag 3).
+  | HeadObject  -- ^ HeadObject (tag 4).
+  | CopyObject  -- ^ CopyObject (tag 5).
+  | CreateBucket  -- ^ CreateBucket (tag 6).
+  | DeleteBucket  -- ^ DeleteBucket (tag 7).
+  | ListBuckets  -- ^ ListBuckets (tag 8).
+  | InitMultipartUpload  -- ^ InitMultipartUpload (tag 9).
+  | UploadPart  -- ^ UploadPart (tag 10).
+  | CompleteMultipartUpload  -- ^ CompleteMultipartUpload (tag 11).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Operation' to its ABI tag value.
@@ -61,19 +65,33 @@ operationFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: Operation)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this is a bucket-level operation.
+isBucketOp :: Operation -> Bool
+isBucketOp CreateBucket = True
+isBucketOp DeleteBucket = True
+isBucketOp ListBuckets = True
+isBucketOp _ = False
+
+-- | Whether this is a multipart upload operation.
+isMultipart :: Operation -> Bool
+isMultipart InitMultipartUpload = True
+isMultipart UploadPart = True
+isMultipart CompleteMultipartUpload = True
+isMultipart _ = False
+
 -- ---------------------------------------------------------------------------
 -- StorageClass
 -- ---------------------------------------------------------------------------
 
--- | StorageClass type matching the Idris2 ABI.
+-- | Object storage classes.
 --
 -- Tags 0-4 (5 constructors).
 data StorageClass
-  = Standard  -- ^ Tag 0.
-  | InfrequentAccess  -- ^ Tag 1.
-  | Glacier  -- ^ Tag 2.
-  | DeepArchive  -- ^ Tag 3.
-  | OneZone  -- ^ Tag 4.
+  = Standard  -- ^ Standard (tag 0).
+  | InfrequentAccess  -- ^ InfrequentAccess (tag 1).
+  | Glacier  -- ^ Glacier (tag 2).
+  | DeepArchive  -- ^ DeepArchive (tag 3).
+  | OneZone  -- ^ OneZone (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StorageClass' to its ABI tag value.
@@ -90,14 +108,14 @@ storageClassFromTag n
 -- Acl
 -- ---------------------------------------------------------------------------
 
--- | Acl type matching the Idris2 ABI.
+-- | Object ACL policies.
 --
 -- Tags 0-3 (4 constructors).
 data Acl
-  = Private  -- ^ Tag 0.
-  | PublicRead  -- ^ Tag 1.
-  | PublicReadWrite  -- ^ Tag 2.
-  | AuthenticatedRead  -- ^ Tag 3.
+  = Private  -- ^ Private (tag 0).
+  | PublicRead  -- ^ PublicRead (tag 1).
+  | PublicReadWrite  -- ^ PublicReadWrite (tag 2).
+  | AuthenticatedRead  -- ^ AuthenticatedRead (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Acl' to its ABI tag value.
@@ -114,18 +132,18 @@ aclFromTag n
 -- ErrorCode
 -- ---------------------------------------------------------------------------
 
--- | ErrorCode type matching the Idris2 ABI.
+-- | Object store error codes.
 --
 -- Tags 0-7 (8 constructors).
 data ErrorCode
-  = NoSuchBucket  -- ^ Tag 0.
-  | NoSuchKey  -- ^ Tag 1.
-  | BucketAlreadyExists  -- ^ Tag 2.
-  | BucketNotEmpty  -- ^ Tag 3.
-  | AccessDenied  -- ^ Tag 4.
-  | EntityTooLarge  -- ^ Tag 5.
-  | InvalidPart  -- ^ Tag 6.
-  | IncompleteBody  -- ^ Tag 7.
+  = NoSuchBucket  -- ^ NoSuchBucket (tag 0).
+  | NoSuchKey  -- ^ NoSuchKey (tag 1).
+  | BucketAlreadyExists  -- ^ BucketAlreadyExists (tag 2).
+  | BucketNotEmpty  -- ^ BucketNotEmpty (tag 3).
+  | AccessDenied  -- ^ AccessDenied (tag 4).
+  | EntityTooLarge  -- ^ EntityTooLarge (tag 5).
+  | InvalidPart  -- ^ InvalidPart (tag 6).
+  | IncompleteBody  -- ^ IncompleteBody (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorCode' to its ABI tag value.
@@ -142,15 +160,15 @@ errorCodeFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | Object store session states.
 --
 -- Tags 0-4 (5 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | Ready  -- ^ Tag 1.
-  | BucketActive  -- ^ Tag 2.
-  | Uploading  -- ^ Tag 3.
-  | Closing  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Ready  -- ^ Ready (tag 1).
+  | BucketActive  -- ^ BucketActive (tag 2).
+  | Uploading  -- ^ Uploading (tag 3).
+  | Closing  -- ^ Closing (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.

@@ -1,51 +1,65 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | RADIUS protocol types for proven-servers.
+-- | RADIUS protocol types for the proven-servers ABI.
 --
--- RADIUS authentication/accounting types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Radius
-  ( -- * ADT types matching Idris2 ABI
-      PacketType(..)
-    , AttributeType(..)
-    , ServiceType(..)
-    , AuthMethod(..)
-    , SessionState(..)
-    , RadiusResult(..)
-    , packetTypeToTag
-    , packetTypeFromTag
-    , attributeTypeToTag
-    , attributeTypeFromTag
-    , serviceTypeToTag
-    , serviceTypeFromTag
-    , authMethodToTag
-    , authMethodFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
-    , radiusResultToTag
-    , radiusResultFromTag
+  (
+    radiusAuthPort
+  , radiusAcctPort
+  , PacketType(..)
+  , packetTypeToTag
+  , packetTypeFromTag
+  , isAuth
+  , isAccounting
+  , isRequest
+  , AttributeType(..)
+  , attributeTypeToTag
+  , attributeTypeFromTag
+  , isSensitive
+  , ServiceType(..)
+  , serviceTypeToTag
+  , serviceTypeFromTag
+  , AuthMethod(..)
+  , authMethodToTag
+  , authMethodFromTag
+  , isLegacy
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
+  , isTerminal
+  , RadiusResult(..)
+  , radiusResultToTag
+  , radiusResultFromTag
+  , isSuccess
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard RADIUS authentication port (RFC 2865).
+radiusAuthPort :: Word16
+radiusAuthPort = 1812
+
+-- | Standard RADIUS accounting port (RFC 2866).
+radiusAcctPort :: Word16
+radiusAcctPort = 1813
 
 -- ---------------------------------------------------------------------------
 -- PacketType
 -- ---------------------------------------------------------------------------
 
--- | PacketType type matching the Idris2 ABI.
+-- | RADIUS packet types (RFC 2865).
 --
--- Tags 1-11 (6 constructors).
+-- Tags 0-11 (6 constructors).
 data PacketType
-  = AccessRequest  -- ^ Tag 1.
-  | AccessAccept  -- ^ Tag 2.
-  | AccessReject  -- ^ Tag 3.
-  | AccountingRequest  -- ^ Tag 4.
-  | AccountingResponse  -- ^ Tag 5.
-  | AccessChallenge  -- ^ Tag 11.
+  = AccessRequest  -- ^ Access-Request (Code 1) (tag 1).
+  | AccessAccept  -- ^ Access-Accept (Code 2) (tag 2).
+  | AccessReject  -- ^ Access-Reject (Code 3) (tag 3).
+  | AccountingRequest  -- ^ Accounting-Request (Code 4) (tag 4).
+  | AccountingResponse  -- ^ Accounting-Response (Code 5) (tag 5).
+  | AccessChallenge  -- ^ Access-Challenge (Code 11) (tag 11).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PacketType' to its ABI tag value.
@@ -58,23 +72,43 @@ packetTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: PacketType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this packet is an authentication request/response.
+isAuth :: PacketType -> Bool
+isAuth AccessRequest = True
+isAuth AccessAccept = True
+isAuth AccessReject = True
+isAuth AccessChallenge = True
+isAuth _ = False
+
+-- | Whether this packet is an accounting request/response.
+isAccounting :: PacketType -> Bool
+isAccounting AccountingRequest = True
+isAccounting AccountingResponse = True
+isAccounting _ = False
+
+-- | Whether this packet is a request (client -> server).
+isRequest :: PacketType -> Bool
+isRequest AccessRequest = True
+isRequest AccountingRequest = True
+isRequest _ = False
+
 -- ---------------------------------------------------------------------------
 -- AttributeType
 -- ---------------------------------------------------------------------------
 
--- | AttributeType type matching the Idris2 ABI.
+-- | RADIUS attribute types (RFC 2865).
 --
--- Tags 1-27 (9 constructors).
+-- Tags 0-27 (9 constructors).
 data AttributeType
-  = UserName  -- ^ Tag 1.
-  | UserPassword  -- ^ Tag 2.
-  | NasIpAddress  -- ^ Tag 4.
-  | NasPort  -- ^ Tag 5.
-  | ServiceType  -- ^ Tag 6.
-  | FramedProtocol  -- ^ Tag 7.
-  | FramedIpAddress  -- ^ Tag 8.
-  | ReplyMessage  -- ^ Tag 18.
-  | SessionTimeout  -- ^ Tag 27.
+  = UserName  -- ^ User-Name (Type 1) (tag 1).
+  | UserPassword  -- ^ User-Password (Type 2) (tag 2).
+  | NasIpAddress  -- ^ NAS-IP-Address (Type 4) (tag 4).
+  | NasPort  -- ^ NAS-Port (Type 5) (tag 5).
+  | ServiceType  -- ^ Service-Type (Type 6) (tag 6).
+  | FramedProtocol  -- ^ Framed-Protocol (Type 7) (tag 7).
+  | FramedIpAddress  -- ^ Framed-IP-Address (Type 8) (tag 8).
+  | ReplyMessage  -- ^ Reply-Message (Type 18) (tag 18).
+  | SessionTimeout  -- ^ Session-Timeout (Type 27) (tag 27).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AttributeType' to its ABI tag value.
@@ -87,20 +121,25 @@ attributeTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: AttributeType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this attribute contains sensitive data.
+isSensitive :: AttributeType -> Bool
+isSensitive UserPassword = True
+isSensitive _ = False
+
 -- ---------------------------------------------------------------------------
 -- ServiceType
 -- ---------------------------------------------------------------------------
 
--- | ServiceType type matching the Idris2 ABI.
+-- | RADIUS Service-Type values (RFC 2865).
 --
--- Tags 1-6 (6 constructors).
+-- Tags 0-6 (6 constructors).
 data ServiceType
-  = Login  -- ^ Tag 1.
-  | Framed  -- ^ Tag 2.
-  | CallbackLogin  -- ^ Tag 3.
-  | CallbackFramed  -- ^ Tag 4.
-  | Outbound  -- ^ Tag 5.
-  | Administrative  -- ^ Tag 6.
+  = Login  -- ^ Login (tag 1).
+  | Framed  -- ^ Framed (tag 2).
+  | CallbackLogin  -- ^ Callback Login (tag 3).
+  | CallbackFramed  -- ^ Callback Framed (tag 4).
+  | Outbound  -- ^ Outbound (tag 5).
+  | Administrative  -- ^ Administrative (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ServiceType' to its ABI tag value.
@@ -117,15 +156,15 @@ serviceTypeFromTag n
 -- AuthMethod
 -- ---------------------------------------------------------------------------
 
--- | AuthMethod type matching the Idris2 ABI.
+-- | RADIUS authentication methods.
 --
 -- Tags 0-4 (5 constructors).
 data AuthMethod
-  = Pap  -- ^ Tag 0.
-  | Chap  -- ^ Tag 1.
-  | Mschap  -- ^ Tag 2.
-  | Mschapv2  -- ^ Tag 3.
-  | Eap  -- ^ Tag 4.
+  = Pap  -- ^ PAP — Password Authentication Protocol (tag 0).
+  | Chap  -- ^ CHAP — Challenge Handshake Authentication Protocol (tag 1).
+  | Mschap  -- ^ MS-CHAP — Microsoft CHAP v1 (tag 2).
+  | Mschapv2  -- ^ MS-CHAPv2 — Microsoft CHAP v2 (tag 3).
+  | Eap  -- ^ EAP — Extensible Authentication Protocol (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AuthMethod' to its ABI tag value.
@@ -138,21 +177,27 @@ authMethodFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: AuthMethod)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this method is considered legacy/weak.
+isLegacy :: AuthMethod -> Bool
+isLegacy Pap = True
+isLegacy Mschap = True
+isLegacy _ = False
+
 -- ---------------------------------------------------------------------------
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | RADIUS session state machine.
 --
 -- Tags 0-6 (7 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | Authenticating  -- ^ Tag 1.
-  | Authorized  -- ^ Tag 2.
-  | Rejected  -- ^ Tag 3.
-  | Challenged  -- ^ Tag 4.
-  | Accounting  -- ^ Tag 5.
-  | Complete  -- ^ Tag 6.
+  = Idle  -- ^ Idle — no active session (tag 0).
+  | Authenticating  -- ^ Authenticating — processing auth request (tag 1).
+  | Authorized  -- ^ Authorized — access granted (tag 2).
+  | Rejected  -- ^ Rejected — access denied (tag 3).
+  | Challenged  -- ^ Challenged — additional auth step required (tag 4).
+  | Accounting  -- ^ Accounting — session accounting in progress (tag 5).
+  | Complete  -- ^ Complete — session fully processed (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.
@@ -165,19 +210,25 @@ sessionStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: SessionState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this is a terminal state.
+isTerminal :: SessionState -> Bool
+isTerminal Rejected = True
+isTerminal Complete = True
+isTerminal _ = False
+
 -- ---------------------------------------------------------------------------
 -- RadiusResult
 -- ---------------------------------------------------------------------------
 
--- | RadiusResult type matching the Idris2 ABI.
+-- | RADIUS FFI result codes.
 --
 -- Tags 0-4 (5 constructors).
 data RadiusResult
-  = Ok  -- ^ Tag 0.
-  | Err  -- ^ Tag 1.
-  | InvalidParam  -- ^ Tag 2.
-  | PoolExhausted  -- ^ Tag 3.
-  | BadSecret  -- ^ Tag 4.
+  = Ok  -- ^ Success (tag 0).
+  | Err  -- ^ Generic error (tag 1).
+  | InvalidParam  -- ^ Invalid parameter (tag 2).
+  | PoolExhausted  -- ^ Address pool exhausted (tag 3).
+  | BadSecret  -- ^ Shared secret mismatch (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RadiusResult' to its ABI tag value.
@@ -189,3 +240,8 @@ radiusResultFromTag :: Word8 -> Maybe RadiusResult
 radiusResultFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: RadiusResult)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Whether this result indicates success.
+isSuccess :: RadiusResult -> Bool
+isSuccess Ok = True
+isSuccess _ = False

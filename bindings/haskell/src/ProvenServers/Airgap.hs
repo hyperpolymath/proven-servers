@@ -1,30 +1,28 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | Air Gap protocol types for proven-servers.
+-- | Air Gap types for the proven-servers ABI.
 --
--- Air-gapped transfer types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Airgap
-  ( -- * ADT types matching Idris2 ABI
-      TransferDirection(..)
-    , MediaType(..)
-    , ScanResult(..)
-    , TransferState(..)
-    , ValidationCheck(..)
-    , transferDirectionToTag
-    , transferDirectionFromTag
-    , mediaTypeToTag
-    , mediaTypeFromTag
-    , scanResultToTag
-    , scanResultFromTag
-    , transferStateToTag
-    , transferStateFromTag
-    , validationCheckToTag
-    , validationCheckFromTag
+  (
+    TransferDirection(..)
+  , transferDirectionToTag
+  , transferDirectionFromTag
+  , MediaType(..)
+  , mediaTypeToTag
+  , mediaTypeFromTag
+  , ScanResult(..)
+  , scanResultToTag
+  , scanResultFromTag
+  , isSafe
+  , TransferState(..)
+  , transferStateToTag
+  , transferStateFromTag
+  , ValidationCheck(..)
+  , validationCheckToTag
+  , validationCheckFromTag
   ) where
 
 import Data.Word (Word8)
@@ -33,12 +31,12 @@ import Data.Word (Word8)
 -- TransferDirection
 -- ---------------------------------------------------------------------------
 
--- | TransferDirection type matching the Idris2 ABI.
+-- | Air gap transfer direction.
 --
 -- Tags 0-1 (2 constructors).
 data TransferDirection
-  = Import  -- ^ Tag 0.
-  | Export  -- ^ Tag 1.
+  = Import  -- ^ Import (tag 0).
+  | Export  -- ^ Export (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'TransferDirection' to its ABI tag value.
@@ -55,14 +53,14 @@ transferDirectionFromTag n
 -- MediaType
 -- ---------------------------------------------------------------------------
 
--- | MediaType type matching the Idris2 ABI.
+-- | Physical transfer media types.
 --
 -- Tags 0-3 (4 constructors).
 data MediaType
-  = Usb  -- ^ Tag 0.
-  | OpticalDisc  -- ^ Tag 1.
-  | TapeCartridge  -- ^ Tag 2.
-  | DiodeLink  -- ^ Tag 3.
+  = Usb  -- ^ USB (tag 0).
+  | OpticalDisc  -- ^ OpticalDisc (tag 1).
+  | TapeCartridge  -- ^ TapeCartridge (tag 2).
+  | DiodeLink  -- ^ DiodeLink (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MediaType' to its ABI tag value.
@@ -79,14 +77,14 @@ mediaTypeFromTag n
 -- ScanResult
 -- ---------------------------------------------------------------------------
 
--- | ScanResult type matching the Idris2 ABI.
+-- | Content scan results.
 --
 -- Tags 0-3 (4 constructors).
 data ScanResult
-  = Clean  -- ^ Tag 0.
-  | Suspicious  -- ^ Tag 1.
-  | Malicious  -- ^ Tag 2.
-  | Unscannable  -- ^ Tag 3.
+  = Clean  -- ^ Clean (tag 0).
+  | Suspicious  -- ^ Suspicious (tag 1).
+  | Malicious  -- ^ Malicious (tag 2).
+  | Unscannable  -- ^ Unscannable (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ScanResult' to its ABI tag value.
@@ -99,21 +97,26 @@ scanResultFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: ScanResult)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether the content is safe to transfer.
+isSafe :: ScanResult -> Bool
+isSafe Clean = True
+isSafe _ = False
+
 -- ---------------------------------------------------------------------------
 -- TransferState
 -- ---------------------------------------------------------------------------
 
--- | TransferState type matching the Idris2 ABI.
+-- | Air gap transfer lifecycle.
 --
 -- Tags 0-6 (7 constructors).
 data TransferState
-  = Pending  -- ^ Tag 0.
-  | Scanning  -- ^ Tag 1.
-  | Approved  -- ^ Tag 2.
-  | Rejected  -- ^ Tag 3.
-  | InProgress  -- ^ Tag 4.
-  | Complete  -- ^ Tag 5.
-  | Failed  -- ^ Tag 6.
+  = Pending  -- ^ Pending (tag 0).
+  | Scanning  -- ^ Scanning (tag 1).
+  | Approved  -- ^ Approved (tag 2).
+  | Rejected  -- ^ Rejected (tag 3).
+  | InProgress  -- ^ InProgress (tag 4).
+  | Complete  -- ^ Complete (tag 5).
+  | Failed  -- ^ Failed (tag 6).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'TransferState' to its ABI tag value.
@@ -130,15 +133,15 @@ transferStateFromTag n
 -- ValidationCheck
 -- ---------------------------------------------------------------------------
 
--- | ValidationCheck type matching the Idris2 ABI.
+-- | Validation check types.
 --
 -- Tags 0-4 (5 constructors).
 data ValidationCheck
-  = HashVerify  -- ^ Tag 0.
-  | SignatureVerify  -- ^ Tag 1.
-  | FormatCheck  -- ^ Tag 2.
-  | ContentInspection  -- ^ Tag 3.
-  | MalwareScan  -- ^ Tag 4.
+  = HashVerify  -- ^ HashVerify (tag 0).
+  | SignatureVerify  -- ^ SignatureVerify (tag 1).
+  | FormatCheck  -- ^ FormatCheck (tag 2).
+  | ContentInspection  -- ^ ContentInspection (tag 3).
+  | MalwareScan  -- ^ MalwareScan (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ValidationCheck' to its ABI tag value.

@@ -1,44 +1,46 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | DoH protocol types for proven-servers.
+-- | DNS-over-HTTPS types for the proven-servers ABI.
 --
--- DNS-over-HTTPS types (RFC 8484), mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Doh
-  ( -- * ADT types matching Idris2 ABI
-      ContentType(..)
-    , RequestMethod(..)
-    , WireFormat(..)
-    , ErrorReason(..)
-    , SessionState(..)
-    , contentTypeToTag
-    , contentTypeFromTag
-    , requestMethodToTag
-    , requestMethodFromTag
-    , wireFormatToTag
-    , wireFormatFromTag
-    , errorReasonToTag
-    , errorReasonFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    dohPort
+  , ContentType(..)
+  , contentTypeToTag
+  , contentTypeFromTag
+  , RequestMethod(..)
+  , requestMethodToTag
+  , requestMethodFromTag
+  , WireFormat(..)
+  , wireFormatToTag
+  , wireFormatFromTag
+  , ErrorReason(..)
+  , errorReasonToTag
+  , errorReasonFromTag
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard HTTPS port for DoH.
+dohPort :: Word16
+dohPort = 443
 
 -- ---------------------------------------------------------------------------
 -- ContentType
 -- ---------------------------------------------------------------------------
 
--- | ContentType type matching the Idris2 ABI.
+-- | Standard HTTPS port for DoH.
 --
 -- Tags 0-1 (2 constructors).
 data ContentType
-  = DnsMessage  -- ^ Tag 0.
-  | DnsJson  -- ^ Tag 1.
+  = DnsMessage  -- ^ application/dns-message (tag 0).
+  | DnsJson  -- ^ application/dns-json (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ContentType' to its ABI tag value.
@@ -55,12 +57,12 @@ contentTypeFromTag n
 -- RequestMethod
 -- ---------------------------------------------------------------------------
 
--- | RequestMethod type matching the Idris2 ABI.
+-- | DoH HTTP request methods.
 --
 -- Tags 0-1 (2 constructors).
 data RequestMethod
-  = Get  -- ^ Tag 0.
-  | Post  -- ^ Tag 1.
+  = Get  -- ^ Get (tag 0).
+  | Post  -- ^ Post (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'RequestMethod' to its ABI tag value.
@@ -77,12 +79,12 @@ requestMethodFromTag n
 -- WireFormat
 -- ---------------------------------------------------------------------------
 
--- | WireFormat type matching the Idris2 ABI.
+-- | DNS wire format.
 --
 -- Tags 0-1 (2 constructors).
 data WireFormat
-  = Binary  -- ^ Tag 0.
-  | Json  -- ^ Tag 1.
+  = Binary  -- ^ Binary (tag 0).
+  | Json  -- ^ Json (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'WireFormat' to its ABI tag value.
@@ -99,15 +101,15 @@ wireFormatFromTag n
 -- ErrorReason
 -- ---------------------------------------------------------------------------
 
--- | ErrorReason type matching the Idris2 ABI.
+-- | DoH-specific error reasons.
 --
 -- Tags 0-4 (5 constructors).
 data ErrorReason
-  = BadContentType  -- ^ Tag 0.
-  | BadMethod  -- ^ Tag 1.
-  | PayloadTooLarge  -- ^ Tag 2.
-  | UpstreamTimeout  -- ^ Tag 3.
-  | UpstreamError  -- ^ Tag 4.
+  = BadContentType  -- ^ BadContentType (tag 0).
+  | BadMethod  -- ^ BadMethod (tag 1).
+  | PayloadTooLarge  -- ^ PayloadTooLarge (tag 2).
+  | UpstreamTimeout  -- ^ UpstreamTimeout (tag 3).
+  | UpstreamError  -- ^ UpstreamError (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorReason' to its ABI tag value.
@@ -124,15 +126,15 @@ errorReasonFromTag n
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | DoH session lifecycle states.
 --
 -- Tags 0-4 (5 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | Bound  -- ^ Tag 1.
-  | Serving  -- ^ Tag 2.
-  | Resolving  -- ^ Tag 3.
-  | Shutdown  -- ^ Tag 4.
+  = Idle  -- ^ Idle (tag 0).
+  | Bound  -- ^ Bound (tag 1).
+  | Serving  -- ^ Serving (tag 2).
+  | Resolving  -- ^ Resolving (tag 3).
+  | Shutdown  -- ^ Shutdown (tag 4).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.

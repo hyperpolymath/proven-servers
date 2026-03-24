@@ -1,54 +1,62 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | BGP protocol types for proven-servers.
+-- | BGP protocol types for the proven-servers ABI.
 --
--- BGP (Border Gateway Protocol) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Bgp
-  ( -- * ADT types matching Idris2 ABI
-      BgpState(..)
-    , BgpEvent(..)
-    , MessageType(..)
-    , ErrorCode(..)
-    , Origin(..)
-    , AsPathSegmentType(..)
-    , PathAttrType(..)
-    , bgpStateToTag
-    , bgpStateFromTag
-    , bgpEventToTag
-    , bgpEventFromTag
-    , messageTypeToTag
-    , messageTypeFromTag
-    , errorCodeToTag
-    , errorCodeFromTag
-    , originToTag
-    , originFromTag
-    , asPathSegmentTypeToTag
-    , asPathSegmentTypeFromTag
-    , pathAttrTypeToTag
-    , pathAttrTypeFromTag
+  (
+    bgpPort
+  , BgpState(..)
+  , bgpStateToTag
+  , bgpStateFromTag
+  , isRouteExchange
+  , hasConnection
+  , BgpEvent(..)
+  , bgpEventToTag
+  , bgpEventFromTag
+  , isTimerEvent
+  , isErrorEvent
+  , MessageType(..)
+  , messageTypeToTag
+  , messageTypeFromTag
+  , ErrorCode(..)
+  , errorCodeToTag
+  , errorCodeFromTag
+  , isFatal
+  , Origin(..)
+  , originToTag
+  , originFromTag
+  , AsPathSegmentType(..)
+  , asPathSegmentTypeToTag
+  , asPathSegmentTypeFromTag
+  , PathAttrType(..)
+  , pathAttrTypeToTag
+  , pathAttrTypeFromTag
+  , isMandatory
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard BGP port (RFC 4271).
+bgpPort :: Word16
+bgpPort = 179
 
 -- ---------------------------------------------------------------------------
 -- BgpState
 -- ---------------------------------------------------------------------------
 
--- | BgpState type matching the Idris2 ABI.
+-- | Standard BGP port (RFC 4271).
 --
 -- Tags 0-5 (6 constructors).
 data BgpState
-  = Idle  -- ^ Tag 0.
-  | Connect  -- ^ Tag 1.
-  | Active  -- ^ Tag 2.
-  | OpenSent  -- ^ Tag 3.
-  | OpenConfirm  -- ^ Tag 4.
-  | Established  -- ^ Tag 5.
+  = Idle  -- ^ Idle — initial state, no connection (tag 0).
+  | Connect  -- ^ Connect — waiting for TCP connection (tag 1).
+  | Active  -- ^ Active — retrying TCP connection (tag 2).
+  | OpenSent  -- ^ OpenSent — OPEN message sent, awaiting OPEN (tag 3).
+  | OpenConfirm  -- ^ OpenConfirm — OPEN received, awaiting KEEPALIVE (tag 4).
+  | Established  -- ^ Established — peers exchanging UPDATE messages (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'BgpState' to its ABI tag value.
@@ -61,33 +69,45 @@ bgpStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: BgpState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether routes can be exchanged in this state.
+isRouteExchange :: BgpState -> Bool
+isRouteExchange Established = True
+isRouteExchange _ = False
+
+-- | Whether a TCP connection exists in this state.
+hasConnection :: BgpState -> Bool
+hasConnection OpenSent = True
+hasConnection OpenConfirm = True
+hasConnection Established = True
+hasConnection _ = False
+
 -- ---------------------------------------------------------------------------
 -- BgpEvent
 -- ---------------------------------------------------------------------------
 
--- | BgpEvent type matching the Idris2 ABI.
+-- | BGP FSM events (RFC 4271 Section 8.1).
 --
 -- Tags 0-18 (19 constructors).
 data BgpEvent
-  = ManualStart  -- ^ Tag 0.
-  | ManualStop  -- ^ Tag 1.
-  | AutomaticStart  -- ^ Tag 2.
-  | ConnectRetryTimerExpires  -- ^ Tag 3.
-  | HoldTimerExpires  -- ^ Tag 4.
-  | KeepaliveTimerExpires  -- ^ Tag 5.
-  | DelayOpenTimerExpires  -- ^ Tag 6.
-  | TcpConnectionValid  -- ^ Tag 7.
-  | TcpCrAcked  -- ^ Tag 8.
-  | TcpConnectionConfirmed  -- ^ Tag 9.
-  | TcpConnectionFails  -- ^ Tag 10.
-  | BgpOpenReceived  -- ^ Tag 11.
-  | BgpHeaderErr  -- ^ Tag 12.
-  | BgpOpenMsgErr  -- ^ Tag 13.
-  | NotifMsgVerErr  -- ^ Tag 14.
-  | NotifMsg  -- ^ Tag 15.
-  | KeepaliveMsg  -- ^ Tag 16.
-  | UpdateMsg  -- ^ Tag 17.
-  | UpdateMsgErr  -- ^ Tag 18.
+  = ManualStart  -- ^ ManualStart — administrative start (tag 0).
+  | ManualStop  -- ^ ManualStop — administrative stop (tag 1).
+  | AutomaticStart  -- ^ AutomaticStart — automatic restart (tag 2).
+  | ConnectRetryTimerExpires  -- ^ ConnectRetryTimer_Expires (tag 3).
+  | HoldTimerExpires  -- ^ HoldTimer_Expires (tag 4).
+  | KeepaliveTimerExpires  -- ^ KeepaliveTimer_Expires (tag 5).
+  | DelayOpenTimerExpires  -- ^ DelayOpenTimer_Expires (tag 6).
+  | TcpConnectionValid  -- ^ Tcp_CR_Valid — valid incoming TCP connection (tag 7).
+  | TcpCrAcked  -- ^ Tcp_CR_Acked — outgoing TCP connection acknowledged (tag 8).
+  | TcpConnectionConfirmed  -- ^ TcpConnectionConfirmed (tag 9).
+  | TcpConnectionFails  -- ^ TcpConnectionFails (tag 10).
+  | BgpOpenReceived  -- ^ BGPOpen received (tag 11).
+  | BgpHeaderErr  -- ^ BGPHeaderErr — bad header received (tag 12).
+  | BgpOpenMsgErr  -- ^ BGPOpenMsgErr — bad OPEN received (tag 13).
+  | NotifMsgVerErr  -- ^ NotifMsgVerErr — NOTIFICATION version error (tag 14).
+  | NotifMsg  -- ^ NotifMsg — NOTIFICATION received (tag 15).
+  | KeepaliveMsg  -- ^ KeepaliveMsg — KEEPALIVE received (tag 16).
+  | UpdateMsg  -- ^ UpdateMsg — UPDATE received (tag 17).
+  | UpdateMsgErr  -- ^ UpdateMsgErr — bad UPDATE received (tag 18).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'BgpEvent' to its ABI tag value.
@@ -100,18 +120,35 @@ bgpEventFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: BgpEvent)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this event is a timer expiry.
+isTimerEvent :: BgpEvent -> Bool
+isTimerEvent ConnectRetryTimerExpires = True
+isTimerEvent HoldTimerExpires = True
+isTimerEvent KeepaliveTimerExpires = True
+isTimerEvent DelayOpenTimerExpires = True
+isTimerEvent _ = False
+
+-- | Whether this event indicates an error.
+isErrorEvent :: BgpEvent -> Bool
+isErrorEvent TcpConnectionFails = True
+isErrorEvent BgpHeaderErr = True
+isErrorEvent BgpOpenMsgErr = True
+isErrorEvent NotifMsgVerErr = True
+isErrorEvent UpdateMsgErr = True
+isErrorEvent _ = False
+
 -- ---------------------------------------------------------------------------
 -- MessageType
 -- ---------------------------------------------------------------------------
 
--- | MessageType type matching the Idris2 ABI.
+-- | BGP message types (RFC 4271 Section 4).
 --
 -- Tags 0-3 (4 constructors).
 data MessageType
-  = Open  -- ^ Tag 0.
-  | Update  -- ^ Tag 1.
-  | Notification  -- ^ Tag 2.
-  | Keepalive  -- ^ Tag 3.
+  = Open  -- ^ OPEN — establish BGP session (tag 0).
+  | Update  -- ^ UPDATE — advertise/withdraw routes (tag 1).
+  | Notification  -- ^ NOTIFICATION — report error (tag 2).
+  | Keepalive  -- ^ KEEPALIVE — maintain session (tag 3).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'MessageType' to its ABI tag value.
@@ -128,16 +165,16 @@ messageTypeFromTag n
 -- ErrorCode
 -- ---------------------------------------------------------------------------
 
--- | ErrorCode type matching the Idris2 ABI.
+-- | BGP NOTIFICATION error codes (RFC 4271 Section 4.5).
 --
 -- Tags 0-5 (6 constructors).
 data ErrorCode
-  = MessageHeaderError  -- ^ Tag 0.
-  | OpenMessageError  -- ^ Tag 1.
-  | UpdateMessageError  -- ^ Tag 2.
-  | HoldTimerExpired  -- ^ Tag 3.
-  | FsmError  -- ^ Tag 4.
-  | Cease  -- ^ Tag 5.
+  = MessageHeaderError  -- ^ Message Header Error (tag 0).
+  | OpenMessageError  -- ^ OPEN Message Error (tag 1).
+  | UpdateMessageError  -- ^ UPDATE Message Error (tag 2).
+  | HoldTimerExpired  -- ^ Hold Timer Expired (tag 3).
+  | FsmError  -- ^ Finite State Machine Error (tag 4).
+  | Cease  -- ^ Cease (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ErrorCode' to its ABI tag value.
@@ -150,17 +187,21 @@ errorCodeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: ErrorCode)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this error is fatal (always terminates session).
+isFatal :: ErrorCode -> Bool
+isFatal _ = True
+
 -- ---------------------------------------------------------------------------
 -- Origin
 -- ---------------------------------------------------------------------------
 
--- | Origin type matching the Idris2 ABI.
+-- | BGP ORIGIN path attribute values (RFC 4271 Section 4.3).
 --
 -- Tags 0-2 (3 constructors).
 data Origin
-  = Igp  -- ^ Tag 0.
-  | Egp  -- ^ Tag 1.
-  | Incomplete  -- ^ Tag 2.
+  = Igp  -- ^ IGP — route originated within the AS (tag 0).
+  | Egp  -- ^ EGP — route learned via EGP (tag 1).
+  | Incomplete  -- ^ Incomplete — origin unknown (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'Origin' to its ABI tag value.
@@ -177,12 +218,12 @@ originFromTag n
 -- AsPathSegmentType
 -- ---------------------------------------------------------------------------
 
--- | AsPathSegmentType type matching the Idris2 ABI.
+-- | BGP AS_PATH segment types (RFC 4271 Section 4.3).
 --
 -- Tags 0-1 (2 constructors).
 data AsPathSegmentType
-  = AsSet  -- ^ Tag 0.
-  | AsSequence  -- ^ Tag 1.
+  = AsSet  -- ^ AS_SET — unordered set of ASes (tag 0).
+  | AsSequence  -- ^ AS_SEQUENCE — ordered sequence of ASes (tag 1).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'AsPathSegmentType' to its ABI tag value.
@@ -199,18 +240,18 @@ asPathSegmentTypeFromTag n
 -- PathAttrType
 -- ---------------------------------------------------------------------------
 
--- | PathAttrType type matching the Idris2 ABI.
+-- | BGP path attribute types (RFC 4271 Section 5).
 --
 -- Tags 0-7 (8 constructors).
 data PathAttrType
-  = Origin  -- ^ Tag 0.
-  | AsPath  -- ^ Tag 1.
-  | NextHop  -- ^ Tag 2.
-  | Med  -- ^ Tag 3.
-  | LocalPref  -- ^ Tag 4.
-  | AtomicAggr  -- ^ Tag 5.
-  | Aggregator  -- ^ Tag 6.
-  | Unknown  -- ^ Tag 7.
+  = Origin  -- ^ ORIGIN (tag 0).
+  | AsPath  -- ^ AS_PATH (tag 1).
+  | NextHop  -- ^ NEXT_HOP (tag 2).
+  | Med  -- ^ MULTI_EXIT_DISC (tag 3).
+  | LocalPref  -- ^ LOCAL_PREF (tag 4).
+  | AtomicAggr  -- ^ ATOMIC_AGGREGATE (tag 5).
+  | Aggregator  -- ^ AGGREGATOR (tag 6).
+  | Unknown  -- ^ Unknown/vendor-specific (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'PathAttrType' to its ABI tag value.
@@ -222,3 +263,10 @@ pathAttrTypeFromTag :: Word8 -> Maybe PathAttrType
 pathAttrTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: PathAttrType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Whether this attribute is mandatory (well-known mandatory per RFC 4271).
+isMandatory :: PathAttrType -> Bool
+isMandatory Origin = True
+isMandatory AsPath = True
+isMandatory NextHop = True
+isMandatory _ = False

@@ -1,53 +1,72 @@
 -- SPDX-License-Identifier: PMPL-1.0-or-later
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- | OPC UA protocol types for proven-servers.
+-- | OPC UA (OPC Unified Architecture) types for the proven-servers ABI.
 --
--- OPC UA (Unified Architecture) types, mirroring the Idris2 ABI.
 -- All tag values match the Idris2 ABI discriminants exactly.
---
--- This is a pure type-definition module with no FFI dependencies.
 
 module ProvenServers.Opcua
-  ( -- * ADT types matching Idris2 ABI
-      ServiceType(..)
-    , NodeClass(..)
-    , StatusCode(..)
-    , SecurityMode(..)
-    , SessionState(..)
-    , serviceTypeToTag
-    , serviceTypeFromTag
-    , nodeClassToTag
-    , nodeClassFromTag
-    , statusCodeToTag
-    , statusCodeFromTag
-    , securityModeToTag
-    , securityModeFromTag
-    , sessionStateToTag
-    , sessionStateFromTag
+  (
+    opcuaPort
+  , opcuaTlsPort
+  , ServiceType(..)
+  , serviceTypeToTag
+  , serviceTypeFromTag
+  , isWrite
+  , isSessionManagement
+  , isSubscriptionRelated
+  , NodeClass(..)
+  , nodeClassToTag
+  , nodeClassFromTag
+  , isInstance
+  , isType
+  , StatusCode(..)
+  , statusCodeToTag
+  , statusCodeFromTag
+  , isGood
+  , isBad
+  , isSecurityRelated
+  , SecurityMode(..)
+  , securityModeToTag
+  , securityModeFromTag
+  , isSigned
+  , isEncrypted
+  , SessionState(..)
+  , sessionStateToTag
+  , sessionStateFromTag
+  , canService
+  , isTransient
   ) where
 
-import Data.Word (Word8)
+import Data.Word (Word16, Word8)
+
+-- | Standard OPC UA TCP port.
+opcuaPort :: Word16
+opcuaPort = 4840
+
+-- | Standard OPC UA TCP/TLS port.
+opcuaTlsPort :: Word16
+opcuaTlsPort = 4843
 
 -- ---------------------------------------------------------------------------
 -- ServiceType
 -- ---------------------------------------------------------------------------
 
--- | ServiceType type matching the Idris2 ABI.
+-- | Standard OPC UA TCP port.
 --
 -- Tags 0-10 (11 constructors).
 data ServiceType
-  = Read  -- ^ Tag 0.
-  | Write  -- ^ Tag 1.
-  | Browse  -- ^ Tag 2.
-  | Subscribe  -- ^ Tag 3.
-  | Publish  -- ^ Tag 4.
-  | Call  -- ^ Tag 5.
-  | CreateSession  -- ^ Tag 6.
-  | ActivateSession  -- ^ Tag 7.
-  | CloseSession  -- ^ Tag 8.
-  | CreateSubscription  -- ^ Tag 9.
-  | DeleteSubscription  -- ^ Tag 10.
+  = Read  -- ^ Read attribute values from nodes (tag 0).
+  | Write  -- ^ Write attribute values to nodes (tag 1).
+  | Browse  -- ^ Browse the address space (tag 2).
+  | Subscribe  -- ^ Create a monitored item subscription (tag 3).
+  | Publish  -- ^ Publish subscription notifications (tag 4).
+  | Call  -- ^ Call a method on a node (tag 5).
+  | CreateSession  -- ^ Create a new session (tag 6).
+  | ActivateSession  -- ^ Activate an existing session (tag 7).
+  | CloseSession  -- ^ Close a session (tag 8).
+  | CreateSubscription  -- ^ Create a new subscription (tag 9).
+  | DeleteSubscription  -- ^ Delete a subscription (tag 10).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'ServiceType' to its ABI tag value.
@@ -60,22 +79,43 @@ serviceTypeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: ServiceType)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this service modifies server state.
+isWrite :: ServiceType -> Bool
+isWrite Write = True
+isWrite Call = True
+isWrite _ = False
+
+-- | Whether this service is a session management operation.
+isSessionManagement :: ServiceType -> Bool
+isSessionManagement CreateSession = True
+isSessionManagement ActivateSession = True
+isSessionManagement CloseSession = True
+isSessionManagement _ = False
+
+-- | Whether this service relates to subscriptions.
+isSubscriptionRelated :: ServiceType -> Bool
+isSubscriptionRelated Subscribe = True
+isSubscriptionRelated Publish = True
+isSubscriptionRelated CreateSubscription = True
+isSubscriptionRelated DeleteSubscription = True
+isSubscriptionRelated _ = False
+
 -- ---------------------------------------------------------------------------
 -- NodeClass
 -- ---------------------------------------------------------------------------
 
--- | NodeClass type matching the Idris2 ABI.
+-- | OPC UA node classes (OPC 10000 Part 3).
 --
 -- Tags 0-7 (8 constructors).
 data NodeClass
-  = Object  -- ^ Tag 0.
-  | Variable  -- ^ Tag 1.
-  | Method  -- ^ Tag 2.
-  | ObjectType  -- ^ Tag 3.
-  | VariableType  -- ^ Tag 4.
-  | ReferenceType  -- ^ Tag 5.
-  | DataType  -- ^ Tag 6.
-  | View  -- ^ Tag 7.
+  = Object  -- ^ Object instance node (tag 0).
+  | Variable  -- ^ Variable node holding a value (tag 1).
+  | Method  -- ^ Method node that can be called (tag 2).
+  | ObjectType  -- ^ Object type definition (tag 3).
+  | VariableType  -- ^ Variable type definition (tag 4).
+  | ReferenceType  -- ^ Reference type definition (tag 5).
+  | DataType  -- ^ Data type definition (tag 6).
+  | View  -- ^ View node for address space subsets (tag 7).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'NodeClass' to its ABI tag value.
@@ -88,26 +128,42 @@ nodeClassFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: NodeClass)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this node class is an instance node (not a type definition).
+isInstance :: NodeClass -> Bool
+isInstance Object = True
+isInstance Variable = True
+isInstance Method = True
+isInstance View = True
+isInstance _ = False
+
+-- | Whether this node class is a type definition.
+isType :: NodeClass -> Bool
+isType ObjectType = True
+isType VariableType = True
+isType ReferenceType = True
+isType DataType = True
+isType _ = False
+
 -- ---------------------------------------------------------------------------
 -- StatusCode
 -- ---------------------------------------------------------------------------
 
--- | StatusCode type matching the Idris2 ABI.
+-- | OPC UA status codes (OPC 10000 Part 4).
 --
 -- Tags 0-11 (12 constructors).
 data StatusCode
-  = Good  -- ^ Tag 0.
-  | Uncertain  -- ^ Tag 1.
-  | Bad  -- ^ Tag 2.
-  | BadNodeIdUnknown  -- ^ Tag 3.
-  | BadAttributeIdInvalid  -- ^ Tag 4.
-  | BadNotReadable  -- ^ Tag 5.
-  | BadNotWritable  -- ^ Tag 6.
-  | BadOutOfRange  -- ^ Tag 7.
-  | BadTypeMismatch  -- ^ Tag 8.
-  | BadSessionIdInvalid  -- ^ Tag 9.
-  | BadSubscriptionIdInvalid  -- ^ Tag 10.
-  | BadTimeout  -- ^ Tag 11.
+  = Good  -- ^ Good — operation succeeded (tag 0).
+  | Uncertain  -- ^ Uncertain — result is not fully reliable (tag 1).
+  | Bad  -- ^ Bad — generic failure (tag 2).
+  | BadNodeIdUnknown  -- ^ NodeId does not exist (tag 3).
+  | BadAttributeIdInvalid  -- ^ Attribute ID is invalid for this node (tag 4).
+  | BadNotReadable  -- ^ Attribute is not readable (tag 5).
+  | BadNotWritable  -- ^ Attribute is not writable (tag 6).
+  | BadOutOfRange  -- ^ Value is out of range (tag 7).
+  | BadTypeMismatch  -- ^ Data type mismatch (tag 8).
+  | BadSessionIdInvalid  -- ^ Session ID is invalid (tag 9).
+  | BadSubscriptionIdInvalid  -- ^ Subscription ID is invalid (tag 10).
+  | BadTimeout  -- ^ Operation timed out (tag 11).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'StatusCode' to its ABI tag value.
@@ -120,17 +176,33 @@ statusCodeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: StatusCode)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether this status code indicates success.
+isGood :: StatusCode -> Bool
+isGood Good = True
+isGood _ = False
+
+-- | Whether this status code indicates a definite failure.
+isBad :: StatusCode -> Bool
+isBad Good = False
+isBad Uncertain = False
+isBad _ = True
+
+-- | Whether this status code relates to security/session issues.
+isSecurityRelated :: StatusCode -> Bool
+isSecurityRelated BadSessionIdInvalid = True
+isSecurityRelated _ = False
+
 -- ---------------------------------------------------------------------------
 -- SecurityMode
 -- ---------------------------------------------------------------------------
 
--- | SecurityMode type matching the Idris2 ABI.
+-- | OPC UA message security modes (OPC 10000 Part 4).
 --
 -- Tags 0-2 (3 constructors).
 data SecurityMode
-  = None  -- ^ Tag 0.
-  | Sign  -- ^ Tag 1.
-  | SignAndEncrypt  -- ^ Tag 2.
+  = None  -- ^ No security (tag 0).
+  | Sign  -- ^ Messages are signed but not encrypted (tag 1).
+  | SignAndEncrypt  -- ^ Messages are signed and encrypted (tag 2).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SecurityMode' to its ABI tag value.
@@ -143,20 +215,31 @@ securityModeFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: SecurityMode)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
 
+-- | Whether messages are signed.
+isSigned :: SecurityMode -> Bool
+isSigned Sign = True
+isSigned SignAndEncrypt = True
+isSigned _ = False
+
+-- | Whether messages are encrypted.
+isEncrypted :: SecurityMode -> Bool
+isEncrypted SignAndEncrypt = True
+isEncrypted _ = False
+
 -- ---------------------------------------------------------------------------
 -- SessionState
 -- ---------------------------------------------------------------------------
 
--- | SessionState type matching the Idris2 ABI.
+-- | OPC UA session lifecycle states for the FFI layer.
 --
 -- Tags 0-5 (6 constructors).
 data SessionState
-  = Idle  -- ^ Tag 0.
-  | Connected  -- ^ Tag 1.
-  | Created  -- ^ Tag 2.
-  | Activated  -- ^ Tag 3.
-  | Monitoring  -- ^ Tag 4.
-  | Closing  -- ^ Tag 5.
+  = Idle  -- ^ No session (tag 0).
+  | Connected  -- ^ Secure channel established (tag 1).
+  | Created  -- ^ Session created, awaiting activation (tag 2).
+  | Activated  -- ^ Session activated, ready for service requests (tag 3).
+  | Monitoring  -- ^ Subscription active, monitoring nodes (tag 4).
+  | Closing  -- ^ Session closing (tag 5).
   deriving (Show, Eq, Ord, Enum, Bounded)
 
 -- | Convert a 'SessionState' to its ABI tag value.
@@ -168,3 +251,16 @@ sessionStateFromTag :: Word8 -> Maybe SessionState
 sessionStateFromTag n
   | n <= fromIntegral (fromEnum (maxBound :: SessionState)) = Just (toEnum (fromIntegral n))
   | otherwise = Nothing
+
+-- | Whether the session can accept service requests.
+canService :: SessionState -> Bool
+canService Activated = True
+canService Monitoring = True
+canService _ = False
+
+-- | Whether the session is in a transient state.
+isTransient :: SessionState -> Bool
+isTransient Connected = True
+isTransient Created = True
+isTransient Closing = True
+isTransient _ = False
