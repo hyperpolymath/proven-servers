@@ -62,15 +62,15 @@ demoAddModule =
                 , I32Add         -- Add them
                 , End            -- End of function
                 ]
-      addFunc = MkFuncDef { typeIdx = typeIdx, locals = [], body = addBody }
-      (m2, funcIdx) = addFunc addFunc m1
+      addFuncDef = MkFuncDef { typeIdx = typeIdx, locals = [], body = addBody }
+      (m2, funcIdx) = addFunc addFuncDef m1
 
       -- Step 3: Add a memory (1 page min, 2 pages max)
       m3 = addMemory (MkMemoryLimits 1 2) m2
 
       -- Step 4: Export the function as "add"
-      addExport = MkExport { name = "add", kind = FuncExtern, index = funcIdx }
-      m4 = addExport addExport m3
+      addExportDef = MkExport { name = "add", kind = FuncExtern, index = funcIdx }
+      m4 = addExport addExportDef m3
 
       -- Step 5: Export the memory as "memory"
       memExport = MkExport { name = "memory", kind = MemExtern, index = 0 }

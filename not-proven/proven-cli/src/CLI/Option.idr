@@ -9,6 +9,9 @@
 
 module CLI.Option
 
+import Data.List
+import Data.Maybe
+import Data.String
 import CLI.ArgType
 
 %default total

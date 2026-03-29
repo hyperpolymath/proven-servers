@@ -10,6 +10,8 @@
 
 module CLI.Parser
 
+import Data.List
+import Data.String
 import CLI.ArgType
 import CLI.Option
 import CLI.Command

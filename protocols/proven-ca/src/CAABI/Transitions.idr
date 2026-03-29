@@ -25,6 +25,8 @@
 
 module CAABI.Transitions
 
+import Data.Nat
+import Data.So
 import CA.Types
 
 %default total

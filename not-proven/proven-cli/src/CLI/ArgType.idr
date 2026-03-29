@@ -156,20 +156,8 @@ isValidPath s  = not (any (== '\0') (unpack s))
 ||| Parse a raw string according to the expected argument type.
 ||| Returns Either an error or a successfully parsed value.
 ||| This function NEVER crashes — all malformed input produces Left.
-public export
-parseArg : ArgType -> String -> Either ArgParseError ArgValue
-parseArg _       raw =
-  if length raw > maxArgLength
-    then Left (ArgTooLong (length raw) maxArgLength)
-    else parseByType raw
-  where
-    parseByType : String -> Either ArgParseError ArgValue
-    parseByType r = case the ArgType _ of  -- We need the outer ArgType
-      _ => Right (StrVal r)  -- Fallback; actual dispatch below
-
--- Note: The above is a placeholder; the real dispatch uses the ArgType
--- parameter directly. Due to Idris2 totality requirements, we define
--- individual parse functions and a dispatcher.
+-- Note: parseArg delegates to parseTypedArg (defined below) after
+-- performing a length check. Individual type-specific parsers follow.
 
 ||| Parse a string value (always succeeds after length check).
 public export

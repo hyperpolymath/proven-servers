@@ -106,7 +106,7 @@ demoParsing = do
   putStrLn "  Input args:"
   putStrLn $ "    " ++ show sampleArgs
   putStrLn "  Tokens:"
-  traverse_ (\t => putStrLn $ "    " ++ show t) tokens
+  for_ tokens $ \t => putStrLn $ "    " ++ show t
 
   -- Demonstrate typed argument parsing
   putStrLn "\n  Argument type parsing:"
@@ -120,10 +120,9 @@ demoParsing = do
               , ("prod",         EnumArg ["dev", "staging", "prod"])
               , ("test",         EnumArg ["dev", "staging", "prod"])
               ]
-  traverse_ (\(raw, ty) =>
+  for_ tests $ \(raw, ty) =>
     putStrLn $ "    parseTypedArg " ++ show ty ++ " " ++ show raw
                ++ " = " ++ show (parseTypedArg ty raw)
-    ) tests
 
 -- ============================================================================
 -- Demo: Validate command definitions
@@ -147,7 +146,7 @@ demoValidation = do
         (simpleCommand "" "A command with no name")
   let errs2 = validateCommand 0 badCmd
   putStrLn $ "  Bad command errors: " ++ show (length errs2)
-  traverse_ (\e => putStrLn $ "    - " ++ show e) errs2
+  for_ errs2 $ \e => putStrLn $ "    - " ++ show e
 
   -- Version text
   putStrLn $ "\n  Version: " ++ versionText demoCLI
@@ -161,22 +160,19 @@ covering
 demoRequired : IO ()
 demoRequired = do
   putStrLn "\n--- Required Option Check Demo ---\n"
-
-  case findSubcommand "deploy" demoCLI of
-    Nothing  => putStrLn "ERROR: deploy not found"
-    Just sub => do
-      -- No options provided -> should flag required options
+  showRequired (findSubcommand "deploy" demoCLI)
+  where
+    covering
+    showRequired : Maybe CLICommand -> IO ()
+    showRequired Nothing = putStrLn "ERROR: deploy not found"
+    showRequired (Just sub) = do
       let missing = checkRequired sub []
       putStrLn $ "  Missing required (no args): " ++ show (length missing)
-      traverse_ (\e => putStrLn $ "    - " ++ show e) missing
-
-      -- Provide env but not tag
+      for_ missing (\e => putStrLn $ "    - " ++ show e)
       let partial = [MkParsedOption (requiredString 'e' "env" "env") (StrVal "prod")]
       let missing2 = checkRequired sub partial
       putStrLn $ "\n  Missing required (env only): " ++ show (length missing2)
-      traverse_ (\e => putStrLn $ "    - " ++ show e) missing2
-
-      -- Provide both required options
+      for_ missing2 (\e => putStrLn $ "    - " ++ show e)
       let full = partial ++ [MkParsedOption (requiredString 't' "tag" "tag") (StrVal "v1.0")]
       let missing3 = checkRequired sub full
       putStrLn $ "\n  Missing required (env+tag): " ++ show (length missing3)

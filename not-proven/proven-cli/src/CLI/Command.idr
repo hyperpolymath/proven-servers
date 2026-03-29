@@ -9,6 +9,7 @@
 
 module CLI.Command
 
+import Data.List
 import CLI.Option
 import CLI.ArgType
 
@@ -136,6 +137,7 @@ findDuplicateSubcommand cmds =
 ||| Validate a command tree, checking names, options, and depth.
 ||| The depth parameter tracks the current nesting level.
 public export
+covering
 validateCommand : (depth : Nat) -> CLICommand -> List CommandDefError
 validateCommand depth cmd =
   let nameErrors = if cmd.name == ""
