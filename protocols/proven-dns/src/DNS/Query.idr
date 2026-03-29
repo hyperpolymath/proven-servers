@@ -9,6 +9,9 @@
 
 module DNS.Query
 
+import Data.List
+import Data.List1
+import Data.String
 import DNS.Name
 import DNS.RecordType
 
@@ -172,7 +175,7 @@ typedQuery txId nameStr rtype =
 public export
 reverseQuery : (txId : Bits16) -> (ipv4 : String) -> Either NameError DNSQuery
 reverseQuery txId ipStr =
-  let parts   = toList (split (== '.') ipStr)
+  let parts   = forget (Data.String.split (== '.') ipStr)
       revParts = reverse parts
       arpaName = concat (intersperse "." revParts) ++ ".in-addr.arpa"
   in case parseName arpaName of

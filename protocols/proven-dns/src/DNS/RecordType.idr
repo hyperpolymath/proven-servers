@@ -9,6 +9,8 @@
 
 module DNS.RecordType
 
+import Data.String
+
 %default total
 
 -- ============================================================================

@@ -13,6 +13,7 @@
 
 module Main
 
+import Data.List
 import DNS
 import DNS.Name
 import DNS.RecordType
@@ -38,11 +39,10 @@ demoNameParsing = do
                    , "sub.domain.example.co.uk"
                    , "single"
                    ]
-  traverse_ (\s => case parseName s of
+  for_ validNames $ \s => case parseName s of
     Right name => putStrLn $ "  OK: " ++ s ++ " -> " ++ show name
                              ++ " (" ++ show (labelCount name) ++ " labels)"
     Left err   => putStrLn $ "  ERR: " ++ s ++ " -> " ++ show err
-  ) validNames
 
   putStrLn ""
 
@@ -71,7 +71,7 @@ demoQueryConstruction = do
     Left err => putStrLn $ "  Query failed: " ++ show err
     Right q  => do
       putStrLn $ "  A query: " ++ show q
-      traverse_ (\qn => putStrLn $ "    Question: " ++ show qn) q.questions
+      for_ q.questions (\qn => putStrLn $ "    Question: " ++ show qn)
 
   -- AAAA record query
   case typedQuery 1235 "ipv6.example.com" AAAA of
@@ -88,7 +88,7 @@ demoQueryConstruction = do
     Left err => putStrLn $ "  Reverse query failed: " ++ show err
     Right q  => do
       putStrLn $ "  PTR query: " ++ show q
-      traverse_ (\qn => putStrLn $ "    Reverse: " ++ show qn) q.questions
+      for_ q.questions (\qn => putStrLn $ "    Reverse: " ++ show qn)
 
 -- ============================================================================
 -- Demo: response construction
@@ -165,16 +165,16 @@ demoZone = do
   let errors = validateZone zone
   case errors of
     [] => putStrLn "  Validation: PASSED (no errors)"
-    _  => traverse_ (\e => putStrLn $ "  Validation error: " ++ show e) errors
+    _  => for_ errors (\e => putStrLn $ "  Validation error: " ++ show e)
 
   -- Look up records
   let results = lookupInZone www A zone
   putStrLn $ "\n  Lookup www.example.com A: " ++ show (length results) ++ " records"
-  traverse_ (\rr => putStrLn $ "    " ++ show rr) results
+  for_ results (\rr => putStrLn $ "    " ++ show rr)
 
   let mxResults = lookupInZone origin MX zone
   putStrLn $ "  Lookup example.com MX: " ++ show (length mxResults) ++ " records"
-  traverse_ (\rr => putStrLn $ "    " ++ show rr) mxResults
+  for_ mxResults (\rr => putStrLn $ "    " ++ show rr)
 
 -- ============================================================================
 -- Main

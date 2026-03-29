@@ -9,6 +9,7 @@
 
 module DNS.Response
 
+import Data.Vect
 import DNS.Name
 import DNS.RecordType
 import DNS.Query

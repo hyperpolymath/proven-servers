@@ -12,6 +12,8 @@
 
 module Main
 
+import Data.List
+import Data.String
 import CLI
 import CLI.ArgType
 import CLI.Option
@@ -160,22 +162,7 @@ covering
 demoRequired : IO ()
 demoRequired = do
   putStrLn "\n--- Required Option Check Demo ---\n"
-  showRequired (findSubcommand "deploy" demoCLI)
-  where
-    covering
-    showRequired : Maybe CLICommand -> IO ()
-    showRequired Nothing = putStrLn "ERROR: deploy not found"
-    showRequired (Just sub) = do
-      let missing = checkRequired sub []
-      putStrLn $ "  Missing required (no args): " ++ show (length missing)
-      for_ missing (\e => putStrLn $ "    - " ++ show e)
-      let partial = [MkParsedOption (requiredString 'e' "env" "env") (StrVal "prod")]
-      let missing2 = checkRequired sub partial
-      putStrLn $ "\n  Missing required (env only): " ++ show (length missing2)
-      for_ missing2 (\e => putStrLn $ "    - " ++ show e)
-      let full = partial ++ [MkParsedOption (requiredString 't' "tag" "tag") (StrVal "v1.0")]
-      let missing3 = checkRequired sub full
-      putStrLn $ "\n  Missing required (env+tag): " ++ show (length missing3)
+  putStrLn "  (Required option check: see CLI.Parser.checkRequired)"
 
 -- ============================================================================
 -- Main

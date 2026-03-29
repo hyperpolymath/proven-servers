@@ -10,6 +10,10 @@
 
 module DNS.Name
 
+import Data.List
+import Data.List1
+import Data.String
+
 %default total
 
 -- ============================================================================
@@ -137,21 +141,12 @@ validateLabel s =
 public export
 parseName : String -> Either NameError DomainName
 parseName s =
-  let trimmed = if s == "."
-                  then ""
-                  else s
-      parts   = toList (split (== '.') trimmed)
-      -- Remove trailing empty string from FQDN trailing dot
+  let trimmed = if s == "." then "" else s
+      parts   = forget (Data.String.split (== '.') trimmed)
       cleaned = filter (/= "") parts
   in if length trimmed == 0
        then Left EmptyName
-     else case validateLabels cleaned of
-            Left err     => Left err
-            Right labels =>
-              let total = computeTotalLen labels
-              in if total > maxNameLen
-                   then Left (NameTooLong total)
-                   else Right (MkDomainName labels total)
+       else checkLabels (validateLabels cleaned)
   where
     ||| Validate each label in the list.
     validateLabels : List String -> Either NameError (List Label)
@@ -167,6 +162,14 @@ parseName s =
     computeTotalLen []        = 0
     computeTotalLen [l]       = l.labelLen
     computeTotalLen (l :: ls) = l.labelLen + 1 + computeTotalLen ls
+
+    checkLabels : Either NameError (List Label) -> Either NameError DomainName
+    checkLabels (Left err) = Left err
+    checkLabels (Right labels) =
+      let totalLen = computeTotalLen labels
+      in if totalLen > maxNameLen
+           then Left (NameTooLong totalLen)
+           else Right (MkDomainName labels totalLen)
 
 -- ============================================================================
 -- Domain name utilities
@@ -204,5 +207,5 @@ public export
 unsafeMkName : List String -> DomainName
 unsafeMkName parts =
   let labels = map (\s => MkLabel s (length s)) parts
-      total  = foldl (\acc, l => acc + l.labelLen + 1) 0 labels
-  in MkDomainName labels (if total > 0 then minus total 1 else 0)
+      nameLen = foldl (\acc, l => acc + l.labelLen + 1) 0 labels
+  in MkDomainName labels (if nameLen > 0 then minus nameLen 1 else 0)

@@ -203,7 +203,7 @@ main = do
   putStrLn ""
   putStrLn $ "MQTT port:     " ++ show (cast {to=Nat} mqttPort)
   putStrLn $ "MQTT TLS port: " ++ show (cast {to=Nat} mqttTlsPort)
-  putStrLn $ "Protocol level: " ++ show (cast {to=Nat} protocolLevel)
+  putStrLn $ "Protocol level: " ++ show (cast {to=Nat} MQTT.protocolLevel)
   putStrLn $ "Max packet size: " ++ show maxPacketSize ++ " bytes"
 
   -- Run demos

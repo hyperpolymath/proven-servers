@@ -25,15 +25,18 @@ import MQTT.Topic
 ||| variable-length encoding scheme. Returns Nothing if the value
 ||| exceeds the maximum representable size (268,435,455).
 public export
+covering
 encodeRemainingLength : Nat -> Maybe (List Bits8)
 encodeRemainingLength n =
   if n > 268435455 then Nothing
   else Just (encode n)
   where
+    covering
     encode : Nat -> List Bits8
     encode x =
-      let byte = cast {to=Bits8} (mod x 128)
-          rest = div x 128
+      let xi : Integer = cast x
+          byte = cast {to=Bits8} (mod xi 128)
+          rest = cast {to=Nat} (div xi 128)
       in if rest == 0
            then [byte]
            -- Set continuation bit (bit 7) and recurse.
