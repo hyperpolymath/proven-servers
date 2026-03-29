@@ -1,22 +1,79 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
-= YOUR Template Repo Roadmap
+= proven-servers Roadmap
+:author: Jonathan D.A. Jewell
+:revdate: 2026-03-29
 
-== Current Status
+== Current State
 
-Initial development phase.
+A catalog of formally verified server components in Idris2 with dependent types.
+94 modules proven (in core/, protocols/, connectors/), 19 modules in not-proven/.
+Total: 113 modules. Completion: 83%.
 
-== Milestones
+Proven breakdown:
 
-=== v0.1.0 - Foundation
-* [ ] Core functionality
-* [ ] Basic documentation
-* [ ] CI/CD pipeline
+* **84 protocol skeletons** in protocols/ (proven, type-checked)
+* **5 core primitives** in core/ (proven: audit, cli, compose, frame, fsm)
+* **5 connector interfaces** in connectors/ (proven: cacheconn, dbconn, queueconn, resolverconn, storageconn)
 
-=== v1.0.0 - Stable Release
-* [ ] Full feature set
-* [ ] Comprehensive tests
-* [ ] Production ready
+ABI-FFI status:
 
-== Future Directions
+* 6/6 connectors: complete ABI-FFI pairs (Idris2 proofs, C headers, Zig FFI, integration tests)
+* 8/8 core primitives: complete ABI-FFI pairs
+* 26 protocols: full ABI-FFI pairs
+* 58 protocols: type definitions only (skeleton, no ABI-FFI yet)
+* 10 language bindings: Rust, Zig, C, ReScript, Gleam, Elixir, Haskell, OCaml, Ada, Julia
 
-_To be determined based on community feedback._
+19 not-proven modules: authconn, bgp, config, container, dbserver, deception, dhcp,
+firewall, httpd, nfs, ntp, nts, socket, ssh-bastion, syslog, tftp, tls,
+typed-frame-router, wire.
+
+== v0.9.0 -- Core ABI-FFI (Complete)
+
+* [x] 6/6 connector ABI-FFI pairs (authconn, dbconn, cacheconn, queueconn, resolverconn, storageconn)
+* [x] 8/8 core primitive ABI-FFI pairs (socket, frame, fsm, wire, compose, tls, config, audit)
+* [x] Generated C headers for all ABI-FFI pairs
+* [x] Zig FFI implementations with integration tests
+* [x] 10-language bindings (Rust, Zig, C, ReScript, Gleam, Elixir, Haskell, OCaml, Ada, Julia)
+
+== v0.10.0 -- Protocol ABI-FFI Expansion (In Progress)
+
+* [x] 26/84 protocol skeletons with full ABI-FFI pairs
+* [ ] Remaining 58 protocols: add Layout.idr, Transitions.idr, Foreign.idr, C headers, Zig FFI
+* [ ] CI/CD integration for ABI-FFI validation
+
+== v0.11.0 -- Prove Remaining 19 Modules
+
+* [ ] proven-authconn (promote from not-proven/)
+* [ ] proven-bgp
+* [ ] proven-config
+* [ ] proven-container
+* [ ] proven-dbserver
+* [ ] proven-deception
+* [ ] proven-dhcp
+* [ ] proven-firewall
+* [ ] proven-httpd
+* [ ] proven-nfs
+* [ ] proven-ntp
+* [ ] proven-nts
+* [ ] proven-socket
+* [ ] proven-ssh-bastion
+* [ ] proven-syslog
+* [ ] proven-tftp
+* [ ] proven-tls
+* [ ] proven-typed-frame-router
+* [ ] proven-wire
+
+== v1.0.0 -- Stable Release
+
+* [ ] All 113 modules proven (0 in not-proven/)
+* [ ] All protocols with full ABI-FFI pairs
+* [ ] Comprehensive integration test suite
+* [ ] No believe_me, assert_total, or unsafe patterns anywhere
+* [ ] OpenSSF badge
+
+== Future
+
+* Additional protocol skeletons as new protocols emerge
+* Cross-protocol composition examples (e.g. OIDC proxy = proxy + authserver)
+* Performance benchmarks for FFI call overhead
+* Stapeln container deployment for verified server bundles
