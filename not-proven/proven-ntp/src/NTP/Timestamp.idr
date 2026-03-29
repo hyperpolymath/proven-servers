@@ -83,10 +83,10 @@ ntpEpochOffset = 2208988800
 public export
 addTimestamp : NTPTimestamp -> NTPTimestamp -> NTPTimestamp
 addTimestamp a b =
-  let fracSum = cast {to=Nat} a.fraction + cast {to=Nat} b.fraction
-      carry   = if fracSum >= 4294967296 then 1 else 0
+  let fracSum : Integer = cast a.fraction + cast b.fraction
+      carry : Integer   = if fracSum >= 4294967296 then 1 else 0
       newFrac = cast {to=Bits32} (mod fracSum 4294967296)
-      newSecs = cast {to=Bits32} (cast {to=Nat} a.seconds + cast {to=Nat} b.seconds + carry)
+      newSecs = cast {to=Bits32} (cast {to=Integer} a.seconds + cast {to=Integer} b.seconds + carry)
   in MkNTPTimestamp newSecs newFrac
 
 ||| Subtract timestamp b from timestamp a.
@@ -94,14 +94,14 @@ addTimestamp a b =
 public export
 subTimestamp : NTPTimestamp -> NTPTimestamp -> NTPTimestamp
 subTimestamp a b =
-  let aFrac = cast {to=Nat} a.fraction
-      bFrac = cast {to=Nat} b.fraction
-      borrow = if aFrac < bFrac then 1 else 0
+  let aFrac : Integer = cast a.fraction
+      bFrac : Integer = cast b.fraction
+      borrow : Integer = if aFrac < bFrac then 1 else 0
       newFrac = if aFrac >= bFrac
                   then cast {to=Bits32} (aFrac - bFrac)
                   else cast {to=Bits32} (4294967296 + aFrac - bFrac)
-      aSecs = cast {to=Nat} a.seconds
-      bSecs = cast {to=Nat} b.seconds
+      aSecs : Integer = cast a.seconds
+      bSecs : Integer = cast b.seconds
       newSecs = if aSecs >= bSecs + borrow
                   then cast {to=Bits32} (aSecs - bSecs - borrow)
                   else 0  -- Underflow protection: clamp to zero
