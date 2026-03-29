@@ -9,6 +9,8 @@
 
 module CLI.ArgType
 
+import Data.String
+
 %default total
 
 -- ============================================================================

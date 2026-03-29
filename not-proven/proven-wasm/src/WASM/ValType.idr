@@ -9,6 +9,8 @@
 
 module WASM.ValType
 
+import Data.List
+
 %default total
 
 -- ============================================================================

@@ -10,6 +10,8 @@
 
 module WASM.Memory
 
+import Data.Nat
+
 %default total
 
 -- ============================================================================
@@ -68,7 +70,7 @@ Show MemoryError where
   show (MinExceedsMax mn mx)      = "min pages (" ++ show mn
                                     ++ ") exceeds max (" ++ show mx ++ ")"
   show (ExceedsHardLimit p)       = "pages (" ++ show p
-                                    ++ ") exceeds hard limit (" ++ show maxPages ++ ")"
+                                    ++ ") exceeds hard limit (" ++ show WASM.Memory.maxPages ++ ")"
   show (GrowBeyondMax c r m)      = "grow from " ++ show c ++ " by " ++ show r
                                     ++ " exceeds max " ++ show m
   show (OutOfBounds addr sz msz)  = "access at " ++ show addr ++ " + " ++ show sz
@@ -155,10 +157,14 @@ canGrow m = m.currentPages < m.limits.maxPages
 
 ||| Calculate the number of pages needed to hold the given number of bytes.
 ||| Rounds up to the nearest whole page.
+||| Calculate the number of pages needed to hold the given number of bytes.
+||| Rounds up to the nearest whole page.  Uses Integer arithmetic internally
+||| to avoid partial divNat/modNat on Nat.
 public export
 pagesForBytes : Nat -> Nat
 pagesForBytes 0 = 0
 pagesForBytes bytes =
-  let full = div bytes pageSize
-      rem  = mod bytes pageSize
-  in if rem == 0 then full else full + 1
+  let b : Integer = cast bytes
+      p : Integer = cast pageSize
+      pages : Integer = div (b + p - 1) p
+  in cast (max 0 pages)

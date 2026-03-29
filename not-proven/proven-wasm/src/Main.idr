@@ -18,6 +18,7 @@ import WASM.Instruction
 import WASM.Module
 import WASM.Memory
 import WASM.Types
+import Data.String
 import System
 
 %default total
@@ -52,8 +53,8 @@ printSep = putStrLn (replicate 60 '-')
 demoAddModule : WASMModule
 demoAddModule =
   let -- Step 1: Define the function type (i32, i32) -> (i32)
-      addType = MkFuncType { params = [I32, I32], results = [I32] }
-      (m1, typeIdx) = addType addType emptyModule
+      addFuncType = MkFuncType { params = [I32, I32], results = [I32] }
+      (m1, typeIdx) = addType addFuncType emptyModule
 
       -- Step 2: Define the function body
       addBody = [ LocalGet 0     -- Push first parameter
