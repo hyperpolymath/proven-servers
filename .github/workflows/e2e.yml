@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# proven-servers — E2E + Safety + Bench
+#
+# Tests ABI/FFI round-trip across 6 connectors, 84 protocols, and 8 core
+# primitives. Safety aspects enforce no dangerous patterns.
+
+name: E2E + Safety + Bench
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'connectors/**'
+      - 'protocols/**'
+      - 'core/**'
+      - 'bindings/**'
+      - 'tests/**'
+      - '.github/workflows/e2e.yml'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions: read-all
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: E2E — Connector + Protocol FFI Round-Trip
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Install Zig
+        uses: goto-bus-stop/setup-zig@7ab2955eb728f5440978d7b4f723a50dea1f3608  # v2
+        with:
+          version: 0.15.0
+
+      - name: Run E2E test suite
+        run: bash tests/e2e.sh
+
+  benchmarks:
+    name: Bench — Rust Binding Performance
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7  # stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5  # v2
+        with:
+          workspaces: bindings/rust
+
+      - name: Run benchmarks
+        run: |
+          if [ -f "bindings/rust/Cargo.toml" ]; then
+            cargo bench --manifest-path bindings/rust/Cargo.toml 2>&1 | tee /tmp/bench-results.txt
+          else
+            echo "No Rust bindings Cargo.toml found"
+          fi
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: benchmark-results
+          path: /tmp/bench-results.txt
+          retention-days: 30
