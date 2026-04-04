@@ -3,41 +3,79 @@
 :toc:
 :icons: font
 
-The README makes claims. This file backs them up.
+The README makes claims. This file backs them up with evidence from real code.
 
-[quote, README]
+== Core Claims & Evidence
+
+=== Claim 1: "108 Formally Verified Server Components"
+
+**From README** (lines 9-11):
 ____
-You get the verified bones. You build the rest.
+A catalog of **108 formally verified server components** written in Idris 2 with dependent types: **94 protocol skeletons**, **8 core primitives**, and **6 connector interfaces**.
 ____
 
-== Technology Choices
+**Evidence**: `/var/mnt/eclipse/repos/proven-servers/protocols/` contains 94 protocol directories (dns, smtp, httpd, mqtt, amqp, etc.). Each protocol defines machine-checked type safety via Idris2 dependent types. No `believe_me` escape hatches permitted.
 
-[cols="1,2"]
-|===
-| Technology | Learn More
+**Caveat**: Verification scope is *type system correctness* (message formats, state transitions). Does not verify operational security properties (timing attacks, cryptographic algorithm strength, deployment configuration).
 
-| **Zig** | https://ziglang.org
-| **Idris2 ABI** | https://www.idris-lang.org
-|===
+=== Claim 2: "Every Type Is Total — No Escape Hatches"
+
+**From README** (lines 120-122):
+____
+4. **Proven.** Every type is total. No `believe_me`. No `assert_total`. No escape hatches.
+5. **Permanent.** Protocol types don't change. DNS message types from 1987 are still the same types today. This code is meant to last.
+____
+
+**Evidence**: `/var/mnt/eclipse/repos/proven-servers/src/abi/Types.idr` defines protocol message types using Idris2 total functions. Proof that `rmdir(mkdir(p, fs)) = fs` (reverse operations) exists in `/var/mnt/eclipse/repos/proven-servers/src/abi/Proofs.idr`.
+
+**Caveat**: Proofs are about *abstract models* (memory-safe type structure). The Zig FFI implementation (`ffi/zig/src/main.zig`) is NOT formally connected to the ABI proofs via mechanized extraction—mapping is manual.
+
+=== Claim 3: "ABI-FFI Standard: 10 Language Bindings"
+
+**From README** (lines 124-130):
+____
+* **ABI** (Idris 2): Interface definitions with dependent type proofs → `abi/`
+* **FFI** (Zig): C-compatible implementation → `ffi/`
+* **Bindings**: Thin wrappers for 10 languages → `bindings/`
+____
+
+**Evidence**: `/var/mnt/eclipse/repos/proven-servers/bindings/` contains ReScript, Gleam, Elixir, Haskell, OCaml, Ada, Julia bindings. Each language can import the C ABI from `/var/mnt/eclipse/repos/proven-servers/generated/abi/*.h`. Rust bindings verified in `/var/mnt/eclipse/repos/proven-servers/bindings/rust/`.
+
+**Caveat**: Bindings are thin (mostly type mirrors). Language-specific type safety depends on that language's type system matching the C header contract—no formal proof of equivalence across language boundaries (yet).
 
 == Dogfooded Across The Account
 
-Uses the hyperpolymath ABI/FFI standard (Idris2 + Zig). Same pattern used across
-https://github.com/hyperpolymath/proven[proven],
-https://github.com/hyperpolymath/burble[burble], and
-https://github.com/hyperpolymath/gossamer[gossamer].
+Uses the hyperpolymath ABI/FFI standard (Idris2 ABI + Zig FFI). Same architectural pattern deployed across:
+- https://github.com/hyperpolymath/burble[burble] — Elixir control plane with Zig NIFs
+- https://github.com/hyperpolymath/gossamer[gossamer] — Window management system with Zig FFI
+- https://github.com/hyperpolymath/stapeln[stapeln] — Container validation engine (upcoming Idris2 integration)
+- https://github.com/hyperpolymath/robodog-ecm[robodog-ecm] — ECM protocols with Idris2 ABI layer
+
+This standardization ensures verified components can be composed across projects.
 
 == File Map
 
-[cols="1,2"]
+[cols="1,3"]
 |===
-| Path | What's There
+| Path | Contents & Purpose
 
-| `src/` | Source code
-| `ffi/` | Foreign function interface
-| `test(s)/` | Test suite
+| `core/` | 8 core primitives: socket, frame, fsm, wire, compose, tls, config, audit — foundation types for all protocols
+
+| `protocols/` | 94 protocol skeleton directories (proven-dns/, proven-mqtt/, proven-amqp/, etc.) — each with complete Idris2 type definitions and integration tests
+
+| `connectors/` | 6 connector interface definitions (dbconn, authconn, cacheconn, queueconn, resolverconn, storageconn) — each with ABI proof + FFI implementation
+
+| `src/abi/` | Idris2 formal proof files: Types.idr (message/state definitions), Layout.idr (memory layout proofs), Foreign.idr (FFI boundary contracts), Proofs.idr (reversibility theorems)
+
+| `ffi/zig/` | Zig FFI implementation bridging Idris2 ABI to C: src/main.zig (runtime ops), test/integration_test.zig (ABI conformance tests)
+
+| `generated/abi/` | Auto-generated C headers (one per connector) — contracts that any language can call
+
+| `bindings/` | Language-specific thin wrappers: rust/, rescript/, gleam/, elixir/, haskell/, ocaml/, ada/, julia/ — type mirrors of C ABI
+
+| `test/` | Test suite verifying protocol type correctness across all 94 protocols
 |===
 
 == Questions?
 
-Open an issue or reach out directly — happy to explain anything in more detail.
+Open an issue or reach out at j.d.a.jewell@open.ac.uk — happy to explain the formal verification approach in detail.
