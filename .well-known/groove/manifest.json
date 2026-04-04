@@ -4,12 +4,12 @@
     "team"
   ],
   "capabilities": {
-    "primary": {
-      "description": "TODO: describe this service's primary capability",
+    "theorem-proving": {
+      "description": "Formally verified HTTP/TCP server cores with Idris2 proofs and multi-language FFI bindings.",
       "panel_compatible": true,
       "protocol": "cli",
       "requires_auth": false,
-      "type": "custom"
+      "type": "theorem-proving"
     }
   },
   "consumes": [],
