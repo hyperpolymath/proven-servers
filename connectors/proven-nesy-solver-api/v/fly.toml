@@ -24,7 +24,9 @@ kill_timeout = "10s"
   NESY_PORT = "9000"
   NESY_REPO_TAG = "hyperpolymath/nesy-solver"
   NESY_FILE_TAG = "playground/submission.txt"
-  # ECHIDNA_URL + VERISIM_URL set via `flyctl secrets set` before deploy.
+  # fly.io 6PN internal DNS — works across apps in the same org.
+  ECHIDNA_URL = "http://echidna-nesy.internal:8090"
+  VERISIM_URL = "http://verisim-api.internal:8080"
 
 [http_service]
   internal_port = 9000
