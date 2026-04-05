@@ -1,0 +1,25 @@
+-- SPDX-License-Identifier: PMPL-1.0-or-later
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- proven-nesy-solver-api: Neurosymbolic proof playground backend interface
+-- types for proven-servers.  Defines the type-safe boundary between the
+-- nesy-solver.dev frontend and echidna/verisim-api — prover kinds,
+-- obligation classes, prove request/response types, strategy queries,
+-- certificate lookups, and attempt-record types.
+
+package proven-nesy-solver-api
+version = 0.1.0
+authors = "Jonathan D.A. Jewell"
+brief   = "Neurosymbolic proof playground interface types for proven-servers"
+
+sourcedir = "src"
+modules   = NesySolverAPI
+          , NesySolverAPI.Types
+          , NesySolverAPIABI
+          , NesySolverAPIABI.Layout
+          , NesySolverAPIABI.Transitions
+          , NesySolverAPIABI.Foreign
+          , Main
+
+main      = Main
+executable = proven-nesy-solver-api
