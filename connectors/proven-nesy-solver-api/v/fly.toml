@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# fly.io deployment configuration for proven-nesy-solver-api.
+#
+# Deploy:
+#   cd proven-servers/connectors/proven-nesy-solver-api/v
+#   flyctl launch --no-deploy --copy-config          # first time only
+#   flyctl secrets set ECHIDNA_URL=https://... VERISIM_URL=https://...
+#   flyctl deploy
+#
+# NB: echidna + verisim-api must be reachable from fly.io. If they run
+# on a private network only, front them with a Cloudflare Tunnel or
+# Tailscale before pointing ECHIDNA_URL / VERISIM_URL at their public
+# hostnames.
+
+app = "nesy-solver-api"
+primary_region = "lhr"  # London — nearest to the .dev registrar region
+kill_signal = "SIGTERM"
+kill_timeout = "10s"
+
+[build]
+  dockerfile = "Containerfile"
+
+[env]
+  NESY_PORT = "9000"
+  NESY_REPO_TAG = "hyperpolymath/nesy-solver"
+  NESY_FILE_TAG = "playground/submission.txt"
+  # ECHIDNA_URL + VERISIM_URL set via `flyctl secrets set` before deploy.
+
+[http_service]
+  internal_port = 9000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1

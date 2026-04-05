@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# Container for proven-nesy-solver-api V HTTP server (Phase E3).
+# Deployed to fly.io; also used for local podman testing.
+#
+# Build:
+#   podman build -f Containerfile -t nesy-solver-api:0.1.0 .
+# Run (local podman, against host echidna + verisim):
+#   podman run --rm -p 9000:9000 \
+#     -e ECHIDNA_URL=http://host.containers.internal:8090 \
+#     -e VERISIM_URL=http://host.containers.internal:8080 \
+#     nesy-solver-api:0.1.0
+
+# ─── Builder stage ─────────────────────────────────────────────────────
+FROM docker.io/thevlang/vlang:alpine AS builder
+
+WORKDIR /build
+COPY server.v ./server.v
+# Produce a statically-linked (ish) binary.
+RUN v -prod -o nesy-server server.v
+
+# ─── Runtime stage (musl-matching Chainguard wolfi base) ──────────────
+# NB: V builder uses Alpine/musl; we need a musl runtime or static link.
+# Chainguard wolfi-base is glibc-based so does NOT work — use alpine instead.
+FROM docker.io/alpine:3.21
+
+LABEL org.opencontainers.image.title="proven-nesy-solver-api"
+LABEL org.opencontainers.image.description="Neurosymbolic proof playground backend (echidna + verisim-api bridge)"
+LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/proven-servers"
+
+COPY --from=builder /build/nesy-server /usr/local/bin/nesy-server
+
+ENV NESY_PORT=9000
+ENV ECHIDNA_URL=http://localhost:8090
+ENV VERISIM_URL=http://localhost:8080
+
+EXPOSE 9000
+
+ENTRYPOINT ["/usr/local/bin/nesy-server"]
