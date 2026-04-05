@@ -28,20 +28,22 @@ import crypto.sha256
 // -----------------------------------------------------------------------
 
 struct Config {
-	echidna_url string
-	verisim_url string
-	port        int
-	repo        string
-	file_tag    string
+	echidna_url  string
+	verisim_url  string
+	port         int
+	repo         string
+	file_tag     string
+	ingest_token string // shared secret for POST /ingest (batch_driver, echidnabot)
 }
 
 fn load_config() Config {
 	return Config{
-		echidna_url: os.getenv_opt('ECHIDNA_URL') or { 'http://localhost:8090' }
-		verisim_url: os.getenv_opt('VERISIM_URL') or { 'http://localhost:8080' }
-		port:        (os.getenv_opt('NESY_PORT') or { '9000' }).int()
-		repo:        os.getenv_opt('NESY_REPO_TAG') or { 'hyperpolymath/nesy-solver' }
-		file_tag:    os.getenv_opt('NESY_FILE_TAG') or { 'playground/submission.txt' }
+		echidna_url:  os.getenv_opt('ECHIDNA_URL') or { 'http://localhost:8090' }
+		verisim_url:  os.getenv_opt('VERISIM_URL') or { 'http://localhost:8080' }
+		port:         (os.getenv_opt('NESY_PORT') or { '9000' }).int()
+		repo:         os.getenv_opt('NESY_REPO_TAG') or { 'hyperpolymath/nesy-solver' }
+		file_tag:     os.getenv_opt('NESY_FILE_TAG') or { 'playground/submission.txt' }
+		ingest_token: os.getenv_opt('NESY_INGEST_TOKEN') or { '' }
 	}
 }
 
@@ -401,6 +403,37 @@ pub fn (mut app App) strategy(class string) vweb.Result {
 		return app.text('{"error":"verisim-api: ${err}"}')
 	}
 	return app.json(resp)
+}
+
+// POST /ingest — authenticated passthrough for batch_driver / echidnabot.
+// Accepts a pre-formed VerisimAttempt JSON and forwards it verbatim to
+// verisim-api's /api/v1/proof_attempts.  Requires
+// `Authorization: Bearer <NESY_INGEST_TOKEN>`.
+@['/ingest'; post]
+pub fn (mut app App) ingest() vweb.Result {
+	app.add_cors_headers()
+	app.add_header('Content-Type', 'application/json')
+	if app.cfg.ingest_token == '' {
+		app.set_status(503, 'Service Unavailable')
+		return app.text('{"error":"ingest disabled: NESY_INGEST_TOKEN not set on server"}')
+	}
+	auth := app.get_header('Authorization')
+	expected := 'Bearer ${app.cfg.ingest_token}'
+	if auth != expected {
+		app.set_status(401, 'Unauthorized')
+		return app.text('{"error":"missing or invalid bearer token"}')
+	}
+	// Forward the request body verbatim to verisim-api.
+	url := '${app.cfg.verisim_url}/api/v1/proof_attempts'
+	req := http.new_request(.post, url, app.req.data)
+	mut mutreq := req
+	mutreq.add_header(http.CommonHeader.content_type, 'application/json')
+	resp := mutreq.do() or {
+		app.set_status(502, 'Bad Gateway')
+		return app.text('{"error":"verisim-api: ${err}"}')
+	}
+	app.set_status(resp.status_code, '')
+	return app.text(resp.body)
 }
 
 // GET /surfaces
