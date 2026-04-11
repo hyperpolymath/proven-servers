@@ -210,6 +210,9 @@ fn call_echidna_verify(cfg Config, prover string, content string) !EchidnaRespon
 	req := http.new_request(.post, url, body)
 	mut mutreq := req
 	mutreq.add_header(http.CommonHeader.content_type, 'application/json')
+	// Generous timeout: echidna may cold-start (Isabelle heap ~1-2 GB, Julia JIT).
+	// 90s covers a realistic worst-case first-request-after-auto-stop on Fly.io.
+	mutreq.read_timeout = 90 * time.second
 	resp := mutreq.do() or {
 		return error('echidna unreachable: ${err}')
 	}

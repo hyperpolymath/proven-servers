@@ -893,9 +893,17 @@ todos:
 edit:
     ${EDITOR:-code} .
 
-# Run panic-attacker pre-commit scan
+# Run panic-attacker pre-commit scan (whole repo)
 assail:
     @command -v panic-attack >/dev/null 2>&1 && panic-attack assail . || echo "panic-attack not found — install from https://github.com/hyperpolymath/panic-attacker"
+
+# Run panic-attack hexadeca surface scan on the nesy-solver-api V connector.
+# Uses connectors/proven-nesy-solver-api/v/panic-attack.toml for surface-specific
+# thresholds (REST + VerisimDB held to 85 robustness; others to 75).
+assail-hexadeca:
+    @command -v panic-attack >/dev/null 2>&1 || { echo "panic-attack not found — install from https://github.com/hyperpolymath/panic-attacker"; exit 1; }
+    @echo "Scanning hexadeca connector (16 surfaces)..."
+    @cd connectors/proven-nesy-solver-api/v && panic-attack assail . --config panic-attack.toml
 
 # Self-diagnostic — checks dependencies, permissions, paths
 doctor:

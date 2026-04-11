@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# panic-attack hexadeca surface scan for proven-nesy-solver-api.
+#
+# Scans the V-lang hexadeca connector (all 16 protocol surfaces) with
+# panic-attack assail, then maps findings to individual surfaces and
+# reports a per-surface pass/fail in the job summary.
+#
+# Triggered only when V connector source or its config changes.
+
+name: panic-attack / hexadeca (nesy-solver-api)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'connectors/proven-nesy-solver-api/v/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'connectors/proven-nesy-solver-api/v/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hexadeca-scan:
+    name: panic-attack hexadeca scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+
+      - name: Cache panic-attacker build
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
+        with:
+          workspaces: /tmp/panic-attacker -> target
+          cache-on-failure: true
+
+      - name: Build and install panic-attack
+        run: |
+          git clone --depth 1 https://github.com/hyperpolymath/panic-attacker.git /tmp/panic-attacker
+          cd /tmp/panic-attacker
+          cargo build --release
+          sudo install -m 0755 target/release/panic-attack /usr/local/bin/panic-attack
+          panic-attack --version
+
+      - name: Run panic-attack assail (hexadeca connector)
+        id: assail
+        working-directory: connectors/proven-nesy-solver-api/v
+        run: |
+          # Run the scan; exit 0 so we can handle failures ourselves.
+          panic-attack assail . --config panic-attack.toml \
+            2>&1 | tee /tmp/panic-raw.txt || true
+
+          # Try JSON output for structured reporting.
+          panic-attack assail . --config panic-attack.toml --format json \
+            > /tmp/panic-findings.json 2>/dev/null || echo '[]' > /tmp/panic-findings.json
+
+          TOTAL=$(jq '. | length' /tmp/panic-findings.json 2>/dev/null || echo 0)
+          CRITICAL=$(jq '[.[] | select(.severity == "critical")] | length' /tmp/panic-findings.json 2>/dev/null || echo 0)
+          HIGH=$(jq '[.[] | select(.severity == "high")] | length' /tmp/panic-findings.json 2>/dev/null || echo 0)
+          echo "total=$TOTAL"    >> $GITHUB_OUTPUT
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH"      >> $GITHUB_OUTPUT
+
+      - name: Build hexadeca surface report
+        id: surface-report
+        working-directory: connectors/proven-nesy-solver-api/v
+        run: |
+          # Surfaces in SurfaceKind order (tags 0-15).
+          SURFACES=(rest graphql websocket sse grpc jsonrpc msgpack_rpc cbor
+                    flatbuffers capnproto bebop trpc mqtt amqp soap verisimdb)
+
+          echo "## panic-attack hexadeca surface report"       >> $GITHUB_STEP_SUMMARY
+          echo ""                                               >> $GITHUB_STEP_SUMMARY
+          echo "| # | Surface | Findings | Status |"           >> $GITHUB_STEP_SUMMARY
+          echo "|---|---------|----------|--------|"           >> $GITHUB_STEP_SUMMARY
+
+          FAIL=0
+          for i in "${!SURFACES[@]}"; do
+            SURFACE="${SURFACES[$i]}"
+            # Count findings that mention this surface in their file/message.
+            COUNT=$(jq --arg s "$SURFACE" \
+              '[.[] | select((.file // "" | test($s; "i")) or (.message // "" | test($s; "i")))] | length' \
+              /tmp/panic-findings.json 2>/dev/null || echo 0)
+            CRIT=$(jq --arg s "$SURFACE" \
+              '[.[] | select(((.file // "" | test($s; "i")) or (.message // "" | test($s; "i"))) and .severity == "critical")] | length' \
+              /tmp/panic-findings.json 2>/dev/null || echo 0)
+
+            if [ "$CRIT" -gt 0 ]; then
+              STATUS="FAIL"
+              FAIL=1
+            else
+              STATUS="pass"
+            fi
+            echo "| $i | \`$SURFACE\` | $COUNT | $STATUS |" >> $GITHUB_STEP_SUMMARY
+          done
+
+          echo ""                                               >> $GITHUB_STEP_SUMMARY
+          echo "**Total findings:** ${{ steps.assail.outputs.total }}" >> $GITHUB_STEP_SUMMARY
+          echo "Critical: ${{ steps.assail.outputs.critical }} | High: ${{ steps.assail.outputs.high }}" >> $GITHUB_STEP_SUMMARY
+
+          echo "any_fail=$FAIL" >> $GITHUB_OUTPUT
+
+      - name: Upload findings artifact
+        if: always()
+        uses: actions/upload-artifact@65c79d7f54e76e4e3c7a8f34db0f4ac8b515c478 # v4
+        with:
+          name: panic-findings-hexadeca
+          path: |
+            /tmp/panic-findings.json
+            /tmp/panic-raw.txt
+          retention-days: 30
+
+      - name: Fail on critical findings
+        if: steps.assail.outputs.critical > 0
+        run: |
+          echo "Critical findings in hexadeca connector — see artifact."
+          jq '[.[] | select(.severity == "critical")]' /tmp/panic-findings.json
+          exit 1

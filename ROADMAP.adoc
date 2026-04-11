@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: PMPL-1.0-or-later
 = proven-servers Roadmap
 :author: Jonathan D.A. Jewell
-:revdate: 2026-03-29
+:revdate: 2026-04-11
 
 == Current State
 
@@ -71,9 +71,71 @@ typed-frame-router, wire.
 * [ ] No believe_me, assert_total, or unsafe patterns anywhere
 * [ ] OpenSSF badge
 
+== v1.1.0 -- HTTP Capability Gateway + Consent Layer
+
+Integrate the estate's HTTP-layer tooling as first-class proven-servers consumers.
+Both repos exist and have ABI-FFI skeletons; what is missing is wiring into the
+proven-httpd + proven-typed-frame-router proof obligations and the nesy-solver-api
+deployment stack.
+
+* [ ] **proven-httpd** — promote from not-proven/; Idris2 capability-typed HTTP handler proofs
+* [ ] **proven-typed-frame-router** — promote from not-proven/; typed-frame dispatch proof obligations
+* [ ] **hybrid-automation-router integration** — wire har-core event types through proven-queueconn
+  dispatch; verified routing decisions backed by proven-fsm states
+* [ ] **conative-gating (consent-aware HTTP)** — wrap proven-httpd with conative-gating's
+  consent-checking middleware; dependent-type proof that a request cannot be forwarded
+  without a resolved consent record
+* [ ] **Invariant path tool** — expose proven-typed-frame-router as an invariant-path
+  checker for the nesy-solver-api: each `/prove` request traverses a verified route
+  that cannot skip consent, audit, or trust-level gates
+* [ ] ABI-FFI pairs for proven-httpd + proven-typed-frame-router
+* [ ] Integration tests: consent-denied → 403, missing trust-level → 403, valid path → 200
+
+== v1.2.0 -- Hypatia + CI Intelligence
+
+* [ ] **Hypatia CI scan integration** — run `hypatia scan` against all proven-servers
+  modules in CI; block merge if trust-pipeline invariants regress
+* [ ] **Hypatia → proven-servers feedback loop** — Hypatia findings routed back as
+  Idris2 proof obligations (currently listed as "potential-consumer" in ECOSYSTEM.a2ml)
+* [ ] **Automated ABI compliance check** — Hypatia rule verifying Idris2 ABI → C header
+  → Zig FFI consistency for all 84 protocol skeletons
+* [ ] Wire Hypatia scan results into STATE.a2ml via the 6A2 innervation pipeline
+
+== v1.3.0 -- VeriSimDB + Lithoglyph Aqueduct
+
+The aqueduct pipeline spec already exists at
+`verisimdb/.machine_readable/integrations/aqueduct.a2ml`.
+What is missing is the actual implementation of each stage.
+
+* [ ] **Stage 1 — sanitise**: strip PII/secrets from raw proof attempt records before
+  they leave the nesy-solver-api boundary
+* [ ] **Stage 2 — structure**: convert `VerisimAttempt` JSON into `ConvStruct` A2ML
+* [ ] **Stage 3 — lithoglyph_insert**: inscribe structured attempt as a permanent narrative
+  artefact in Lithoglyph; `LithoInscription` type (permanent, side-effect)
+* [ ] **Stage 4 — verisim_ingest**: derive counterfactual record in VeriSimDB from the
+  inscription (closes the loop: every proved obligation has both a graph inscription
+  and a counterfactual drift record)
+* [ ] Linear-type enforcement: no attempt record can skip inscription; no inscription
+  can be consumed twice (Ephapax-style affine token)
+* [ ] Wire aqueduct as a post-handler in nesy-solver-api `/prove` response path
+
+== v1.4.0 -- ReScript TEA + Cadre Router
+
+* [ ] **cadre-tea-router** (`developer-ecosystem/rescript-ecosystem/cadre-tea-router`)
+  — wire as the routing layer for the nesy-solver playground UI; replaces ad-hoc
+  ReScript component wiring with a typed TEA message bus
+* [ ] **ReScript TEA pattern** — refactor echidna's 33 ReScript UI components to route
+  all messages through the cadre-tea-router; no direct DOM side-effects outside TEA
+  update loop
+* [ ] Type-safe message dispatch: each user action (submit proof, select prover, view
+  history) modelled as a variant in the TEA `Msg` type
+* [ ] Cadre router integration test: invalid message shape → compile error, not runtime crash
+
 == Future
 
 * Additional protocol skeletons as new protocols emerge
 * Cross-protocol composition examples (e.g. OIDC proxy = proxy + authserver)
 * Performance benchmarks for FFI call overhead
 * Stapeln container deployment for verified server bundles
+* Groove protocol integration: all inter-service calls (nesy-solver-api ↔ echidna ↔
+  verisim-api) routed through Groove rather than direct HTTP

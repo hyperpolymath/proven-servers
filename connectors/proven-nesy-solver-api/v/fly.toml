@@ -4,13 +4,13 @@
 # Deploy:
 #   cd proven-servers/connectors/proven-nesy-solver-api/v
 #   flyctl launch --no-deploy --copy-config          # first time only
-#   flyctl secrets set ECHIDNA_URL=https://... VERISIM_URL=https://...
 #   flyctl deploy
 #
-# NB: echidna + verisim-api must be reachable from fly.io. If they run
-# on a private network only, front them with a Cloudflare Tunnel or
-# Tailscale before pointing ECHIDNA_URL / VERISIM_URL at their public
-# hostnames.
+# Private networking: echidna-nesy and verisim-api are reached via Fly's
+# private 6PN network. Use .flycast (NOT .internal) so that auto-stopped
+# machines are woken on first request. .internal does NOT trigger auto-wake.
+# The URLs below are the correct defaults; override with flyctl secrets if
+# the app names ever change.
 
 app = "nesy-solver-api"
 primary_region = "lhr"  # London — nearest to the .dev registrar region
@@ -24,9 +24,9 @@ kill_timeout = "10s"
   NESY_PORT = "9000"
   NESY_REPO_TAG = "hyperpolymath/nesy-solver"
   NESY_FILE_TAG = "playground/submission.txt"
-  # fly.io 6PN internal DNS — works across apps in the same org.
-  ECHIDNA_URL = "http://echidna-nesy.internal:8090"
-  VERISIM_URL = "http://verisim-api.internal:8080"
+  # .flycast (not .internal) — required for auto-wake of stopped machines.
+  ECHIDNA_URL = "http://echidna-nesy.flycast:8090"
+  VERISIM_URL = "http://verisim-api.flycast:8080"
 
 [http_service]
   internal_port = 9000
