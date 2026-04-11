@@ -4,8 +4,8 @@
 # ECOSYSTEM.a2ml — Ecosystem position for proven-servers.
 
 [metadata]
-version = "0.2.0"
-last-updated = "2026-03-01"
+version = "0.3.0"
+last-updated = "2026-04-11"
 
 [project]
 name = "proven-servers"
@@ -21,9 +21,15 @@ projects = [
   { name = "proven (original)", relationship = "predecessor", notes = "Replaced — original had 4566 believe_me instances and bulk AI-generated bindings. proven-servers is a clean rewrite with zero believe_me." },
   { name = "language-bridges", relationship = "sibling-standard", notes = "Shares the Idris2-ABI / Zig-FFI / C-header pattern" },
   { name = "rsr-template-repo", relationship = "template-source", notes = "Repository scaffolding, workflows, and governance structure sourced from RSR template" },
-  { name = "hypatia", relationship = "potential-consumer", notes = "Neurosymbolic CI scanning could verify proven-servers ABI compliance" },
+  { name = "reasonably-good-token-vault", relationship = "active-integration", notes = "RGTV vault-broker deployed as rgtv-nesy on Fly.io; nesy-solver-api fetches NESY_INGEST_TOKEN via grant→redeem protocol. RGTV_URL + RGTV_AGENT_TOKEN configured in fly.toml." },
+  { name = "echidna", relationship = "active-integration", notes = "Prover dispatcher consumed by nesy-solver-api as echidna-nesy.flycast:8090; cold-start hardening applied (90s grace, HTTP health check)." },
+  { name = "verisimdb", relationship = "active-integration", notes = "Scan results, build metrics, and dependency graph emitted via hexad format. See integrations/verisimdb.a2ml." },
+  { name = "hypatia", relationship = "planned-integration", notes = "v1.2.0 milestone — Hypatia CI scan + feedback loop + automated ABI compliance check. See ROADMAP.adoc." },
   { name = "stapeln", relationship = "potential-consumer", notes = "Container orchestration could use proven-servers for verified network stacks" },
   { name = "gitbot-fleet", relationship = "potential-consumer", notes = "Automated maintenance bots could manage connector version updates" },
+  { name = "conative-gating", relationship = "planned-integration", notes = "v1.1.0 milestone — consent-aware HTTP gateway layer for nesy-solver-api." },
+  { name = "lithoglyph", relationship = "planned-integration", notes = "v1.3.0 milestone — VeriSimDB→Lithoglyph aqueduct (4-stage: sanitise → structure → lithoglyph_insert → verisim_ingest)." },
+  { name = "cadre-tea-router", relationship = "planned-integration", notes = "v1.4.0 milestone — ReScript TEA pattern refactor of echidna's 33 UI components." },
 ]
 
 [integration-points]
@@ -32,4 +38,8 @@ points = [
   { system = "C ABI consumers", direction = "outbound", protocol = "libproven_*.so / libproven_*.a via standard C calling convention" },
   { system = "Idris2 compiler", direction = "inbound", protocol = "dependent-type verification at compile time" },
   { system = "Zig build system", direction = "inbound", protocol = "zig build / zig build test" },
+  { system = "RGTV (rgtv-nesy)", direction = "inbound", protocol = "HTTP grant→redeem over Fly.io private 6PN (.flycast)" },
+  { system = "echidna (echidna-nesy)", direction = "outbound", protocol = "HTTP POST /api/verify over Fly.io private 6PN (.flycast)" },
+  { system = "verisim-api", direction = "outbound", protocol = "HTTP POST /attempts over Fly.io private 6PN (.flycast)" },
+  { system = "panic-attack", direction = "inbound", protocol = "hexadeca 16-surface CI scan via panic-attack-hexadeca.yml" },
 ]

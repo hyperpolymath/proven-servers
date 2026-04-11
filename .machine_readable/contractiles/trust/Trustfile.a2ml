@@ -1,82 +1,69 @@
 # SPDX-License-Identifier: PMPL-1.0-or-later
-# =============================================================================
-# A2ML Trustfile Template (Cyber-Resilient Baseline)
-# Replace all {{PLACEHOLDERS}} for each derived repository.
-# =============================================================================
+# Trustfile — Integrity and provenance verification
+# Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
----
-### [META]
-id: "did:web:{{DOMAIN}}"
-version: "{{TRUSTFILE_VERSION}}"
-context:
-  - "https://a2ml.org/ns/v2"
-  - "https://leanprover-community.github.io/lean4"
-  - "https://hypatia.scans/ns/v1"
-  - "https://w3id.org/security/v4"
-meta:
-  generated: "{{GENERATED_AT}}"
-  expires: "{{EXPIRES_AT}}"
-  signature:
-    algorithm: "Ed448+Dilithium5"
-    value: "{{PRIMARY_SIGNATURE}}"
-    signedBy: "did:web:{{DOMAIN}}#primary-sig"
-  fallbackSignature:
-    algorithm: "SPHINCS+"
-    value: "{{FALLBACK_SIGNATURE}}"
-  integrity:
-    sha3-512: "{{SHA3_512}}"
-    shake256: "{{SHAKE256}}"
-    zonemd: "{{ZONEMD}}"
+@abstract:
+Integrity invariants for proven-servers. Verifies that the repo has not been
+tampered with, secrets are not leaked, provenance is traceable, and the
+Idris2/Zig ABI-FFI pipeline is correctly structured.
+@end
 
----
-### [TRUSTFILE]
-issuer: "did:web:{{DOMAIN}}"
-keys:
-  - id: "#primary-sig"
-    type: "HybridKey2024"
-    classical:
-      algorithm: "Ed448"
-      publicKeyJwk:
-        kty: "OKP"
-        crv: "Ed448"
-        x: "{{ED448_PUBLIC_KEY}}"
-    postQuantum:
-      algorithm: "Dilithium5"
-      publicKeyJwk:
-        kty: "OKP"
-        crv: "Dilithium5"
-        x: "{{DILITHIUM5_PUBLIC_KEY}}"
-    fallback:
-      algorithm: "SPHINCS+"
-      publicKeyJwk:
-        kty: "OKP"
-        crv: "SPHINCS+"
-        x: "{{SPHINCS_PLUS_PUBLIC_KEY}}"
+## Secrets
 
-algorithms:
-  hashing: ["SHA3-512", "SHAKE256", "BLAKE3"]
-  kdf: "HKDF-SHAKE512"
-  rng: "ChaCha20-DRBG"
+### no-secrets-committed
+- description: No credential files in repo
+- run: test ! -f .env && test ! -f credentials.json && test ! -f .env.local && test ! -f .env.production
+- severity: critical
 
----
-### [CI_CD]
-github_actions:
-  workflow: ".github/workflows/trustfile.yml"
-  checks:
-    - "a2ml validate {{TRUSTFILE_PATH}}"
-    - "lake build && lake exectest"
-    - "hypatia scan --config hypatia.yml"
+### no-private-keys
+- description: No private key files committed
+- run: "! find . -name '*.pem' -o -name '*.key' -o -name 'id_rsa' -o -name 'id_ed25519' 2>/dev/null | grep -v node_modules | head -1 | grep -q ."
+- severity: critical
 
-gitbot_fleet:
-  hooks:
-    - type: "pre-commit"
-      script: "a2ml validate {{TRUSTFILE_PATH}}"
-    - type: "post-merge"
-      script: "gitbot-fleet diff --file {{TRUSTFILE_PATH}}"
+### no-tokens-in-source
+- description: No hardcoded API tokens in source
+- run: "! grep -rE '(api[_-]?key|secret|token|password)\s*[:=]\s*[\"'\"'\"'][A-Za-z0-9]{16,}' --include='*.v' --include='*.idr' --include='*.zig' --include='*.rs' . 2>/dev/null | head -1 | grep -q ."
+- severity: critical
 
----
-### [DEPLOYMENT]
-steps:
-  - "Replace all placeholders."
-  - "Generate proofs and signatures."
-  - "Validate trustfile and commit."
+## Provenance
+
+### author-correct
+- description: Git author matches expected identity
+- run: "git log -1 --format='%ae' | grep -qE '(hyperpolymath|j\\.d\\.a\\.jewell)'"
+- severity: warning
+
+### license-content
+- description: LICENSE contains expected identifier
+- run: grep -q 'PMPL\|MPL\|MIT\|Apache\|LGPL' LICENSE
+- severity: warning
+
+### spdx-headers
+- description: All Idris2 and Zig source files have SPDX headers
+- run: "! find src -name '*.idr' -o -name '*.zig' | xargs grep -rL 'SPDX-License-Identifier' 2>/dev/null | head -1 | grep -q ."
+- severity: warning
+
+## ABI-FFI Structure
+
+### abi-directory-exists
+- description: src/abi/ directory exists (Idris2 ABI definitions)
+- run: test -d src/abi || test -d connectors
+- severity: warning
+
+### no-dockerfile
+- description: No Dockerfile (use Containerfile)
+- run: test ! -f Dockerfile
+- severity: warning
+
+## Container Security
+
+### container-images-pinned
+- description: Containerfile uses pinned or Chainguard base images
+- run: test ! -f Containerfile || grep -qE 'cgr\.dev|@sha256:' Containerfile
+- severity: warning
+
+## V-lang Migration (2026-04-10 ban)
+
+### no-new-vmod
+- description: v.mod files indicate V-lang — alert if new ones appear (existing nesy-solver-api connector is exempt pending migration)
+- run: "! find . -name 'v.mod' -newer connectors/proven-nesy-solver-api/v/v.mod 2>/dev/null | head -1 | grep -q ."
+- severity: warning

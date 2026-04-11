@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: PMPL-1.0-or-later
+# RGTV Integration — Zero-Trust Credential Broker
+
+[integration]
+name = "reasonably-good-token-vault"
+type = "credential-broker"
+repository = "https://github.com/hyperpolymath/reasonably-good-token-vault"
+component = "vault-broker"
+fly-app = "rgtv-nesy"
+
+[protocol]
+# Two-step grant→redeem. Raw credential values never appear in agent context.
+step-1 = "POST /v1/grants  { hint: 'NESY_INGEST_TOKEN' }  → 201 { grant_id, expires_in_secs }"
+step-2 = "POST /v1/grants/:grant_id/redeem                → 200 { hint, value }"
+auth = "Authorization: Bearer <RGTV_AGENT_TOKEN>"
+grant-ttl-secs = 30
+
+[wiring]
+# Consumer: proven-nesy-solver-api connector
+consumer-file = "connectors/proven-nesy-solver-api/v/rgtv_client.v"
+env-required = ["RGTV_URL", "RGTV_AGENT_TOKEN"]
+env-fallback = "NESY_INGEST_TOKEN (direct env — local dev only)"
+fly-url = "http://rgtv-nesy.flycast:9100"
+
+[deployment]
+# Set secrets before deploying nesy-solver-api:
+#   flyctl secrets set RGTV_AGENT_TOKEN=<tok> -a nesy-solver-api
+# Or use deploy-fly.sh which handles this automatically:
+#   NESY_INGEST_TOKEN=<tok> ./deploy-fly.sh rgtv
+state-file = "~/.config/nesy-solver/rgtv-agent-token"

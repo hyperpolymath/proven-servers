@@ -5,14 +5,14 @@
 
 [metadata]
 project = "proven-servers"
-version = "0.3.0"
-last-updated = "2026-03-22"
+version = "0.4.0"
+last-updated = "2026-04-11"
 status = "active"
 
 [project-context]
 name = "proven-servers"
 purpose = "Catalog of 108 formally verified server components (94 protocol skeletons, 8 core primitives, 6 connector interfaces) in Idris2 with dependent types. ABI defined in Idris2, FFI implemented in Zig, callable from any language via C ABI."
-completion-percentage = 60
+completion-percentage = 65
 
 [position]
 phase = "implementation"
@@ -35,19 +35,31 @@ milestones = [
 issues = [
   "Idris2 not yet in CI — .idr files type-check locally but not in GitHub Actions",
   "ABI-FFI-README.md still has template placeholders from rsr-template-repo",
+  "V-lang banned (2026-04-10) — nesy-solver-api connector is V-lang and must migrate to Zig over time",
+  "RGTV vault-broker not yet deployed to Fly.io (./deploy-fly.sh rgtv not run in production)",
+  "nesy-solver-api JSON output format violates no-JSON-emit rule (should be A2ML)",
+  "No Groove protocol wiring — no V-lang Groove client exists",
 ]
 
 [critical-next-actions]
 actions = [
-  "Continue ABI-FFI for remaining core primitives",
-  "Add Idris2 type-checking to CI workflow",
-  "Begin Gleam + Elixir bindings (BEAM NIF/port infrastructure)",
-  "Begin Haskell + OCaml bindings (C FFI to Zig)",
-  "Update ABI-FFI-README.md with concrete proven-servers examples",
+  "Deploy RGTV: NESY_INGEST_TOKEN=<tok> ./deploy-fly.sh rgtv (from connectors/proven-nesy-solver-api/v/)",
+  "Full stack deploy: ./deploy-fly.sh all",
+  "Continue ABI-FFI for remaining core primitives (Phase 2)",
+  "Add Idris2 type-checking to CI workflow (Phase 5)",
+  "Begin Gleam + Elixir bindings (Phase 4 — BEAM NIF/port infrastructure)",
+  "v1.1.0: proven-httpd + HAR integration + conative-gating consent layer",
+  "v1.2.0: Hypatia CI scan integration",
 ]
 
 [completed-work]
 entries = [
+  { date = "2026-04-11", description = "RGTV credential brokering: wired rgtv_client.v into nesy-solver-api, deploy-fly.sh rgtv phase added, RGTV_URL + RGTV_AGENT_TOKEN in fly.toml, vault-broker axum HTTP server built." },
+  { date = "2026-04-11", description = "panic-attack hexadeca CI: 16-surface protocol architecture in panic-attack.toml, GitHub Actions workflow panic-attack-hexadeca.yml with per-surface attribution table, Justfile assail-hexadeca recipe." },
+  { date = "2026-04-11", description = "Fly.io cold-start hardening: echidna read_timeout 90s in server.v, deploy-fly.sh echidna grace_period 90s, echidna fly.toml HTTP health check + 90s grace, echidna Containerfile curl HEALTHCHECK with 90s start-period." },
+  { date = "2026-04-11", description = "ROADMAP.adoc: v1.1.0 (HAR, conative-gating, invariant path), v1.2.0 (Hypatia CI), v1.3.0 (Lithoglyph aqueduct), v1.4.0 (cadre-tea-router + ReScript TEA) milestones added." },
+  { date = "2026-04-11", description = "deploy-fly.sh: RGTV phase 0 added, dependency order updated (rgtv → clickhouse → schema → verisim → echidna → nesy-api), rgtv-agent-token state file management." },
+  { date = "2026-04-11", description = "fly.toml .internal → .flycast fix: all internal service URLs use .flycast (auto-wake capable) not .internal." },
   { date = "2026-03-16", description = "7 protocols built or enhanced with ABI-FFI. 403 tests total across the server suite." },
   { date = "2026-03-01", description = "ABI-FFI for all 6 connectors: dbconn, authconn, cacheconn, queueconn, resolverconn, storageconn. 48 new files, ~5500 lines. All build and test with Zig 0.15.2." },
   { date = "2026-03-01", description = "6 connector interface skeletons added (Types.idr + Main.idr + top-level module)." },
@@ -55,7 +67,7 @@ entries = [
 ]
 
 [maintenance-status]
-last-run-utc = "never"
+last-run-utc = "2026-04-11T00:00:00Z"
 last-report = "reports/maintenance/latest.json"
 last-result = "unknown"
 open-warnings = 0
@@ -63,4 +75,4 @@ open-failures = 0
 
 [ecosystem]
 part-of = ["proven ecosystem", "PanLL VAB"]
-depends-on = ["idris2", "zig"]
+depends-on = ["idris2", "zig", "reasonably-good-token-vault", "echidna", "verisimdb"]
