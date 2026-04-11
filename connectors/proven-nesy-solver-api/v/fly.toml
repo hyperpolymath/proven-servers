@@ -27,6 +27,10 @@ kill_timeout = "10s"
   # .flycast (not .internal) — required for auto-wake of stopped machines.
   ECHIDNA_URL = "http://echidna-nesy.flycast:8090"
   VERISIM_URL = "http://verisim-api.flycast:8080"
+  # RGTV grant broker — set RGTV_URL + RGTV_AGENT_TOKEN as fly secrets to
+  # enable credential brokering.  If unset, falls back to NESY_INGEST_TOKEN env.
+  RGTV_URL = "http://rgtv-nesy.flycast:9100"
+  # RGTV_AGENT_TOKEN set via: flyctl secrets set RGTV_AGENT_TOKEN=... -a nesy-solver-api
 
 [http_service]
   internal_port = 9000

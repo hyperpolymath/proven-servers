@@ -43,7 +43,8 @@ fn load_config() Config {
 		port:         (os.getenv_opt('NESY_PORT') or { '9000' }).int()
 		repo:         os.getenv_opt('NESY_REPO_TAG') or { 'hyperpolymath/nesy-solver' }
 		file_tag:     os.getenv_opt('NESY_FILE_TAG') or { 'playground/submission.txt' }
-		ingest_token: os.getenv_opt('NESY_INGEST_TOKEN') or { '' }
+		// Loaded via RGTV grant broker if RGTV_URL is set; env fallback otherwise.
+		ingest_token: load_ingest_token()
 	}
 }
 

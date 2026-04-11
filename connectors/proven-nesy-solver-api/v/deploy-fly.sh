@@ -5,11 +5,12 @@
 # deploy-fly.sh: Deploy the nesy-solver playground stack to fly.io.
 #
 # Deploys in dependency order (all in the same fly.io org, reachable via
-# .internal 6PN DNS):
-#   1. ClickHouse (clickhouse-nesy) — volume + schema migration
-#   2. verisim-api (verisim-api) — HTTP API, depends on ClickHouse
-#   3. echidna (echidna-nesy) — prover dispatcher, standalone
-#   4. nesy-solver-api (nesy-solver-api) — public edge, depends on (2)+(3)
+# .flycast 6PN DNS):
+#   0. rgtv-nesy   (rgtv-nesy)      — credential broker, internal-only
+#   1. ClickHouse  (clickhouse-nesy) — volume + schema migration
+#   2. verisim-api (verisim-api)     — HTTP API, depends on ClickHouse
+#   3. echidna     (echidna-nesy)    — prover dispatcher, standalone
+#   4. nesy-solver-api               — public edge, depends on (0)+(2)+(3)
 #
 # Prereqs:
 #   - flyctl auth login   (interactive browser OAuth; set FLY_API_TOKEN instead
@@ -19,6 +20,7 @@
 # Run:
 #   ./deploy-fly.sh [phase]
 #     phase = all (default)
+#           | rgtv       (deploy RGTV broker and set its secrets)
 #           | clickhouse | schema | verisim | echidna | nesy-api
 #           | secrets    (re-set VERISIM_CLICKHOUSE_URL from saved password)
 #
@@ -34,6 +36,7 @@ set -euo pipefail
 
 REGION="${FLY_REGION:-lhr}"
 ORG="${FLY_ORG:-personal}"
+RGTV_APP="rgtv-nesy"
 CH_APP="clickhouse-nesy"
 VERISIM_APP="verisim-api"
 ECHIDNA_APP="echidna-nesy"
@@ -41,12 +44,15 @@ NESY_APP="nesy-solver-api"
 
 # Repo paths (absolute, so the script works from any cwd).
 REPOS_ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
+RGTV="$REPOS_ROOT/reasonably-good-token-vault/vault-broker"
 VERISIMDB="$REPOS_ROOT/verisimdb"
 ECHIDNA="$REPOS_ROOT/echidna"
 NESY_API="$REPOS_ROOT/proven-servers/connectors/proven-nesy-solver-api/v"
 
 # State directory for locally-generated secrets we need to reuse.
 STATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/nesy-solver"
+RGTV_AGENT_TOKEN_FILE="$STATE_DIR/rgtv-agent-token"
+
 CH_PW_FILE="$STATE_DIR/fly-ch-password"
 
 PHASE="${1:-all}"
@@ -108,6 +114,51 @@ load_or_pick_ch_password() {
     chmod 600 "$CH_PW_FILE"
     echo "$pw"
   fi
+}
+
+load_or_pick_rgtv_token() {
+  mkdir -p "$STATE_DIR"
+  chmod 700 "$STATE_DIR"
+  if [ -f "$RGTV_AGENT_TOKEN_FILE" ]; then
+    cat "$RGTV_AGENT_TOKEN_FILE"
+  else
+    local tok
+    tok="$(openssl rand -hex 32)"
+    echo "$tok" > "$RGTV_AGENT_TOKEN_FILE"
+    chmod 600 "$RGTV_AGENT_TOKEN_FILE"
+    echo "$tok"
+  fi
+}
+
+deploy_rgtv() {
+  say "=== Phase 0: RGTV credential broker ==="
+  ensure_app "$RGTV_APP"
+
+  local agent_tok
+  agent_tok="$(load_or_pick_rgtv_token)"
+  ok "agent token saved to $RGTV_AGENT_TOKEN_FILE"
+
+  # NESY_INGEST_TOKEN is pulled from the caller's env or the saved state file.
+  local ingest_tok="${NESY_INGEST_TOKEN:-}"
+  if [ -z "$ingest_tok" ]; then
+    die "NESY_INGEST_TOKEN must be set in env to register with RGTV"
+  fi
+
+  flyctl secrets set \
+    RGTV_AGENT_TOKEN="$agent_tok" \
+    RGTV_CRED_NESY_INGEST_TOKEN="$ingest_tok" \
+    -a "$RGTV_APP" --stage >/dev/null
+  ok "RGTV secrets staged"
+
+  cd "$RGTV"
+  flyctl deploy -a "$RGTV_APP" -c fly.toml --dockerfile Containerfile --remote-only
+  ok "rgtv-nesy deployed"
+
+  # Wire the agent token into nesy-solver-api so it can authenticate to RGTV.
+  flyctl secrets set \
+    RGTV_AGENT_TOKEN="$agent_tok" \
+    -a "$NESY_APP" --stage >/dev/null 2>&1 || true
+  ok "RGTV_AGENT_TOKEN staged on $NESY_APP (will apply on next deploy)"
 }
 
 deploy_clickhouse() {
@@ -221,6 +272,7 @@ main() {
   fi
 
   case "$PHASE" in
+    rgtv)       deploy_rgtv ;;
     clickhouse) deploy_clickhouse ;;
     schema)     apply_schema ;;
     verisim)    deploy_verisim ;;
@@ -228,6 +280,7 @@ main() {
     nesy-api)   deploy_nesy_api ;;
     secrets)    set_secrets_only ;;
     all)
+      deploy_rgtv
       deploy_clickhouse
       apply_schema
       deploy_verisim
@@ -236,6 +289,7 @@ main() {
       say "=== Deploy complete ==="
       ok "public URL: https://${NESY_APP}.fly.dev"
       ok "ClickHouse password: $CH_PW_FILE"
+      ok "RGTV agent token:    $RGTV_AGENT_TOKEN_FILE"
       ;;
     *)
       echo "usage: $0 [all|clickhouse|schema|verisim|echidna|nesy-api|secrets]"
