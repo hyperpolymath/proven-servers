@@ -142,6 +142,7 @@ fn to_echidna_prover_name(req_prover string, language string) string {
 		'cvc5' { 'CVC5' }
 		'coq' { 'Coq' }
 		'lean' { 'Lean' }
+		'lean4' { 'Lean' }
 		'idris2' { 'Idris2' }
 		'agda' { 'Agda' }
 		'isabelle' { 'Isabelle' }
@@ -151,6 +152,7 @@ fn to_echidna_prover_name(req_prover string, language string) string {
 			// 'auto' or unknown — derive from language.
 			match language.to_lower() {
 				'lean' { 'Lean' }
+				'lean4' { 'Lean' }
 				'coq' { 'Coq' }
 				'idris2' { 'Idris2' }
 				'agda' { 'Agda' }
