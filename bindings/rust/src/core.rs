@@ -341,7 +341,7 @@ mod tests {
 
     #[test]
     fn handle_display() {
-        let h = Handle::new(0xDEAD_BEEF).unwrap();
+        let h = Handle::new(0xDEAD_BEEF).expect("TODO: handle error");
         let s = format!("{h}");
         assert!(s.contains("deadbeef"), "display should show hex: {s}");
     }
