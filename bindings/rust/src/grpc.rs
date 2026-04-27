@@ -407,7 +407,7 @@ mod tests {
         // The Idris2 proof `closedIsTerminal` shows no transition exists
         // from Closed to any other state.
         for to_tag in 0u8..=5 {
-            let to = StreamState::from_tag(to_tag).expect("TODO: handle error");
+            let to = StreamState::from_tag(to_tag).unwrap();
             assert!(
                 validate_stream_transition(StreamState::Closed, to).is_none(),
                 "Closed -> {to:?} should be impossible"
