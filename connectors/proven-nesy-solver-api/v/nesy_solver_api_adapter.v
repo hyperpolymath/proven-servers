@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
-// nesy_solver_api_adapter.v: V-lang hexadeca wrapper for proven-nesy-solver-api.
+// nesy_solver_api_adapter.v: zig hexadeca wrapper for proven-nesy-solver-api.
 // Wraps the Zig FFI (libproven_nesy_solver_api.so) and exposes a single
 // request model across 16 protocol surfaces from v_api_interfaces:
 //   REST, GraphQL, WebSocket, SSE, gRPC, JSON-RPC, MsgPack-RPC, CBOR,

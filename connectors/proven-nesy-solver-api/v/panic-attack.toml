@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # panic-attack configuration for the proven-nesy-solver-api V hexadeca surfaces.
 #
 # All 16 protocol surfaces (rest → verisimdb) share two source files:

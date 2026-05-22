@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # Container for proven-nesy-solver-api V HTTP server (Phase E3).
@@ -27,7 +27,7 @@ FROM docker.io/alpine:3.21
 
 LABEL org.opencontainers.image.title="proven-nesy-solver-api"
 LABEL org.opencontainers.image.description="Neurosymbolic proof playground backend (echidna + verisim-api bridge)"
-LABEL org.opencontainers.image.licenses="PMPL-1.0-or-later"
+LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/proven-servers"
 
 COPY --from=builder /build/nesy-server /usr/local/bin/nesy-server

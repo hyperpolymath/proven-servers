@@ -1,4 +1,4 @@
-<!-- SPDX-License-Identifier: PMPL-1.0-or-later -->
+<!-- SPDX-License-Identifier: MPL-2.0 -->
 <!-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> -->
 <!--
     .NET 8.0 project file for proven-servers C# bindings.
@@ -28,7 +28,7 @@
       implementations. Uses P/Invoke to call into the Zig FFI shared library
       whose ABI is defined in Idris2.
     </Description>
-    <PackageLicenseExpression>LicenseRef-PMPL-1.0-or-later</PackageLicenseExpression>
+    <PackageLicenseExpression>LicenseRef-MPL-2.0</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/hyperpolymath/proven-servers</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>

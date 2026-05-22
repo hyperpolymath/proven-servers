@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # proven_servers — Python bindings for the proven-servers Zig FFI libraries.
@@ -16,7 +16,7 @@
 
 __version__ = "0.1.0"
 __author__ = "Jonathan D.A. Jewell"
-__license__ = "PMPL-1.0-or-later"
+__license__ = "MPL-2.0"
 
 from proven_servers.error import ProvenError, ProvenErrorCode
 from proven_servers.ffi import get_library_path, load_library

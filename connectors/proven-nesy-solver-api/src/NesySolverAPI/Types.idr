@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
 -- NesySolverAPI.Types: Core type definitions for the neurosymbolic proof
@@ -166,7 +166,7 @@ Show SessionState where
 -- SurfaceKind — which of the 16 hexadeca surfaces a request arrived on.
 ---------------------------------------------------------------------------
 
-||| Which V-lang protocol surface a request came in on.  The 16 surfaces
+||| Which zig protocol surface a request came in on.  The 16 surfaces
 ||| from v_api_interfaces/ that the proven-nesy-solver-api wraps.
 public export
 data SurfaceKind : Type where

@@ -1,11 +1,11 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # ENSAID_CONFIG.a2ml — eNSAID Environment Configuration for proven-servers
 #
 # Configures PanLL for formal server/protocol development. This repo contains
 # 94 protocol skeletons, 8 core primitives, 6 connector interfaces — all using
-# the Idris2 ABI → Zig FFI → V-lang adapter architecture.
+# the Idris2 ABI → Zig FFI → zig adapter architecture.
 #
 # This is a dogfooding config: PanLL developing BoJ cartridge components that
 # BoJ then serves back to PanLL. The recursive value loop.
@@ -24,7 +24,7 @@ tool = "panll"
 # [workspace] — Formal verification + systems development mode
 #
 # "rhodium" because proven-servers is an RSR-compliant repo.
-# "language-locked" restricts edits to Idris2/Zig/V-lang files — you don't
+# "language-locked" restricts edits to Idris2/Zig/zig files — you don't
 # want accidental edits to generated C headers or .so files.
 # "live" because we're building real shared libraries that need testing.
 # ─────────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ auto-connect = true
 # [panels] — Panels relevant to protocol/server development
 #
 # Core workflow:
-#   1. Editor Bridge — edit Idris2 ABI, Zig FFI, V-lang adapter in VSCodium
+#   1. Editor Bridge — edit Idris2 ABI, Zig FFI, zig adapter in VSCodium
 #   2. Build Dashboard — compile Idris2, run Zig tests, build .so
 #   3. BoJ — load cartridge, test via invoke, check matrix
 #   4. Valence Shell — run CLI commands (idris2, zig build, v run)
@@ -142,7 +142,7 @@ trigger = { event = "file-changed", pattern = "**/*.idr" }
 action = { panel = "build-dashboard", message = "TriggerBuild", args = { target = "zig-ffi" } }
 approval = "auto-fire"
 
-# Rebuild V-lang adapter when Zig FFI changes
+# Rebuild zig adapter when Zig FFI changes
 [[workflows.rule]]
 name = "adapter-on-ffi-change"
 trigger = { event = "file-changed", pattern = "**/*.zig" }
@@ -198,7 +198,7 @@ version = "1.0.0"
 [[portfolios.custom]]
 id = "server-dev-full"
 name = "Server Development (Full)"
-description = "All panels for Idris2 ABI + Zig FFI + V-lang adapter development with BoJ testing"
+description = "All panels for Idris2 ABI + Zig FFI + zig adapter development with BoJ testing"
 panels = [
   "valence-shell", "editor-bridge", "build-dashboard", "boj",
   "vm-inspector", "security", "reposystem", "migration",

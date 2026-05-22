@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
 --- LuaRocks package specification for proven-servers Lua bindings.
@@ -23,7 +23,7 @@ description = {
     declarations for the Zig FFI layer.
   ]],
   homepage = "https://github.com/hyperpolymath/proven-servers",
-  license = "PMPL-1.0-or-later",
+  license = "MPL-2.0",
   maintainer = "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>",
 }
 

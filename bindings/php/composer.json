@@ -2,7 +2,7 @@
     "name": "hyperpolymath/proven-servers",
     "description": "PHP bindings for proven-servers formally verified protocol libraries",
     "type": "library",
-    "license": "PMPL-1.0-or-later",
+    "license": "MPL-2.0",
     "authors": [
         {
             "name": "Jonathan D.A. Jewell",

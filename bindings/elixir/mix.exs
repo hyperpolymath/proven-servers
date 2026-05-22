@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # Mix project definition for proven_servers Elixir bindings.
@@ -48,7 +48,7 @@ defmodule ProvenServers.MixProject do
 
   defp package do
     [
-      licenses: ["PMPL-1.0-or-later"],
+      licenses: ["MPL-2.0"],
       links: %{"GitHub" => @source_url}
     ]
   end

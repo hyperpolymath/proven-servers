@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Trustfile — Integrity and provenance verification
 # Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 
@@ -61,9 +61,9 @@ Idris2/Zig ABI-FFI pipeline is correctly structured.
 - run: test ! -f Containerfile || grep -qE 'cgr\.dev|@sha256:' Containerfile
 - severity: warning
 
-## V-lang Migration (2026-04-10 ban)
+## zig Migration (2026-04-10 ban)
 
 ### no-new-vmod
-- description: v.mod files indicate V-lang — alert if new ones appear (existing nesy-solver-api connector is exempt pending migration)
+- description: v.mod files indicate zig — alert if new ones appear (existing nesy-solver-api connector is exempt pending migration)
 - run: "! find . -name 'v.mod' -newer connectors/proven-nesy-solver-api/v/v.mod 2>/dev/null | head -1 | grep -q ."
 - severity: warning

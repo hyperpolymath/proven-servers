@@ -1,9 +1,9 @@
-/* SPDX-License-Identifier: PMPL-1.0-or-later
+/* SPDX-License-Identifier: MPL-2.0
  * Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
  *
  * nesy_ffi.h: C header for the proven-nesy FFI.
  * Generated from Idris2 ABI definitions, implemented in Zig.
- * This header is consumed by the V-lang triple adapter and
+ * This header is consumed by the zig triple adapter and
  * any other language binding that needs C ABI compatibility.
  */
 

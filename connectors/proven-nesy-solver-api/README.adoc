@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 = proven-nesy-solver-api — Neurosymbolic Playground Backend
 :author: Jonathan D.A. Jewell
 :email: j.d.a.jewell@open.ac.uk
 :revdate: 2026-04-05
-:license: PMPL-1.0-or-later
+:license: MPL-2.0
 
 == What This Is
 
@@ -41,7 +41,7 @@ ffi/zig/                        Zig FFI implementation
 ├── src/nesy_solver_api.zig     C-ABI functions + SHA-256 hasher
 └── test/integration_test.zig   cross-module integration tests
 
-v/                              V-lang hexadeca surface wrapper
+v/                              zig hexadeca surface wrapper
 └── nesy_solver_api_adapter.v   loads libproven_nesy_solver_api.so,
                                 exposes SolverAPI across 16 surfaces
 ----
@@ -56,7 +56,7 @@ v/                              V-lang hexadeca surface wrapper
 | `ObligationClass`  | 0–10  | mirrors verisimdb `proof_attempts` Enum8
 | `ProveOutcome`     | 0–3   | mirrors verisimdb `outcome` field
 | `SessionState`     | 0–3   | `src/NesySolverAPIABI/Transitions.idr`
-| `SurfaceKind`      | 0–15  | 16 V-lang hexadeca protocol surfaces
+| `SurfaceKind`      | 0–15  | 16 zig hexadeca protocol surfaces
 |===
 
 Any change to these tag values MUST update Layout.idr, nesy_solver_api.h,
@@ -91,7 +91,7 @@ cd ffi/zig && zig build test --summary all
 == Phase E status
 
 * *E2 (this session)*: Scaffold complete — Idris2 types + proofs + Zig FFI
-  skeleton + V-lang adapter. All dispatch functions are typed stubs.
+  skeleton + zig adapter. All dispatch functions are typed stubs.
 * *E3 (next)*: Wire FFI to real echidna HTTP client (POST
   `http://localhost:8090/api/verify`) and verisim-api persistence (POST
   `http://localhost:8080/api/v1/proof_attempts`). Deploy adapter service

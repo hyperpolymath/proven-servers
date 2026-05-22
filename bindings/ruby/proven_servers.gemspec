@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # Gemspec for the proven-servers Ruby bindings.
@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.authors     = ["Jonathan D.A. Jewell"]
   s.email       = ["j.d.a.jewell@open.ac.uk"]
   s.homepage    = "https://github.com/hyperpolymath/proven-servers"
-  s.license     = "PMPL-1.0-or-later"
+  s.license     = "MPL-2.0"
   s.files       = Dir["lib/**/*.rb"]
   s.require_paths = ["lib"]
 

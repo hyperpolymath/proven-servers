@@ -2,7 +2,7 @@
 :author: Jonathan D.A. Jewell
 :email: j.d.a.jewell@open.ac.uk
 :revdate: 2026-03-01
-:license: PMPL-1.0-or-later
+:license: MPL-2.0
 
 == What This Is
 
@@ -131,6 +131,6 @@ See `ABI-FFI-README.md` for the full standard.
 
 == License
 
-SPDX-License-Identifier: PMPL-1.0-or-later
+SPDX-License-Identifier: MPL-2.0
 
 Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)

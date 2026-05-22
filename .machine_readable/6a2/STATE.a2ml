@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # STATE.a2ml — Project state checkpoint for proven-servers.
@@ -35,10 +35,10 @@ milestones = [
 issues = [
   "Idris2 not yet in CI — .idr files type-check locally but not in GitHub Actions",
   "ABI-FFI-README.md still has template placeholders from rsr-template-repo",
-  "V-lang banned (2026-04-10) — nesy-solver-api connector is V-lang and must migrate to Zig over time",
+  "zig banned (2026-04-10) — nesy-solver-api connector is zig and must migrate to Zig over time",
   "RGTV vault-broker not yet deployed to Fly.io (./deploy-fly.sh rgtv not run in production)",
   "nesy-solver-api JSON output format violates no-JSON-emit rule (should be A2ML)",
-  "No Groove protocol wiring — no V-lang Groove client exists",
+  "No Groove protocol wiring — no zig Groove client exists",
 ]
 
 [critical-next-actions]

@@ -1,7 +1,7 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # panic-attack hexadeca surface scan for proven-nesy-solver-api.
 #
-# Scans the V-lang hexadeca connector (all 16 protocol surfaces) with
+# Scans the zig hexadeca connector (all 16 protocol surfaces) with
 # panic-attack assail, then maps findings to individual surfaces and
 # reports a per-surface pass/fail in the job summary.
 #

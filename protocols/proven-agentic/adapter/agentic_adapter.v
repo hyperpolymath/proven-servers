@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: PMPL-1.0-or-later
+// SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
-// agentic_adapter.v: V-lang triple adapter for the proven-agentic protocol.
+// agentic_adapter.v: zig triple adapter for the proven-agentic protocol.
 // Exposes the Zig FFI as REST + gRPC + GraphQL endpoints.
 // This is the API surface that BoJ cartridges and external consumers use.
 

@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: PMPL-1.0-or-later
+# SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # proven-servers-rs: Rust bindings for the proven-servers protocol ABI.
@@ -14,7 +14,7 @@ version = "0.4.0"
 edition = "2024"
 authors = ["Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"]
 description = "Rust bindings for proven-servers formally verified protocol ABI with safe FFI wrappers"
-license = "PMPL-1.0-or-later"
+license = "MPL-2.0"
 repository = "https://github.com/hyperpolymath/proven-servers"
 categories = ["network-programming", "api-bindings"]
 keywords = ["proven", "protocols", "abi", "ffi"]

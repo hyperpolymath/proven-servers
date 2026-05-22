@@ -1,4 +1,4 @@
--- SPDX-License-Identifier: PMPL-1.0-or-later
+-- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
 -- Cabal package definition for proven-servers Haskell bindings.
@@ -8,7 +8,7 @@
 cabal-version:      3.0
 name:               proven-servers
 version:            0.2.0.0
-license:            PMPL-1.0-or-later
+license:            MPL-2.0
 license-file:       ../../LICENSE
 author:             Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 maintainer:         Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
