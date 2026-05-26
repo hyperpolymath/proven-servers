@@ -1,0 +1,72 @@
+;; SPDX-License-Identifier: MPL-2.0
+;; Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+(assail-classifications
+  (metadata
+    (version "1.0.0")
+    (project "proven-servers")
+    (last-updated "2026-05-26")
+    (entries 10)
+    (status "active"))
+
+  (classification
+    (file "bindings/rust/src/ffi_smtp.rs")
+    (category "UnsafeCode")
+    (classification "legitimate-ffi")
+    (audit "audits/audit-ffi-2026-05-26.md")
+    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
+  (classification
+    (file "bindings/rust/src/ffi_ftp.rs")
+    (category "UnsafeCode")
+    (classification "legitimate-ffi")
+    (audit "audits/audit-ffi-2026-05-26.md")
+    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
+  (classification
+    (file "bindings/rust/src/ffi_grpc.rs")
+    (category "UnsafeCode")
+    (classification "legitimate-ffi")
+    (audit "audits/audit-ffi-2026-05-26.md")
+    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
+  (classification
+    (file "bindings/rust/src/ffi_mqtt.rs")
+    (category "UnsafeCode")
+    (classification "legitimate-ffi")
+    (audit "audits/audit-ffi-2026-05-26.md")
+    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
+  (classification
+    (file "bindings/rust/src/ffi_firewall.rs")
+    (category "UnsafeCode")
+    (classification "legitimate-ffi")
+    (audit "audits/audit-ffi-2026-05-26.md")
+    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
+  (classification
+    (file "bindings/rust/src/ffi_ssh.rs")
+    (category "UnsafeCode")
+    (classification "legitimate-ffi")
+    (audit "audits/audit-ffi-2026-05-26.md")
+    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
+  (classification
+    (file "bindings/rust/src/core.rs")
+    (category "UnsafeCode")
+    (classification "legitimate-ffi")
+    (audit "audits/audit-ffi-2026-05-26.md")
+    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
+  (classification
+    (file "bindings/rust/src/ffi_graphql.rs")
+    (category "UnsafeCode")
+    (classification "legitimate-ffi")
+    (audit "audits/audit-ffi-2026-05-26.md")
+    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
+  (classification
+    (file "bindings/rust/src/ffi_dns.rs")
+    (category "UnsafeCode")
+    (classification "legitimate-ffi")
+    (audit "audits/audit-ffi-2026-05-26.md")
+    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
+  (classification
+    (file "bindings/rust/src/ffi_macros.rs")
+    (category "UnsafeCode")
+    (classification "legitimate-ffi")
+    (audit "audits/audit-ffi-2026-05-26.md")
+    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
+)
