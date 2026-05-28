@@ -43,7 +43,7 @@ issues = [
 
 [critical-next-actions]
 actions = [
-  "Deploy RGTV: NESY_INGEST_TOKEN=<tok> ./deploy-fly.sh rgtv (from connectors/proven-nesy-solver-api/v/)",
+  "Deploy RGTV: NESY_INGEST_TOKEN=<tok> ./deploy-fly.sh rgtv (from connectors/proven-nesy-solver-api/zig/)",
   "Full stack deploy: ./deploy-fly.sh all",
   "Continue ABI-FFI for remaining core primitives (Phase 2)",
   "Add Idris2 type-checking to CI workflow (Phase 5)",

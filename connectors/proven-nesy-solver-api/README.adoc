@@ -41,9 +41,13 @@ ffi/zig/                        Zig FFI implementation
 ├── src/nesy_solver_api.zig     C-ABI functions + SHA-256 hasher
 └── test/integration_test.zig   cross-module integration tests
 
-v/                              zig hexadeca surface wrapper
-└── nesy_solver_api_adapter.v   loads libproven_nesy_solver_api.so,
-                                exposes SolverAPI across 16 surfaces
+zig/                            Zig HTTP service + deployment
+├── build.zig                   builds the nesy-server executable
+├── src/main.zig                REST + JSON proof-dispatch service
+├── src/rgtv.zig                RGTV grant-broker client
+├── Containerfile               podman/fly.io image
+├── fly.toml                    fly.io deployment config
+└── deploy-fly.sh               deploy script
 ----
 
 == Type tag table (must stay synchronised)
@@ -60,7 +64,7 @@ v/                              zig hexadeca surface wrapper
 |===
 
 Any change to these tag values MUST update Layout.idr, nesy_solver_api.h,
-nesy_solver_api.zig, and nesy_solver_api_adapter.v in the same commit.
+and nesy_solver_api.zig in the same commit.
 
 == State machine (proof-dispatch session)
 

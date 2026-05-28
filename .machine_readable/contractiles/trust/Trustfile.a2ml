@@ -61,9 +61,14 @@ Idris2/Zig ABI-FFI pipeline is correctly structured.
 - run: test ! -f Containerfile || grep -qE 'cgr\.dev|@sha256:' Containerfile
 - severity: warning
 
-## zig Migration (2026-04-10 ban)
+## V-lang → Zig Migration (completed 2026-05-28)
 
-### no-new-vmod
-- description: v.mod files indicate zig — alert if new ones appear (existing nesy-solver-api connector is exempt pending migration)
-- run: "! find . -name 'v.mod' -newer connectors/proven-nesy-solver-api/v/v.mod 2>/dev/null | head -1 | grep -q ."
-- severity: warning
+### no-vmod
+- description: v.mod files indicate V-lang. None should remain after the 2026-05-28 estate-wide V→Zig conversion.
+- run: "! find . -name 'v.mod' 2>/dev/null | head -1 | grep -q ."
+- severity: error
+
+### no-vlang-source
+- description: .v files are banned post-conversion. Coq .v files are not present in this repo (no formal/ tree).
+- run: "! find . -name '*.v' -not -path './zig-cache/*' -not -path './zig-out/*' 2>/dev/null | head -1 | grep -q ."
+- severity: error
