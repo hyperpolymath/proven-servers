@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# Container for proven-nesy-solver-api V HTTP server (Phase E3).
+# Container for proven-nesy-solver-api Zig HTTP server.
+# Replaces the legacy V-lang container at ../v/Containerfile.
 # Deployed to fly.io; also used for local podman testing.
 #
 # Build:
@@ -13,16 +14,21 @@
 #     nesy-solver-api:0.1.0
 
 # ─── Builder stage ─────────────────────────────────────────────────────
-FROM docker.io/thevlang/vlang:alpine AS builder
+FROM docker.io/alpine:3.21 AS builder
+
+# Install Zig toolchain
+ARG ZIG_VERSION=0.14.0
+RUN apk add --no-cache curl tar xz \
+ && curl -sSL "https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz" \
+  | tar -xJ -C /opt \
+ && ln -s "/opt/zig-linux-x86_64-${ZIG_VERSION}/zig" /usr/local/bin/zig
 
 WORKDIR /build
-COPY server.v ./server.v
-# Produce a statically-linked (ish) binary.
-RUN v -prod -o nesy-server server.v
+COPY build.zig ./
+COPY src/ ./src/
+RUN zig build -Doptimize=ReleaseFast
 
-# ─── Runtime stage (musl-matching Chainguard wolfi base) ──────────────
-# NB: V builder uses Alpine/musl; we need a musl runtime or static link.
-# Chainguard wolfi-base is glibc-based so does NOT work — use alpine instead.
+# ─── Runtime stage ─────────────────────────────────────────────────────
 FROM docker.io/alpine:3.21
 
 LABEL org.opencontainers.image.title="proven-nesy-solver-api"
@@ -30,7 +36,7 @@ LABEL org.opencontainers.image.description="Neurosymbolic proof playground backe
 LABEL org.opencontainers.image.licenses="MPL-2.0"
 LABEL org.opencontainers.image.source="https://github.com/hyperpolymath/proven-servers"
 
-COPY --from=builder /build/nesy-server /usr/local/bin/nesy-server
+COPY --from=builder /build/zig-out/bin/nesy-server /usr/local/bin/nesy-server
 
 ENV NESY_PORT=9000
 ENV ECHIDNA_URL=http://localhost:8090

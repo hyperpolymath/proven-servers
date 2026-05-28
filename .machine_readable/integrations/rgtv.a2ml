@@ -17,7 +17,7 @@ grant-ttl-secs = 30
 
 [wiring]
 # Consumer: proven-nesy-solver-api connector
-consumer-file = "connectors/proven-nesy-solver-api/v/rgtv_client.v"
+consumer-file = "connectors/proven-nesy-solver-api/zig/src/rgtv.zig"
 env-required = ["RGTV_URL", "RGTV_AGENT_TOKEN"]
 env-fallback = "NESY_INGEST_TOKEN (direct env — local dev only)"
 fly-url = "http://rgtv-nesy.flycast:9100"
