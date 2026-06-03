@@ -1,4 +1,8 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 = proven-servers — Formally Verified Server Cores
+image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=openssourcesecurity[OpenSSF Best Practices,link="https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/proven-servers"]
+
 :author: Jonathan D.A. Jewell
 :email: j.d.a.jewell@open.ac.uk
 :revdate: 2026-03-01
@@ -131,6 +135,6 @@ See `ABI-FFI-README.md` for the full standard.
 
 == License
 
-SPDX-License-Identifier: MPL-2.0
+This project is licensed under the Mozilla Public License, v. 2.0. See the `LICENSE` file for details.
 
-Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath)
+SPDX-License-Identifier: MPL-2.0
