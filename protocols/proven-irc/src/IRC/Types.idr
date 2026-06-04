@@ -1,6 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -- | Core IRC protocol types as closed sum types.
 -- | Models commands (RFC 2812 Section 3), numeric replies (Section 5),
 -- | and channel modes (Section 4).

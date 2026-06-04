@@ -1,6 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 ||| Core protocol types for the proven-ldp Linked Data Platform server.
 ||| Defines closed sum types per the W3C LDP Recommendation for container
 ||| types, resource types, preferences, interaction models, and constraints.
