@@ -10,8 +10,8 @@ image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=openssource
 
 == What This Is
 
-A catalog of **108 formally verified server components** written in Idris 2 with
-dependent types: **94 protocol skeletons**, **8 core primitives**, and **6 connector
+A catalog of **109 formally verified server components** written in Idris 2 with
+dependent types: **95 protocol skeletons**, **8 core primitives**, and **6 connector
 interfaces**.
 
 Each component defines the *correct types* for its domain: message types, valid states,
@@ -42,7 +42,7 @@ Either way, your server's protocol handling is *proven correct*.
 proven-servers/
 ├── core/              # 8 primitives (socket, frame, fsm, wire, compose,
 │                      #   tls, config, audit)
-├── protocols/         # 94 protocol skeletons
+├── protocols/         # 95 protocol skeletons
 │   ├── proven-dns/    #   Each with its own .ipkg and src/
 │   ├── proven-smtp/
 │   ├── proven-mqtt/
@@ -60,7 +60,7 @@ proven-servers/
                        #   Elixir, Haskell, OCaml, Ada, Julia)
 ----
 
-== Protocol Catalog (94 skeletons)
+== Protocol Catalog (95 skeletons)
 
 === Network Protocols
 `dns` `smtp` `httpd` `ftp` `imap` `pop3` `irc` `xmpp` `mqtt` `ldap`
@@ -71,7 +71,7 @@ proven-servers/
 === Security
 `firewall` `vpn` `ids` `siem` `honeypot` `deception` `ca` `ocsp` `kms`
 `pqc` `zerotrust` `ctlog` `airgap` `diode` `sandbox` `hardened`
-`authserver` `kerberos` `socks` `tacacs` `ssh-bastion`
+`authserver` `kerberos` `socks` `tacacs` `ssh-bastion` `epistemic`
 
 === DNS Variants
 `doh` `dot` `doq` `odns`
