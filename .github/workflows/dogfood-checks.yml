@@ -43,6 +43,18 @@ jobs:
         with:
           path: '.'
           strict: 'false'
+          # Action defaults reproduced (setting the input overrides them),
+          # plus the panic-attack assail ledger: S-expression tool output,
+          # not a TOML-style a2ml manifest (hypatia#243 fixture rule).
+          paths-ignore: |
+            vendor/
+            vendored/
+            verified-container-spec/
+            .audittraining/
+            integration/fixtures/
+            test/fixtures/
+            tests/fixtures/
+            audits/assail-classifications.a2ml
 
       - name: Write summary
         run: |

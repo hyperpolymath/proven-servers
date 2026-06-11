@@ -1,3 +1,4 @@
+K9!
 # SPDX-License-Identifier: MPL-2.0
 # deploy.k9.ncl — proven-servers deployment component (Hunt level)
 #
@@ -68,7 +69,7 @@ let component_pedigree = {
 } in
 
 # Deployment configuration
-let deployment = {
+let deployment_def = {
   # Target environments (dev / staging / production)
   environments = {
     dev = {
@@ -108,7 +109,7 @@ let deployment = {
 } in
 
 # Deployment scripts (executed at Hunt level)
-let scripts = {
+let scripts_def = {
   # Pre-deployment validation
   pre_deploy = m%"
 #!/bin/sh
@@ -143,9 +144,15 @@ echo "K9: Rollback complete."
 
 # Export the component
 {
-  pedigree = component_pedigree,
-  deployment = deployment,
-  scripts = scripts,
+  # Validator-visible identity block (k9-validate-action tracks the brace
+  # block after `pedigree =`); merged with the full five-layer pedigree.
+  pedigree = {
+    name = component_pedigree.metadata.name,
+    version = component_pedigree.metadata.version,
+    leash = component_pedigree.security.trust_level,
+  } & component_pedigree,
+  deployment = deployment_def,
+  scripts = scripts_def,
 
   # Security check: this component requires Hunt level
   required_level = 'Hunt,
