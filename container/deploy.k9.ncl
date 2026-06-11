@@ -149,7 +149,7 @@ echo "K9: Rollback complete."
   pedigree = {
     name = component_pedigree.metadata.name,
     version = component_pedigree.metadata.version,
-    leash = component_pedigree.security.trust_level,
+    leash = 'Hunt,
   } & component_pedigree,
   deployment = deployment_def,
   scripts = scripts_def,
