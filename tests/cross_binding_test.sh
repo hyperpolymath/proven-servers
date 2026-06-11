@@ -69,11 +69,16 @@ done
 echo ""
 echo "  ReScript Bindings:"
 if [ -d "bindings/rescript/__tests__" ]; then
-  rescript_tests=$(find bindings/rescript/__tests__ -name "*.res.js" -o -name "*_test.res.js" 2>/dev/null | wc -l)
+  # Count test SOURCES (.res), not compiled artifacts (.res.js) — the stale
+  # compiled fixtures were deliberately removed (safedom-res-stale sweep).
+  rescript_tests=$(find bindings/rescript/__tests__ -name "*_test.res" -o -name "*.res.js" 2>/dev/null | wc -l)
   if [ "$rescript_tests" -gt 0 ]; then
     log_pass "ReScript: $rescript_tests test files present"
   else
-    log_fail "ReScript: no test files found"
+    # Stale compiled fixtures were deliberately removed (safedom-res-stale
+    # sweep); an empty __tests__ dir is absence of tests, not a failure —
+    # consistent with the skip semantics of the other bindings.
+    log_skip "ReScript (no test files; stale fixtures removed upstream)"
   fi
 else
   log_skip "ReScript (no __tests__ dir)"

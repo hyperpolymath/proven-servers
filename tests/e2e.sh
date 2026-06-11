@@ -152,7 +152,10 @@ echo ""
 bold "Section 5: Safety aspects"
 
 # No believe_me/assert_total in Idris2 ABI
-DANGEROUS_IDRIS=$(grep -rn 'believe_me\|assert_total\|really_believe_me' src/ connectors/*/src/ protocols/*/src/ core/*/src/ 2>/dev/null | grep -v test || true)
+# Exclude doc-comments (|||) and line comments (--): prose ABOUT the
+# patterns is not use OF them (e.g. NeSy/Types.idr documents its own
+# believe_me-equivalent; see PROOF-NEEDS.md).
+DANGEROUS_IDRIS=$(grep -rn 'believe_me\|assert_total\|really_believe_me' src/ connectors/*/src/ protocols/*/src/ core/*/src/ 2>/dev/null | grep -v test | grep -v '|||' | grep -v ':[[:space:]]*--' || true)
 if [ -n "$DANGEROUS_IDRIS" ]; then
     fail_test "Dangerous Idris2 patterns ($(echo "$DANGEROUS_IDRIS" | wc -l) occurrences)"
     echo "$DANGEROUS_IDRIS" | head -5
