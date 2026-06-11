@@ -8,7 +8,6 @@
 # Triggered only when V connector source or its config changes.
 
 name: panic-attack / hexadeca (nesy-solver-api)
-
 on:
   push:
     branches: [main]
@@ -19,31 +18,25 @@ on:
     paths:
       - 'connectors/proven-nesy-solver-api/zig/**'
   workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
   hexadeca-scan:
     name: panic-attack hexadeca scan
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 1
-
       - name: Install Rust (stable)
         uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
-
       - name: Cache panic-attacker build
         uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
         with:
           workspaces: /tmp/panic-attacker -> target
           cache-on-failure: true
-
       - name: Build and install panic-attack
         run: |
           git clone --depth 1 https://github.com/hyperpolymath/panic-attacker.git /tmp/panic-attacker
@@ -51,7 +44,6 @@ jobs:
           cargo build --release
           sudo install -m 0755 target/release/panic-attack /usr/local/bin/panic-attack
           panic-attack --version
-
       - name: Run panic-attack assail (hexadeca connector)
         id: assail
         working-directory: connectors/proven-nesy-solver-api/v
@@ -70,7 +62,6 @@ jobs:
           echo "total=$TOTAL"    >> $GITHUB_OUTPUT
           echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
           echo "high=$HIGH"      >> $GITHUB_OUTPUT
-
       - name: Build hexadeca surface report
         id: surface-report
         working-directory: connectors/proven-nesy-solver-api/v
@@ -109,7 +100,6 @@ jobs:
           echo "Critical: ${{ steps.assail.outputs.critical }} | High: ${{ steps.assail.outputs.high }}" >> $GITHUB_STEP_SUMMARY
 
           echo "any_fail=$FAIL" >> $GITHUB_OUTPUT
-
       - name: Upload findings artifact
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -119,10 +109,9 @@ jobs:
             /tmp/panic-findings.json
             /tmp/panic-raw.txt
           retention-days: 30
-
       - name: Fail on critical findings
         if: steps.assail.outputs.critical > 0
-        run: |
+        run: |-
           echo "Critical findings in hexadeca connector — see artifact."
           jq '[.[] | select(.severity == "critical")]' /tmp/panic-findings.json
           exit 1
