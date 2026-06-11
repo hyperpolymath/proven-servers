@@ -1,6 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -- | Core Oblivious DNS types as closed sum types.
 -- | Models participant roles, message types, error reasons,
 -- | and encapsulation formats per draft-pauly-dprive-oblivious-doh.

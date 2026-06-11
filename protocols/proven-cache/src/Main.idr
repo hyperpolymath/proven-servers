@@ -1,6 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 ||| Entry point for the proven-cache key/value caching server.
 ||| Prints the server identity, port, and enumerates all type constructors
 ||| to verify the type definitions are correctly linked.

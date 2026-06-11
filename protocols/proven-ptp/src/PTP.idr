@@ -1,6 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -- | Top-level module for the proven-ptp skeleton.
 -- | Re-exports PTP.Types and defines protocol constants for
 -- | IEEE 1588 Precision Time Protocol.

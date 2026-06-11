@@ -1,5 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
 -- Socket.Types: Core type definitions for typed socket operations.
 -- Closed sum types representing socket domains, types, states, operations,

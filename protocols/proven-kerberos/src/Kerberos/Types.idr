@@ -1,6 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -- | Core protocol types for RFC 4120 Kerberos V5.
 -- | Defines message types, encryption types, error codes, and ticket
 -- | flags as closed sum types with Show instances.

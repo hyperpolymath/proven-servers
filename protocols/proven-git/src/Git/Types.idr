@@ -1,6 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 ||| Core protocol types for the proven-git Git protocol server.
 ||| Defines closed sum types for Git transport commands, packet types,
 ||| ref types, protocol capabilities, and hook results.

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 const std = @import("std");
 
 pub const ServiceEmulation = enum(u8) { ssh = 0, http = 1, ftp = 2, smtp = 3, telnet = 4, mysql = 5, rdp = 6 };

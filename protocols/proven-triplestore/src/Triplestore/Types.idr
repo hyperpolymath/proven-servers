@@ -1,6 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 ||| Core protocol types for the proven-triplestore RDF triple store server.
 ||| Defines closed sum types for statement types, index orderings,
 ||| storage backends, import formats, and transaction isolation levels.

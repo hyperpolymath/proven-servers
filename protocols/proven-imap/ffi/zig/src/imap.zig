@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
-// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 const std = @import("std");
 
 pub const Command = enum(u8) { login=0,logout=1,select=2,examine=3,create=4,delete=5,rename=6,list=7,fetch=8,store=9,search=10,copy=11,noop=12,capability=13 };

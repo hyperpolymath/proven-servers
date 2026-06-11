@@ -1,6 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -- | Core mDNS/DNS-SD protocol types as closed sum types.
 -- | Models DNS record types, query modes (RFC 6762 Section 5),
 -- | conflict resolution actions (Section 9), and service flags.

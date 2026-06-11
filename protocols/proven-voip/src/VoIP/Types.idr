@@ -1,6 +1,5 @@
 -- SPDX-License-Identifier: MPL-2.0
--- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
+-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 -- | Core SIP/VoIP protocol types as closed sum types.
 -- | Models SIP methods (RFC 3261 Section 7.1), response codes (Section 21),
 -- | and dialog states (Section 12).
