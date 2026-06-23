@@ -12,4 +12,6 @@ main = Main
 executable = "proven-proxy"
 
 modules = Proxy
+        , ProxyABI.Types
+        , ProxyABI.Foreign
         , Proxy.Types
