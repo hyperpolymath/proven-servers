@@ -1,0 +1,21 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+package proven-timestamp
+version = "0.1.0"
+authors = "Jonathan D.A. Jewell"
+license = "MPL-2.0"
+brief   = "Proven append-only hash-chained timestamp evidence receipts"
+
+sourcedir = "src"
+main = Main
+executable = "proven-timestamp"
+
+modules = Timestamp
+        , Timestamp.Types
+        , Timestamp.Receipt
+        , Timestamp.Chain
+        , Timestamp.Provider
+        , TimestampABI.Types
+        , TimestampABI.Foreign
+        , Main
