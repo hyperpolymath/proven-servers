@@ -45,15 +45,19 @@ only. Plug-in points are marked `TODO(crypto)` / `TODO(recovery)`.
 
 [cols="1,3"]
 |===
-| `protocols/proven-quic/src/Quic/Types.idr`       | All enums (endpoint, direction, stream kinds, states, packets, frames, errors).
-| `protocols/proven-quic/src/Quic/Streams.idr`     | Stream-ID encoding round-trips + access rules + proofs.
-| `protocols/proven-quic/src/Quic/Transitions.idr` | Connection + stream send/recv state machines + impossibility proofs.
-| `protocols/proven-quic/src/Quic/Frames.idr`      | The frame-in-packet table + pinned facts.
-| `protocols/proven-quic/src/QuicABI/Types.idr`    | C-ABI tag encodings + round-trip proofs.
-| `protocols/proven-quic/src/QuicABI/Foreign.idr`  | Opaque handle + the FFI contract.
-| `protocols/proven-quic/ffi/zig/src/quic.zig`     | The engine: varint codec, classification, state machines.
-| `protocols/proven-quic/ffi/zig/test/`            | RFC-vector + behavioural FFI tests.
+| Module / file | Role
+| `Quic.Types`       | All enums (endpoint, direction, stream kinds, states, packets, frames, errors).
+| `Quic.Streams`     | Stream-ID encoding round-trips + access rules + proofs.
+| `Quic.Transitions` | Connection + stream send/recv state machines + impossibility proofs.
+| `Quic.Frames`      | The frame-in-packet table + pinned facts.
+| `QuicABI.Types`    | C-ABI tag encodings + round-trip proofs.
+| `QuicABI.Foreign`  | Opaque handle + the FFI contract.
+| `ffi/zig/src/quic.zig` | The engine: varint codec, classification, state machines.
+| `ffi/zig/test/`        | RFC-vector + behavioural FFI tests.
 |===
+
+Idris modules live under the package `src` tree (package root
+`protocols/proven-quic`); the Zig engine is under `ffi/zig`.
 
 == Build and test locally
 
