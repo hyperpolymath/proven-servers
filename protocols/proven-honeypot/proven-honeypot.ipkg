@@ -12,5 +12,7 @@ main = Main
 executable = "proven-honeypot"
 
 modules = Honeypot
+        , HoneypotABI.Types
+        , HoneypotABI.Foreign
         , Honeypot.Types
         , Main

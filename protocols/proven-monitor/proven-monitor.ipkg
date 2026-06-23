@@ -12,4 +12,6 @@ main = Main
 executable = "proven-monitor"
 
 modules = Monitor
+        , MonitorABI.Types
+        , MonitorABI.Foreign
         , Monitor.Types

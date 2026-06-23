@@ -15,5 +15,7 @@ main = Main
 executable = "proven-federation"
 
 modules = Main, Federation, Federation.Types
+        , FederationABI.Types
+        , FederationABI.Foreign
 
 depends = base, prelude

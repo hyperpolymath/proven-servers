@@ -12,5 +12,7 @@ main = Main
 executable = "proven-siem"
 
 modules = SIEM
+        , SIEMABI.Types
+        , SIEMABI.Foreign
         , SIEM.Types
         , Main

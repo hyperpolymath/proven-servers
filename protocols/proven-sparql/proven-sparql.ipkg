@@ -12,5 +12,7 @@ main = Main
 executable = "proven-sparql"
 
 modules = Sparql
+        , SparqlABI.Types
+        , SparqlABI.Foreign
         , Sparql.Types
         , Main

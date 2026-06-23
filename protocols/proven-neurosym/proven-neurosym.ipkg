@@ -15,5 +15,7 @@ main = Main
 executable = "proven-neurosym"
 
 modules = Main, Neurosym, Neurosym.Types
+        , NeurosymABI.Types
+        , NeurosymABI.Foreign
 
 depends = base, prelude

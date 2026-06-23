@@ -13,4 +13,6 @@ executable = "proven-ctlog"
 
 modules = CTLog
         , CTLog.Types
+        , CTLogABI.Types
+        , CTLogABI.Foreign
         , Main

@@ -12,4 +12,6 @@ main = Main
 executable = "proven-apiserver"
 
 modules = Apiserver
+        , ApiserverABI.Types
+        , ApiserverABI.Foreign
         , Apiserver.Types

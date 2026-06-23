@@ -12,4 +12,6 @@ main = Main
 executable = "proven-gameserver"
 
 modules = Gameserver
+        , GameserverABI.Types
+        , GameserverABI.Foreign
         , Gameserver.Types

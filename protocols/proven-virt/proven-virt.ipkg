@@ -12,5 +12,7 @@ main = Main
 executable = "proven-virt"
 
 modules = Virt
+        , VirtABI.Types
+        , VirtABI.Foreign
         , Virt.Types
         , Main

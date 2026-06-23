@@ -12,5 +12,7 @@ main = Main
 executable = "proven-sdn"
 
 modules = SDN
+        , SDNABI.Types
+        , SDNABI.Foreign
         , SDN.Types
         , Main

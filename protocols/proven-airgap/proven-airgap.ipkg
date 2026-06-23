@@ -12,5 +12,7 @@ main = Main
 executable = "proven-airgap"
 
 modules = Airgap
+        , AirgapABI.Types
+        , AirgapABI.Foreign
         , Airgap.Types
         , Main

@@ -12,4 +12,6 @@ main = Main
 executable = "proven-webdav"
 
 modules = WebDAV
+        , WebDAVABI.Types
+        , WebDAVABI.Foreign
         , WebDAV.Types

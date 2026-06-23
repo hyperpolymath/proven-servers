@@ -12,4 +12,6 @@ main = Main
 executable = "proven-xmpp"
 
 modules = XMPP
+        , XMPPABI.Types
+        , XMPPABI.Foreign
         , XMPP.Types

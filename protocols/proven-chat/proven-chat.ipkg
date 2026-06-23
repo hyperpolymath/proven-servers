@@ -12,5 +12,7 @@ main = Main
 executable = "proven-chat"
 
 modules = Chat
+        , ChatABI.Types
+        , ChatABI.Foreign
         , Chat.Types
         , Main
