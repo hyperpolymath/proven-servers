@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
--- abi.Foreign: Foreign function declarations for the MCP C bridge.
+-- McpABI.Foreign: Foreign function declarations for the MCP C bridge.
 --
 -- Declares the opaque handle type and documents the complete FFI contract
 -- that the Zig implementation (ffi/zig/src/mcp.zig) must provide.
@@ -14,11 +14,11 @@
 --   - Transport selection per session
 --
 -- All functions use C calling convention and communicate state via
--- Bits8 tags matching abi.Types exactly.
+-- Bits8 tags matching McpABI.Types exactly.
 
-module abi.Foreign
+module McpABI.Foreign
 
-import abi.Types
+import McpABI.Types
 
 %default total
 

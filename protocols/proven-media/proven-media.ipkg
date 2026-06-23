@@ -12,5 +12,7 @@ main = Main
 executable = "proven-media"
 
 modules = Media
+        , MediaABI.Types
+        , MediaABI.Foreign
         , Media.Types
         , Main
