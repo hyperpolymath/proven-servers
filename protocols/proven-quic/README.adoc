@@ -1,0 +1,91 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= proven-quic
+:toc: macro
+:toclevels: 2
+
+A *transport-core* for QUIC (RFC 9000) in the proven house style: the parts
+of QUIC whose correctness is structural are modelled as dependently-typed
+data with machine-checked proofs (Idris2), backed by a small, dependency-free
+Zig engine that implements the real variable-length-integer codec and runs
+the state machines.
+
+toc::[]
+
+== What it does (the proven core)
+
+* *Stream identity* (RFC 9000 2.1) — the two-bit stream-ID code ↔ (initiator,
+  directionality), with round-trip proofs and the access rules (who may
+  send/receive on which stream kind), e.g. a client can never send on a
+  server-initiated unidirectional stream — proven by `Refl`.
+* *Stream state machines* (RFC 9000 3.1, 3.2) — the sending part
+  (Ready → Send → DataSent → DataRecvd, with reset paths) and the receiving
+  part (Recv → SizeKnown → DataRecvd → DataRead, with reset paths), as
+  `ValidSendTransition` / `ValidRecvTransition` relations. Illegal moves are
+  ruled out by `impossible` proofs (e.g. no transition out of a terminal
+  state).
+* *Connection lifecycle* (RFC 9000 9-10) — Initial → Handshaking → Connected
+  → Closing/Draining → Closed, as `ValidConnTransition`.
+* *Frame-in-packet table* (RFC 9000 12.4) — `frameAllowedIn`, with cells
+  pinned as proofs (STREAM not in Initial, HANDSHAKE_DONE only in 1-RTT,
+  Retry/Version-Negotiation carry no frames, …).
+* *Variable-length integers* (RFC 9000 16) — a real encoder/decoder in the
+  Zig engine, verified against the RFC's published vectors.
+
+== What it does NOT do
+
+This is the structural core, not a full stack. Out of scope (a real
+deployment layers these on top): TLS 1.3 and the cryptographic handshake,
+packet number spaces, AEAD packet protection and header protection,
+congestion control and loss recovery (RFC 9002), flow-control accounting, and
+connection migration. The Zig engine keeps connection/stream state in memory
+only. Plug-in points are marked `TODO(crypto)` / `TODO(recovery)`.
+
+== Layout
+
+[cols="1,3"]
+|===
+| `protocols/proven-quic/src/Quic/Types.idr`       | All enums (endpoint, direction, stream kinds, states, packets, frames, errors).
+| `protocols/proven-quic/src/Quic/Streams.idr`     | Stream-ID encoding round-trips + access rules + proofs.
+| `protocols/proven-quic/src/Quic/Transitions.idr` | Connection + stream send/recv state machines + impossibility proofs.
+| `protocols/proven-quic/src/Quic/Frames.idr`      | The frame-in-packet table + pinned facts.
+| `protocols/proven-quic/src/QuicABI/Types.idr`    | C-ABI tag encodings + round-trip proofs.
+| `protocols/proven-quic/src/QuicABI/Foreign.idr`  | Opaque handle + the FFI contract.
+| `protocols/proven-quic/ffi/zig/src/quic.zig`     | The engine: varint codec, classification, state machines.
+| `protocols/proven-quic/ffi/zig/test/`            | RFC-vector + behavioural FFI tests.
+|===
+
+== Build and test locally
+
+Requires Idris2 (core + proofs) and Zig 0.15+ (engine). Commands run from
+this package directory (`protocols/proven-quic/`):
+
+[source,sh]
+----
+idris2 --build proven-quic.ipkg     # type-check + verify all proofs
+./build/exec/proven-quic            # identification + live demo
+cd ffi/zig && zig build test        # RFC varint vectors + state machines
+----
+
+== FFI surface (for the engine)
+
+`quic_varint_encode` / `quic_varint_decode` / `quic_varint_len`;
+`quic_stream_code` / `quic_stream_initiator` / `quic_stream_is_uni`;
+`quic_can_send` / `quic_can_receive`; `quic_frame_allowed`;
+`quic_create` / `quic_conn_state` / `quic_conn_transition`;
+`quic_open_stream` / `quic_send_state` / `quic_recv_state` /
+`quic_send_transition` / `quic_recv_transition`; and the stateless
+`quic_*_can_transition` tables. All enum values are u8 tags matching
+`QuicABI.Types`.
+
+== Relationship to the rest of the repo
+
+`proven-http3` builds HTTP/3 (RFC 9114) on top of this transport core, reusing
+the varint codec for frame headers. `proven-doq` (DNS over QUIC) treats QUIC
+as an opaque transport; this package models QUIC's internals.
+
+== Future work
+
+TLS 1.3 handshake + key schedule; packet protection (AEAD + header
+protection); loss recovery and congestion control (RFC 9002); flow control;
+connection migration; and language bindings under `/bindings`.
