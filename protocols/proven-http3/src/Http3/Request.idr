@@ -40,6 +40,19 @@ validateReqTransition RData       RDone       = Just DoneAfterBody
 validateReqTransition RTrailers   RDone       = Just DoneAfterTrailers
 validateReqTransition _           _           = Nothing
 
+||| Completeness: every legal request-stream move (witnessed by `w`) is found
+||| by the validator, so with soundness it is a verified decision procedure.
+public export
+validateReqComplete : (w : ValidReqTransition a b) -> validateReqTransition a b = Just w
+validateReqComplete RecvHeaders       = Refl
+validateReqComplete StartBody         = Refl
+validateReqComplete MoreBody          = Refl
+validateReqComplete TrailersNoBody    = Refl
+validateReqComplete TrailersAfterBody = Refl
+validateReqComplete DoneAfterHeaders  = Refl
+validateReqComplete DoneAfterBody     = Refl
+validateReqComplete DoneAfterTrailers = Refl
+
 ---------------------------------------------------------------------------
 -- Impossibility proofs (illegal frame orderings)
 ---------------------------------------------------------------------------

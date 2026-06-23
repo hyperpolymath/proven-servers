@@ -193,6 +193,58 @@ test "stateless transition tables match the GADTs" {
 }
 
 // =========================================================================
+// Exhaustive conformance: engine vs the proven relation over the WHOLE domain
+// =========================================================================
+//
+// Quic.Transitions proves these relations in Idris (and now their decidability
+// via validate*Complete). Here we check the Zig engine reproduces them on
+// every one of the 6x6 cells — exhaustive over the finite domain, so for
+// these tables conformance is decided, not merely sampled. The ground-truth
+// pair lists are the RFC 9000 transitions, independent of the engine's
+// if-chain implementation.
+
+fn inPairs(pairs: []const [2]u8, a: u8, b: u8) bool {
+    for (pairs) |p| if (p[0] == a and p[1] == b) return true;
+    return false;
+}
+
+test "EXHAUSTIVE: quic_conn_can_transition matches the proven relation (36 cells)" {
+    const valid = [_][2]u8{ .{ 0, 1 }, .{ 1, 2 }, .{ 1, 3 }, .{ 1, 4 }, .{ 2, 3 }, .{ 2, 4 }, .{ 3, 4 }, .{ 3, 5 }, .{ 4, 5 } };
+    var a: u8 = 0;
+    while (a < 6) : (a += 1) {
+        var b: u8 = 0;
+        while (b < 6) : (b += 1) {
+            const expected: u8 = if (inPairs(&valid, a, b)) 1 else 0;
+            try std.testing.expectEqual(expected, quic.quic_conn_can_transition(a, b));
+        }
+    }
+}
+
+test "EXHAUSTIVE: quic_send_can_transition matches the proven relation (36 cells)" {
+    const valid = [_][2]u8{ .{ 0, 1 }, .{ 1, 2 }, .{ 2, 3 }, .{ 0, 4 }, .{ 1, 4 }, .{ 2, 4 }, .{ 4, 5 } };
+    var a: u8 = 0;
+    while (a < 6) : (a += 1) {
+        var b: u8 = 0;
+        while (b < 6) : (b += 1) {
+            const expected: u8 = if (inPairs(&valid, a, b)) 1 else 0;
+            try std.testing.expectEqual(expected, quic.quic_send_can_transition(a, b));
+        }
+    }
+}
+
+test "EXHAUSTIVE: quic_recv_can_transition matches the proven relation (36 cells)" {
+    const valid = [_][2]u8{ .{ 0, 1 }, .{ 1, 2 }, .{ 2, 3 }, .{ 0, 4 }, .{ 1, 4 }, .{ 4, 5 } };
+    var a: u8 = 0;
+    while (a < 6) : (a += 1) {
+        var b: u8 = 0;
+        while (b < 6) : (b += 1) {
+            const expected: u8 = if (inPairs(&valid, a, b)) 1 else 0;
+            try std.testing.expectEqual(expected, quic.quic_recv_can_transition(a, b));
+        }
+    }
+}
+
+// =========================================================================
 // Safety
 // =========================================================================
 

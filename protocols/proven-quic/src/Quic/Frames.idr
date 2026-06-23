@@ -80,6 +80,17 @@ public export
 noFramesInRetry : frameAllowedIn Crypto PRetry = False
 noFramesInRetry = Refl
 
+||| Stronger, universally-quantified form: *no* frame kind is permitted in a
+||| Retry packet (RFC 9000 17.2.5: Retry packets contain no frames).
+public export
+retryHasNoFrames : (f : FrameKind) -> frameAllowedIn f PRetry = False
+retryHasNoFrames _ = Refl
+
+||| Likewise, Version Negotiation packets carry no frames (RFC 9000 17.2.1).
+public export
+vnHasNoFrames : (f : FrameKind) -> frameAllowedIn f PVersionNegotiation = False
+vnHasNoFrames _ = Refl
+
 ||| PADDING is universally permitted in frame-carrying packets.
 public export
 paddingInInitial : frameAllowedIn Padding PInitial = True
