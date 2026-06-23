@@ -15,5 +15,7 @@ main = Main
 executable = "proven-mcp"
 
 modules = Main, Mcp, Mcp.Types
+        , McpABI.Types
+        , McpABI.Foreign
 
 depends = base, prelude

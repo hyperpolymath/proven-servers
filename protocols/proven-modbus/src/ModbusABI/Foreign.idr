@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
--- abi.Foreign: Foreign function declarations for the Modbus C bridge.
+-- ModbusABI.Foreign: Foreign function declarations for the Modbus C bridge.
 --
 -- Declares the opaque handle type and documents the complete FFI contract
 -- that the Zig implementation (ffi/zig/src/modbus.zig) must provide.
@@ -13,11 +13,11 @@
 --   - Modbus TCP/RTU gateway lifecycle
 --
 -- All functions use C calling convention and communicate state via
--- Bits8 tags matching abi.Types exactly.
+-- Bits8 tags matching ModbusABI.Types exactly.
 
-module abi.Foreign
+module ModbusABI.Foreign
 
-import abi.Types
+import ModbusABI.Types
 
 %default total
 

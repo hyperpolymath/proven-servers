@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
--- abi.Types: C-ABI-compatible numeric representations of Modbus types.
+-- ModbusABI.Types: C-ABI-compatible numeric representations of Modbus types.
 --
 -- Maps every constructor of the core Modbus sum types to fixed Bits8 values
 -- for C interop. Each type gets a total encoder, partial decoder, and
@@ -16,7 +16,7 @@
 --   DeviceRole     (2 constructors, tags 0-1)
 --   GatewayState   (5 constructors, tags 0-4)
 
-module abi.Types
+module ModbusABI.Types
 
 import Modbus.Types
 

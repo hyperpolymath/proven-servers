@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
--- abi.Foreign: Foreign function declarations for the Media C bridge.
+-- MediaABI.Foreign: Foreign function declarations for the Media C bridge.
 --
 -- Declares the opaque handle type and documents the complete FFI contract
 -- that the Zig implementation (ffi/zig/src/media.zig) must provide.
@@ -13,11 +13,11 @@
 --   - Playback lifecycle (load/play/pause/seek/stop)
 --
 -- All functions use C calling convention and communicate state via
--- Bits8 tags matching abi.Types exactly.
+-- Bits8 tags matching MediaABI.Types exactly.
 
-module abi.Foreign
+module MediaABI.Foreign
 
-import abi.Types
+import MediaABI.Types
 
 %default total
 
