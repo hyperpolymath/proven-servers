@@ -14,3 +14,4 @@ executable = "proven-irc"
 modules = IRC
         , IRC.Types
         , Main
+        , IRCABI.Layout

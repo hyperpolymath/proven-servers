@@ -13,3 +13,5 @@ executable = "proven-diode"
 
 modules = Diode
         , Diode.Types
+        , DiodeABI.Types
+        , DiodeABI.Foreign

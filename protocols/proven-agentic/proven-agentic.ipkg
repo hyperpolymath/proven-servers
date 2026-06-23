@@ -15,5 +15,8 @@ main = Main
 executable = "proven-agentic"
 
 modules = Main, Agentic, Agentic.Types
+        , AgenticABI.Layout
+        , AgenticABI.Transitions
+        , AgenticABI.Foreign
 
 depends = base, prelude

@@ -14,3 +14,5 @@ executable = "proven-doh"
 modules = DoH
         , DoH.Types
         , Main
+        , DoHABI.Types
+        , DoHABI.Foreign
