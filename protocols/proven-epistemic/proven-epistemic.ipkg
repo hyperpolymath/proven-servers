@@ -15,3 +15,5 @@ modules = Epistemic
         , Epistemic.Types
         , Epistemic.Lattice
         , Epistemic.Transitions
+        , EpistemicABI.Types
+        , EpistemicABI.Foreign
