@@ -226,3 +226,38 @@ grep -rnE 'believe_me|assert_total|assert_smaller|idris_crash|postulate' \
   protocols core connectors --include='*.idr'
 grep -rn '@panic' protocols core connectors --include='*.zig' | grep -v /test/
 ```
+
+## Addendum (2026-06-23): edge-case resolution
+
+The 16 ABI-migration edge cases (S2) were examined and 15 resolved; each fix
+was build-verified. The examination surfaced several real bugs that had been
+invisible precisely because the modules were never compiled.
+
+**Fixed (15):**
+
+- *6 mis-detected orphans* (ospf, pop3, proxy, ptp, rtsp, wasm): the first
+  migration script read the namespace from a docstring comment ("This module
+  defines…"); using the anchored `^module` declaration they migrate cleanly.
+- *5 invalid lowercase `abi` namespaces* (mcp, mdns, media, metrics, modbus):
+  declared `module abi.Types`, which the ipkg parser rejects ("Expected end of
+  file"). Renamed to capitalized `<Name>ABI` and compiled.
+- *graphdb — a real proof bug*: `idleCannotQuery : SessionState -> Void;
+  idleCannotQuery _ impossible` is not a valid impossible case (SessionState is
+  inhabited). Fixed by adding the `CanQuery` capability witness and restating it
+  as `CanQuery GDBIdle -> Void`.
+- *caldav, carddav, dds — no ipkg at all*: added a library ipkg and removed a
+  stale duplicate `src/abi/`. Their ABI proofs now compile (the protocols
+  otherwise remain incomplete: no `Main`, top module, or Zig engine).
+
+**Outstanding (1) — `proven-radius`:** its orphaned ABI has several
+interrelated latent bugs that need the maintainer's design intent, so it was
+left untouched (no regression — it was never compiled):
+
+1. `ServiceType` is declared both as an `AttributeType` constructor and as a
+   separate data type in `RADIUSABI.Types` (name collision).
+2. `RADIUSABI.Layout`, `RADIUSABI.Types`, and `RADIUS.Types` define/import
+   `ServiceType` inconsistently (module overlap).
+3. A `maxGEMin : So (maxPacketSize >= minPacketSize)` proof to re-verify.
+
+Net: of the 73 originally-orphaned ABIs, all but `proven-radius` now compile —
+their round-trip proofs are verified for the first time.
