@@ -13,3 +13,6 @@ executable = "proven-kerberos"
 
 modules = Kerberos
         , Kerberos.Types
+        , KerberosABI.Layout
+        , KerberosABI.Transitions
+        , KerberosABI.Foreign

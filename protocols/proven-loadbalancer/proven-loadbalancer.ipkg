@@ -13,3 +13,5 @@ executable = "proven-loadbalancer"
 
 modules = Loadbalancer
         , Loadbalancer.Types
+        , LoadbalancerABI.Layout
+        , LoadbalancerABI.Foreign

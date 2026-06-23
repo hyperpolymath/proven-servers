@@ -14,3 +14,5 @@ executable = "proven-ldp"
 modules = Ldp
         , Ldp.Types
         , Main
+        , LdpABI.Layout
+        , LdpABI.Foreign

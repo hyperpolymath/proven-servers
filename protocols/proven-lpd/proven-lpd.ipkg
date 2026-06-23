@@ -17,5 +17,7 @@ modules = LPD
         , LPD.Queue
         , LPD.Protocol
         , LPD.Spool
+        , LPDABI.Layout
+        , LPDABI.Foreign
 
 -- depends = proven

@@ -275,3 +275,29 @@ compiles all six modules, the executable runs, and the Zig engine still passes
 
 Net: all 73 originally-orphaned ABIs now compile — every round-trip proof is
 verified for the first time.
+
+## Addendum 2 (2026-06-23): a stricter orphan sweep
+
+The earlier passes detected orphans by *path* (the tell-tale lowercase
+`src/abi/`). A second, stricter check — *is every `.idr` module actually named
+in some ipkg's `modules =` list?* — found a class the path heuristic missed:
+modules sitting at the correct `src/<Name>ABI/` path, with the correct
+namespace, that were simply never added to `modules =`. The compiler never saw
+them, so their proofs were written but unverified.
+
+The sweep flagged **36 such modules** across 17 protocols: the ABI
+`Layout`/`Types`/`Transitions`/`Foreign` modules of agentic, bfd, coap, diode,
+doh, doq, dot, irc, kerberos, kms, ldp, loadbalancer, logcollector, lpd, vpn,
+and zerotrust, plus a dead `Main.idr` in nesy (which had been configured as a
+library with no `main`/`executable`).
+
+Resolution: the 35 ABI modules were added to their ipkgs; nesy was wired as an
+executable (`main = Main`) like its siblings. Every one of the 17 protocols then
+builds cleanly with `idris2 --build` (these proofs happened to be correct, just
+unverified — unlike graphdb/radius, the only way to know was to compile them),
+and nesy's executable runs.
+
+Re-running the sweep afterwards: **0 orphaned / 498 total `.idr` modules** —
+every proof module in the repository is now compiled, and therefore checked.
+Escape hatches in active Idris code remain 0; `@panic` in Zig production code
+remains 0.

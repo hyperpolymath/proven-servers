@@ -13,3 +13,5 @@ executable = "proven-coap"
 
 modules = CoAP
         , CoAP.Types
+        , CoAPABI.Types
+        , CoAPABI.Foreign
