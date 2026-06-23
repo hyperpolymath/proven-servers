@@ -76,7 +76,7 @@ pub const StoreState = enum(u8) {
 // =========================================================================
 
 /// Maximum concurrent sessions.
-const MAX_SESSIONS: usize = 64;
+const MAX_SESSIONS: usize = 8;
 
 /// Maximum triples per store session.
 const MAX_TRIPLES: usize = 256;
