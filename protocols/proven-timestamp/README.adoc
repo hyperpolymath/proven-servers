@@ -1,0 +1,205 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= proven-timestamp
+:toc: macro
+:toclevels: 2
+
+Append-only, hash-chained *evidence-timestamping* core for union (or any)
+documentation. Submit a content hash, get back a tamper-evident receipt that
+proves the content existed at or before a given time — without the service
+ever seeing or storing the document.
+
+[WARNING]
+====
+*This is NOT a qualified electronic timestamping authority.* Receipts are
+internal evidence only. They are not produced by an RFC 3161 Time-Stamping
+Authority or a qualified trust service, and the internal clock is not
+attested. See <<what-this-does-not-prove>>.
+====
+
+toc::[]
+
+== What it does
+
+* Computes a hash of submitted content (the content stays client-side; only
+  the hash need ever reach the server).
+* Issues a *receipt* recording the content hash, a UTC timestamp, optional
+  label/reference, and the hash of the *previous* receipt.
+* Links every receipt into an *append-only hash chain*: changing any receipt
+  changes its hash and breaks the chain, so tampering is detectable.
+* Verifies (a) that supplied content still matches a receipt, and (b) that
+  the whole chain is internally consistent.
+
+The design follows the repo's "proven" philosophy: a small, auditable core
+where the type system carries the invariant. The append-only chain is an
+Idris2 datatype (`Timestamp.Chain.ValidChain`) that is *impossible to
+construct* for a mis-linked list — the proof is the guarantee. The runtime
+engine is a single, dependency-light Zig file using only `std.crypto`.
+
+This package is deliberately just the core. HTTP routes, the web UI, file
+upload, persistence, and language bindings are the integration surface you
+build on top — the FFI contract below is the seam.
+
+== Layout
+
+[cols="1,3"]
+|===
+| `src/Timestamp/Types.idr`      | Enums (`HashAlgo`, `TimestampSource`, `VerificationResult`) + constants.
+| `src/Timestamp/Receipt.idr`    | The `Receipt` record + the canonical pre-image, NDJSON and a2ml serialisers.
+| `src/Timestamp/Chain.idr`      | `ValidChain` (the proven hash chain), validator, and tamper-evidence proofs.
+| `src/Timestamp/Provider.idr`   | `TimestampProvider` abstraction; `internalProvider` + RFC 3161 plug-in point.
+| `src/TimestampABI/Types.idr`   | C-ABI tag encodings + round-trip proofs + the lifecycle state machine.
+| `src/TimestampABI/Foreign.idr` | Opaque handle + the full FFI function contract.
+| `src/Main.idr`                 | Identification + a live `validateChain` demo.
+| `ffi/zig/src/timestamp.zig`    | The engine: hashing, append-only log, chain + content verification.
+| `ffi/zig/test/`                | Known-answer + behavioural FFI tests.
+|===
+
+== Build and test locally
+
+Requires *Idris2* (for the core + proofs) and *Zig 0.15+* (for the engine).
+
+[source,sh]
+----
+# Type-check the core AND verify every proof (a clean build = proofs hold):
+idris2 --build proven-timestamp.ipkg
+./build/exec/proven-timestamp          # runs the chain demo
+
+# Build + run the Zig engine tests:
+cd ffi/zig && zig build test
+----
+
+== How receipts work
+
+Each receipt carries exactly the fields the brief asks for:
+
+[cols="1,3"]
+|===
+| `receipt_id`              | Decimal index within the log (0-based).
+| `created_at_utc`          | ISO-8601 UTC, e.g. `2026-06-23T00:00:00Z`.
+| `content_hash`            | Hex digest of the content. (The brief's `content_hash_sha512` is generalised: the algorithm is recorded explicitly, see note below.)
+| `hash_algorithm`          | One of `sha-256`, `sha-512-256`, `sha3-256` (default), `shake-256`.
+| `submitted_label`         | Optional human label.
+| `submitter_reference`     | Optional caller reference.
+| `timestamp_source`        | `internal` in v1 (`rfc3161` / `anchored` reserved).
+| `previous_receipt_hash`   | Prior receipt's `receipt_hash`; genesis uses 64 zeros.
+| `receipt_hash`            | Digest of the canonical pre-image (below).
+| `server_signature`        | Reserved placeholder; signing is future work.
+| `verification_instructions`, `disclaimer` | Embedded in every serialised receipt.
+|===
+
+NOTE: The brief asked for a "SHAKE512-256/Kyber-1024 hash". That conflates a
+hash/XOF (SHAKE, SHA-2, SHA-3) with a *key-encapsulation mechanism* (Kyber /
+ML-KEM-1024), which cannot hash data. We therefore use real, standardised,
+quantum-resistant hashes and record which one each receipt used, so the
+format can evolve without breaking verification.
+
+=== The canonical pre-image (frozen as `proven-timestamp.receipt.v1`)
+
+`receipt_hash` is the digest (using `hash_algorithm`) of nine
+newline-separated fields, *with no trailing newline*:
+
+----
+proven-timestamp.receipt.v1
+<receipt_id>
+<created_at_utc>
+<timestamp_source>
+<hash_algorithm>
+<content_hash>
+<submitted_label>          (empty line if absent)
+<submitter_reference>      (empty line if absent)
+<previous_receipt_hash>
+----
+
+Because the format is pinned, anyone can re-derive a receipt hash with
+off-the-shelf tools — no need to trust this server:
+
+[source,sh]
+----
+# content_hash of "hello":
+printf 'hello' | openssl dgst -sha3-256
+#   -> 3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392
+
+# receipt_hash of the genesis receipt:
+printf 'proven-timestamp.receipt.v1\n0\n2026-06-23T00:00:00Z\ninternal\nsha3-256\n3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392\n\n\n0000000000000000000000000000000000000000000000000000000000000000' \
+  | openssl dgst -sha3-256
+#   -> f943110b734fe3ff9ac100ecf2bc5cd883e14ec5a4c220b61ebaa25cbd64ca84
+----
+
+The Idris core, the Zig engine, and `openssl` all agree on these values (the
+test suites pin them as known-answer vectors).
+
+== How hash-chain verification works
+
+The log is reverse-chronological (newest first). A chain is valid when:
+
+. the oldest receipt's `previous_receipt_hash` is the genesis constant
+  (64 zeros); and
+. every newer receipt's `previous_receipt_hash` equals the
+  `receipt_hash` of the receipt immediately before it.
+
+Two layers enforce this:
+
+* *Engine* (`ts_verify_chain`): walks the in-memory log, re-derives every
+  `receipt_hash` from the stored fields, and checks every link. Editing any
+  stored field changes that receipt's hash and is caught as `chain_broken`.
+* *Proof* (`Timestamp.Chain`): `ValidChain` can only be built for a correctly
+  linked list. `validateChain` turns a downloaded receipt list into that
+  proof or rejects it; `nonGenesisRejected` and `brokenLinkRejected` are the
+  machine-checked tamper-evidence statements.
+
+Content verification (`ts_verify_content`, the `/verify` flow): re-hash the
+supplied bytes and compare to the receipt's `content_hash` — `verified` or
+`content_mismatch`.
+
+== API → FFI mapping
+
+The intended HTTP layer is thin glue over the engine:
+
+[cols="1,2"]
+|===
+| `GET /health`            | static / `ts_abi_version`
+| `POST /api/hash-note`    | `ts_hash`
+| `POST /api/timestamp`    | `ts_append` (+ `ts_now_iso8601`)
+| `GET /api/receipt/:id`   | `ts_get_receipt_hash` / `ts_get_prev_hash` / `ts_get_content_hash`
+| `GET /verify`            | `ts_verify_content` + `ts_verify_chain`
+|===
+
+Lifecycle: `ts_create` -> Active; `ts_seal`/`ts_reopen` freeze/resume appends;
+`ts_shutdown` -> `ts_cleanup`. Appends are only accepted while Active. The
+log is never mutated or truncated in normal operation.
+
+[#what-this-does-not-prove]
+== What this does *not* prove
+
+* *Not a trusted timestamp.* The internal clock is asserted by this server,
+  not attested by an independent authority. It does not satisfy eIDAS /
+  RFC 3161 qualified timestamping.
+* *Not a signature.* `server_signature` is a reserved placeholder; receipts
+  are not yet cryptographically signed, so a malicious operator could in
+  principle rewrite the *entire* chain. (A signing key + external anchoring
+  closes this; see below.)
+* *Not proof of authorship or possession* — only that *some* content with
+  that hash was presented at/after the recorded time.
+* *Not durable yet.* v1 keeps the log in memory; restart loses it.
+
+== Security notes
+
+* UTC everywhere; timestamps are ISO-8601 `...Z`.
+* Document contents are never stored or logged — only hashes. `ts_hash` and
+  `ts_verify_content` hash transient bytes and discard them.
+* Inputs are validated (algorithm tag, hash length, field sizes, state).
+* No `believe_me`/`assert_total` in Idris; no `@panic` in the Zig engine.
+
+== Future work
+
+* *RFC 3161 TSA* — implement `Rfc3161TimestampProvider` (plug-in points are
+  marked `TODO(rfc3161)` in `Timestamp/Provider.idr` and `timestamp.zig`):
+  POST a `TimeStampReq`, embed the returned token, set `timestamp_source = rfc3161`.
+* *Signing key* — sign each `receipt_hash` (or the head) and fill
+  `server_signature`.
+* *External anchoring* — periodically publish the head hash to a
+  transparency log / ledger (`timestamp_source = anchored`).
+* *Persistence* — back the append-only log with SQLite or JSONL on disk.
+* *Integration* — Nextcloud app, member accounts, MFA, HTTP layer, web UI,
+  and the cross-language bindings under `/bindings`.
