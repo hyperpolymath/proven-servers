@@ -44,16 +44,20 @@ build on top — the FFI contract below is the seam.
 
 [cols="1,3"]
 |===
-| `src/Timestamp/Types.idr`      | Enums (`HashAlgo`, `TimestampSource`, `VerificationResult`) + constants.
-| `src/Timestamp/Receipt.idr`    | The `Receipt` record + the canonical pre-image, NDJSON and a2ml serialisers.
-| `src/Timestamp/Chain.idr`      | `ValidChain` (the proven hash chain), validator, and tamper-evidence proofs.
-| `src/Timestamp/Provider.idr`   | `TimestampProvider` abstraction; `internalProvider` + RFC 3161 plug-in point.
-| `src/TimestampABI/Types.idr`   | C-ABI tag encodings + round-trip proofs + the lifecycle state machine.
-| `src/TimestampABI/Foreign.idr` | Opaque handle + the full FFI function contract.
-| `src/Main.idr`                 | Identification + a live `validateChain` demo.
-| `ffi/zig/src/timestamp.zig`    | The engine: hashing, append-only log, chain + content verification.
-| `ffi/zig/test/`                | Known-answer + behavioural FFI tests.
+| `protocols/proven-timestamp/src/Timestamp/Types.idr`      | Enums (`HashAlgo`, `TimestampSource`, `VerificationResult`) + constants.
+| `protocols/proven-timestamp/src/Timestamp/Receipt.idr`    | The `Receipt` record + the canonical pre-image, NDJSON and a2ml serialisers.
+| `protocols/proven-timestamp/src/Timestamp/Chain.idr`      | `ValidChain` (the proven hash chain), validator, and tamper-evidence proofs.
+| `protocols/proven-timestamp/src/Timestamp/Provider.idr`   | `TimestampProvider` abstraction; `internalProvider` + RFC 3161 plug-in point.
+| `protocols/proven-timestamp/src/TimestampABI/Types.idr`   | C-ABI tag encodings + round-trip proofs + the lifecycle state machine.
+| `protocols/proven-timestamp/src/TimestampABI/Foreign.idr` | Opaque handle + the full FFI function contract.
+| `protocols/proven-timestamp/src/Main.idr`                 | Identification + a live `validateChain` demo.
+| `protocols/proven-timestamp/ffi/zig/src/timestamp.zig`    | The engine: hashing, append-only log, chain + content verification.
+| `protocols/proven-timestamp/ffi/zig/test/`                | Known-answer + behavioural FFI tests.
 |===
+
+NOTE: Paths above are relative to the repository root. The `idris2` / `zig`
+commands below are run from this package directory
+(`protocols/proven-timestamp/`).
 
 == Build and test locally
 
