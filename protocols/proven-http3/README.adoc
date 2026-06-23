@@ -44,14 +44,18 @@ Plug-in points are marked `TODO(qpack)` / `TODO(settings)` / `TODO(semantics)`.
 
 [cols="1,3"]
 |===
-| `protocols/proven-http3/src/Http3/Types.idr`       | Enums: frames, stream types, settings, errors, request states.
-| `protocols/proven-http3/src/Http3/Frames.idr`      | Wire codes + classification + frame-vs-stream rules + proofs.
-| `protocols/proven-http3/src/Http3/Request.idr`     | The request-stream state machine + impossibility proofs.
-| `protocols/proven-http3/src/Http3ABI/Types.idr`    | C-ABI tag encodings + round-trip proofs.
-| `protocols/proven-http3/src/Http3ABI/Foreign.idr`  | Opaque handle + the FFI contract.
-| `protocols/proven-http3/ffi/zig/src/http3.zig`     | The engine: frame-header parsing, classification, request state machine.
-| `protocols/proven-http3/ffi/zig/test/`             | Frame-parsing + sequence FFI tests.
+| Module / file | Role
+| `Http3.Types`       | Enums: frames, stream types, settings, errors, request states.
+| `Http3.Frames`      | Wire codes + classification + frame-vs-stream rules + proofs.
+| `Http3.Request`     | The request-stream state machine + impossibility proofs.
+| `Http3ABI.Types`    | C-ABI tag encodings + round-trip proofs.
+| `Http3ABI.Foreign`  | Opaque handle + the FFI contract.
+| `ffi/zig/src/http3.zig` | The engine: frame-header parsing, classification, request state machine.
+| `ffi/zig/test/`         | Frame-parsing + sequence FFI tests.
 |===
+
+Idris modules live under the package `src` tree (package root
+`protocols/proven-http3`); the Zig engine is under `ffi/zig`.
 
 == Build and test locally
 
