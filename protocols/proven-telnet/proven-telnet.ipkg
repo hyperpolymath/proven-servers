@@ -12,5 +12,7 @@ main = Main
 executable = "proven-telnet"
 
 modules = Telnet
+        , TelnetABI.Types
+        , TelnetABI.Foreign
         , Telnet.Types
         , Main

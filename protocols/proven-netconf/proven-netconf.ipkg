@@ -12,5 +12,7 @@ main = Main
 executable = "proven-netconf"
 
 modules = NETCONF
+        , NetconfABI.Types
+        , NetconfABI.Foreign
         , NETCONF.Types
         , Main

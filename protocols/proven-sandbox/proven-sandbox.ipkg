@@ -12,4 +12,6 @@ main = Main
 executable = "proven-sandbox"
 
 modules = Sandbox
+        , SandboxABI.Types
+        , SandboxABI.Foreign
         , Sandbox.Types

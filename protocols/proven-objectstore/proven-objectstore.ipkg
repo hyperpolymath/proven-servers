@@ -12,4 +12,6 @@ main = Main
 executable = "proven-objectstore"
 
 modules = Objectstore
+        , ObjectstoreABI.Types
+        , ObjectstoreABI.Foreign
         , Objectstore.Types

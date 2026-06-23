@@ -12,5 +12,7 @@ main = Main
 executable = "proven-voip"
 
 modules = VoIP
+        , VoIPABI.Types
+        , VoIPABI.Foreign
         , VoIP.Types
         , Main

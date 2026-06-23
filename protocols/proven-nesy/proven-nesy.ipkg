@@ -13,6 +13,8 @@ brief   = "Neurosymbolic integration server — formal ABI types"
 sourcedir = "src"
 
 modules = NeSy
+        , NeSyABI.Types
+        , NeSyABI.Foreign
         , NeSy.Types
         , NeSy.Reasoning
         , NeSy.Integration

@@ -12,5 +12,7 @@ main = Main
 executable = "proven-odns"
 
 modules = ODNS
+        , ODNSABI.Types
+        , ODNSABI.Foreign
         , ODNS.Types
         , Main

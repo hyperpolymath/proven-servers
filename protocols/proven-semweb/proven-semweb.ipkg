@@ -12,5 +12,7 @@ main = Main
 executable = "proven-semweb"
 
 modules = Semweb
+        , SemwebABI.Types
+        , SemwebABI.Foreign
         , Semweb.Types
         , Main

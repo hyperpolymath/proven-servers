@@ -12,4 +12,6 @@ main = Main
 executable = "proven-imap"
 
 modules = IMAP
+        , IMAPABI.Types
+        , IMAPABI.Foreign
         , IMAP.Types

@@ -12,4 +12,6 @@ main = Main
 executable = "proven-socks"
 
 modules = SOCKS
+        , SOCKSABI.Types
+        , SOCKSABI.Foreign
         , SOCKS.Types

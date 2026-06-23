@@ -12,4 +12,6 @@ main = Main
 executable = "proven-git"
 
 modules = Git
+        , GitABI.Types
+        , GitABI.Foreign
         , Git.Types

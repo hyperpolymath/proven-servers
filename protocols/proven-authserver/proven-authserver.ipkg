@@ -12,4 +12,6 @@ main = Main
 executable = "proven-authserver"
 
 modules = Authserver
+        , AuthserverABI.Types
+        , AuthserverABI.Foreign
         , Authserver.Types

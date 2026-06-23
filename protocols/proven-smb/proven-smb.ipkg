@@ -12,4 +12,6 @@ main = Main
 executable = "proven-smb"
 
 modules = SMB
+        , SMBABI.Types
+        , SMBABI.Foreign
         , SMB.Types
