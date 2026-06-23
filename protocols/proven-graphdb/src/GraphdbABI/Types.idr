@@ -184,6 +184,17 @@ sessionStateRoundtrip GDBQuerying = Refl
 sessionStateRoundtrip GDBTraversing = Refl
 sessionStateRoundtrip GDBDisconnecting = Refl
 
+||| Proof witness that a session state permits query operations.
+||| Only a connected or actively-querying session may issue queries.
 public export
-idleCannotQuery : SessionState -> Void
+data CanQuery : SessionState -> Type where
+  ConnectedCanQuery : CanQuery GDBConnected
+  QueryingCanQuery  : CanQuery GDBQuerying
+
+||| An idle session cannot run queries — it must connect first.
+||| (Previously written as `SessionState -> Void`, which is not a valid
+||| impossible case: SessionState is inhabited. The intended statement is
+||| the impossibility of the *query capability* in the Idle state.)
+public export
+idleCannotQuery : CanQuery GDBIdle -> Void
 idleCannotQuery _ impossible

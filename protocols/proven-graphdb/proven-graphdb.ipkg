@@ -12,5 +12,7 @@ main = Main
 executable = "proven-graphdb"
 
 modules = Graphdb
+        , GraphdbABI.Types
+        , GraphdbABI.Foreign
         , Graphdb.Types
         , Main
