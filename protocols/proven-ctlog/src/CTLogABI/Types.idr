@@ -254,3 +254,20 @@ idleCannotSubmit _ impossible
 public export
 cannotResumeFromShutdown : ValidServerTransition SSShutdown SSActive -> Void
 cannotResumeFromShutdown _ impossible
+
+---------------------------------------------------------------------------
+-- Validator completeness (audit S1): every legal transition is found, so
+-- validateServerTransition is a verified decision procedure (sound + complete).
+---------------------------------------------------------------------------
+
+public export
+validateServerComplete : (w : ValidServerTransition a b) -> validateServerTransition a b = Just w
+validateServerComplete ServerStarted      = Refl
+validateServerComplete BeginMerge         = Refl
+validateServerComplete MergeDone          = Refl
+validateServerComplete BeginSign          = Refl
+validateServerComplete SignDone           = Refl
+validateServerComplete ShutdownFromActive = Refl
+validateServerComplete ShutdownFromMerge  = Refl
+validateServerComplete ShutdownFromSign   = Refl
+validateServerComplete CleanupDone        = Refl
