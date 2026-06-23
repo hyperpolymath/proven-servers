@@ -8,7 +8,13 @@
 
 == Tech Stack
 
-{{LANG_STACK}}
+* *ABI + proofs*: Idris 2 (dependent types; `%default total`). Each component's
+  ABI lives in `src/<Name>ABI/` — tag encodings with round-trip proofs,
+  state-machine GADTs, and the FFI contract. Type-checking *is* proof checking.
+* *FFI / engines*: Zig 0.15+ in `ffi/zig/`, exporting a C ABI.
+* *Bridge*: generated C headers in `generated/abi/`.
+* *Bindings*: Rust, Zig, C, ReScript, Gleam, Elixir, Haskell, OCaml, Ada, Julia
+  (`bindings/`) — all calling the same C ABI.
 
 == Set Up Development Environment
 
@@ -39,14 +45,25 @@ just setup-dev
 
 [source,bash]
 ----
-{{BUILD_CMD}}
+# Idris2 core + proofs for one component (a clean build = proofs verified):
+idris2 --build protocols/proven-<name>/proven-<name>.ipkg
+
+# Zig FFI engine (shared + static libraries):
+(cd protocols/proven-<name>/ffi/zig && zig build)
+
+# Or, via the task runner:
+just build
 ----
 
 == Test
 
 [source,bash]
 ----
-{{TEST_CMD}}
+# One engine's FFI tests:
+(cd protocols/proven-<name>/ffi/zig && zig build test)
+
+# Full end-to-end suite (FFI builds + safety aspects):
+bash tests/e2e.sh        # or: just test
 ----
 
 == Project Structure
@@ -92,7 +109,16 @@ just panic-scan     # No new security issues
 Read `.machine_readable/MUST.contractile` before making changes.
 Key invariants that must never be violated:
 
-{{MUST_INVARIANTS}}
+* The ABI is defined in Idris 2; FFIs/APIs are implemented in Zig (the RSR
+  standard — see `ABI-FFI-README.md`).
+* No proof-escape hatches in Idris code (`believe_me`, `assert_total`,
+  `assert_smaller`, `idris_crash`, `postulate`); `%default total` in every module.
+* No `@panic` or `unreachable` in Zig FFI production code; every exported
+  function is NULL-/invalid-handle-safe.
+* ABI tag values must match exactly between Idris (`*ABI.Types`) and Zig
+  (`@intFromEnum`); the FFI tests enforce this.
+* Every component's ABI modules are listed in its `.ipkg`, so the proofs are
+  actually compiled (not orphaned).
 
 == LLM/AI Agent Development
 
