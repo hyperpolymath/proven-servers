@@ -9,7 +9,7 @@ import Semweb
 %default total
 
 ||| Print server name, port, and enumerate all type constructors.
-partial
+covering
 main : IO ()
 main = do
   putStrLn "=========================================="
