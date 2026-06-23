@@ -1,0 +1,21 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+package proven-quic
+version = "0.1.0"
+authors = "Jonathan D.A. Jewell"
+license = "MPL-2.0"
+brief   = "Proven QUIC transport core (RFC 9000): stream/connection state machines, stream identity, frame rules, varint"
+
+sourcedir = "src"
+main = Main
+executable = "proven-quic"
+
+modules = Quic
+        , Quic.Types
+        , Quic.Streams
+        , Quic.Transitions
+        , Quic.Frames
+        , QuicABI.Types
+        , QuicABI.Foreign
+        , Main
