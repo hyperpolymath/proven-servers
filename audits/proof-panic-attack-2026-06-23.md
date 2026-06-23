@@ -249,15 +249,29 @@ invisible precisely because the modules were never compiled.
   stale duplicate `src/abi/`. Their ABI proofs now compile (the protocols
   otherwise remain incomplete: no `Main`, top module, or Zig engine).
 
-**Outstanding (1) — `proven-radius`:** its orphaned ABI has several
-interrelated latent bugs that need the maintainer's design intent, so it was
-left untouched (no regression — it was never compiled):
+**Resolved follow-up (1) — `proven-radius`:** the remaining edge was a genuine
+mess: the orphaned ABI was two overlapping module families. A redundant,
+self-contained `RadiusABI.Types` (mixed-case) re-declared the core types from
+scratch — and that is where the real bug lived: a data type `ServiceType` *and*
+an `AttributeType` constructor also named `ServiceType` in the same namespace (a
+clash). Alongside it sat a coherent all-caps family, `RADIUSABI.Layout` +
+`RADIUSABI.Transitions`, which correctly `import RADIUS.Types` and add the
+ABI-only `AuthMethod`/`RadiusResult`/`SessionState` plus the AAA state machine.
 
-1. `ServiceType` is declared both as an `AttributeType` constructor and as a
-   separate data type in `RADIUSABI.Types` (name collision).
-2. `RADIUSABI.Layout`, `RADIUSABI.Types`, and `RADIUS.Types` define/import
-   `ServiceType` inconsistently (module overlap).
-3. A `maxGEMin : So (maxPacketSize >= minPacketSize)` proof to re-verify.
+The three reported issues resolved as follows:
 
-Net: of the 73 originally-orphaned ABIs, all but `proven-radius` now compile —
-their round-trip proofs are verified for the first time.
+1. *`ServiceType` collision* — existed only inside the redundant `RadiusABI.Types`.
+   Its tag values were byte-for-byte identical to `RADIUSABI.Layout`, so the file
+   was deleted with no loss of ABI information.
+2. *Module overlap* — consolidated onto the single `RADIUSABI.*` family (the
+   casing the Zig engine already documents) under `src/RADIUSABI/`; `Foreign`
+   became `RADIUSABI.Foreign` importing `RADIUSABI.Layout`.
+3. *`maxGEMin` proof* — not a logic error at all: `So`/`Oh` were simply never in
+   scope. Adding `import Data.So` lets `So (4096 >= 20)` reduce and `Oh` close it.
+
+All three ABI modules are now in the ipkg and build-verified: `idris2 --build`
+compiles all six modules, the executable runs, and the Zig engine still passes
+48/48 tests (tag values were preserved throughout).
+
+Net: all 73 originally-orphaned ABIs now compile — every round-trip proof is
+verified for the first time.

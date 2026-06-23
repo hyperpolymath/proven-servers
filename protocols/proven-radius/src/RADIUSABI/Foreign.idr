@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
--- RadiusABI.Foreign: Foreign function declarations for the C bridge.
+-- RADIUSABI.Foreign: Foreign function declarations for the C bridge.
 --
 -- Declares the opaque handle type and documents the complete FFI contract
 -- that the Zig implementation (ffi/zig/src/radius.zig) must provide.
@@ -12,11 +12,11 @@
 --   - Thread-safe via per-pool mutex
 --
 -- All functions use C calling convention and communicate state via
--- Bits8 tags matching RadiusABI.Types exactly.
+-- Bits8 tags matching RADIUSABI.Layout and RADIUSABI.Transitions exactly.
 
-module RadiusABI.Foreign
+module RADIUSABI.Foreign
 
-import RadiusABI.Types
+import RADIUSABI.Layout
 
 %default total
 
