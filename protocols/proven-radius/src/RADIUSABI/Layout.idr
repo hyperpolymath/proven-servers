@@ -21,6 +21,7 @@
 module RADIUSABI.Layout
 
 import RADIUS.Types
+import Data.So
 
 %default total
 

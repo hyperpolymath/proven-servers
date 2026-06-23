@@ -13,3 +13,7 @@ executable = "proven-radius"
 
 modules = RADIUS
         , RADIUS.Types
+        , RADIUSABI.Layout
+        , RADIUSABI.Transitions
+        , RADIUSABI.Foreign
+        , Main
