@@ -74,7 +74,7 @@ pub const GatewayState = enum(u8) {
 // =========================================================================
 
 /// Maximum concurrent gateways.
-const MAX_GATEWAYS: usize = 64;
+const MAX_GATEWAYS: usize = 8;
 
 /// Maximum queued segments per gateway.
 const MAX_SEGMENTS: usize = 128;

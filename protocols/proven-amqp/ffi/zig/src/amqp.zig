@@ -92,7 +92,7 @@ pub const BrokerState = enum(u8) {
 // =========================================================================
 
 /// Maximum concurrent sessions.
-const MAX_SESSIONS: usize = 64;
+const MAX_SESSIONS: usize = 16;
 
 /// Maximum channels per session.
 const MAX_CHANNELS: usize = 16;
