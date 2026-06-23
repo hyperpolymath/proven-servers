@@ -292,3 +292,9 @@ pub export fn ldp_check_constraint(slot: c_int, op: u8) callconv(.c) u8 {
     ctx.last_error = 255;
     return 255; // no violation
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(contexts)) > 16 * 1024 * 1024)
+        @compileError("pool 'contexts' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}

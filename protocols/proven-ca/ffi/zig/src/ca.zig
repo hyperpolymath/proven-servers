@@ -658,3 +658,9 @@ pub export fn ca_validate_key_usage(slot: c_int, cert_id: c_int) callconv(.c) u8
         .end_entity, .code_signing, .email_protection, .ocsp_signing => if (has_cert_sign) 1 else 0,
     };
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(contexts)) > 16 * 1024 * 1024)
+        @compileError("pool 'contexts' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}

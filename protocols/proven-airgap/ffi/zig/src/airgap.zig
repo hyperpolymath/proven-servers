@@ -325,3 +325,9 @@ pub export fn airgap_can_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 4 and to == 6) return 1; // InProgress -> Failed
     return 0;
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(transfers)) > 16 * 1024 * 1024)
+        @compileError("pool 'transfers' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}

@@ -584,3 +584,9 @@ pub export fn dds_can_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 4 and to == 0) return 1; // Leaving -> Idle
     return 0;
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(participants)) > 16 * 1024 * 1024)
+        @compileError("pool 'participants' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}
