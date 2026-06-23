@@ -12,4 +12,6 @@ main = Main
 executable = "proven-ospf"
 
 modules = OSPF
+        , OSPFABI.Types
+        , OSPFABI.Foreign
         , OSPF.Types
