@@ -1,0 +1,14 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+package proven-dds
+version = "0.1.0"
+authors = "Jonathan D.A. Jewell"
+license = "MPL-2.0"
+brief   = "Proven dds type + ABI skeleton"
+
+sourcedir = "src"
+
+modules = DDS.Types
+        , DDSABI.Foreign
+        , DDSABI.Types
