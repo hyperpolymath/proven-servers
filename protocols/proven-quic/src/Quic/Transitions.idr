@@ -42,6 +42,21 @@ validateConnTransition CClosing     CClosed      = Just ClosingTimeout
 validateConnTransition CDraining    CClosed      = Just DrainingTimeout
 validateConnTransition _            _            = Nothing
 
+||| Completeness: every legal transition (witnessed by `w`) is found by the
+||| validator. With soundness (the validator returns the witness), this makes
+||| `validateConnTransition` a verified decision procedure for the relation.
+public export
+validateConnComplete : (w : ValidConnTransition a b) -> validateConnTransition a b = Just w
+validateConnComplete BeginHandshake    = Refl
+validateConnComplete HandshakeComplete = Refl
+validateConnComplete CloseInHandshake  = Refl
+validateConnComplete DrainInHandshake  = Refl
+validateConnComplete LocalClose        = Refl
+validateConnComplete PeerClose         = Refl
+validateConnComplete ClosingToDraining = Refl
+validateConnComplete ClosingTimeout    = Refl
+validateConnComplete DrainingTimeout   = Refl
+
 ||| `Closed` is terminal — no transitions leave it.
 public export
 closedIsTerminal : ValidConnTransition CClosed s -> Void
@@ -83,6 +98,17 @@ validateSendTransition SDataSent SResetSent  = Just ResetFromSent
 validateSendTransition SResetSent SResetRecvd = Just ResetAcked
 validateSendTransition _         _           = Nothing
 
+||| Completeness of the sending-part validator.
+public export
+validateSendComplete : (w : ValidSendTransition a b) -> validateSendTransition a b = Just w
+validateSendComplete StartSending  = Refl
+validateSendComplete SendFin       = Refl
+validateSendComplete AllAcked      = Refl
+validateSendComplete ResetFromReady = Refl
+validateSendComplete ResetFromSend  = Refl
+validateSendComplete ResetFromSent  = Refl
+validateSendComplete ResetAcked     = Refl
+
 ||| Once all data is acknowledged the sending part is complete and final.
 public export
 dataRecvdIsTerminal : ValidSendTransition SDataRecvd s -> Void
@@ -121,6 +147,16 @@ validateRecvTransition RRecv      RResetRecvd = Just ResetWhileRecv
 validateRecvTransition RSizeKnown RResetRecvd = Just ResetWhileSize
 validateRecvTransition RResetRecvd RResetRead = Just AppReadReset
 validateRecvTransition _          _           = Nothing
+
+||| Completeness of the receiving-part validator.
+public export
+validateRecvComplete : (w : ValidRecvTransition a b) -> validateRecvTransition a b = Just w
+validateRecvComplete RecvFin       = Refl
+validateRecvComplete AllReceived   = Refl
+validateRecvComplete AppReadAll    = Refl
+validateRecvComplete ResetWhileRecv = Refl
+validateRecvComplete ResetWhileSize = Refl
+validateRecvComplete AppReadReset   = Refl
 
 ||| The application reading all data is the terminal receive state.
 public export
