@@ -349,3 +349,9 @@ pub export fn lpd_parse_command(code: u8) callconv(.c) u8 {
     if (code >= 1 and code <= 5) return code;
     return 255;
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(contexts)) > 16 * 1024 * 1024)
+        @compileError("pool 'contexts' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}

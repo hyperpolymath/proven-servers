@@ -174,3 +174,9 @@ pub export fn epistemic_disclose(slot: c_int, min_tier: u8, revealingness: u8) c
     if (min_tier <= @intFromEnum(s.eff_tier)) return DiscloseResult.disclosed;
     return DiscloseResult.tier_exceeded;
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
+        @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}

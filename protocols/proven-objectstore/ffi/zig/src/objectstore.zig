@@ -530,3 +530,9 @@ pub export fn objectstore_cleanup(slot: c_int) callconv(.c) u8 {
     sessions[idx].selected_bucket = -1;
     return 0;
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
+        @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}

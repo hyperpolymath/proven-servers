@@ -339,3 +339,9 @@ pub export fn quic_recv_transition(slot: c_int, idx: u32, to: u8) callconv(.c) u
     s.recv = @enumFromInt(to);
     return 0;
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(conns)) > 16 * 1024 * 1024)
+        @compileError("pool 'conns' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}

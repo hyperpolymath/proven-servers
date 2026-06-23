@@ -364,3 +364,9 @@ pub export fn webdav_move(src: c_int, dst: c_int) callconv(.c) u8 {
 
     return 0;
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(resources)) > 16 * 1024 * 1024)
+        @compileError("pool 'resources' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}
