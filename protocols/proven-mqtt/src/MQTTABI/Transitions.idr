@@ -269,3 +269,22 @@ failedIsTerminalQoS1 _ impossible
 public export
 failedIsTerminalQoS2 : ValidQoS2Transition QDFailed s -> Void
 failedIsTerminalQoS2 _ impossible
+
+---------------------------------------------------------------------------
+-- Validator completeness (audit S1): validateBrokerTransition is sound + complete.
+---------------------------------------------------------------------------
+
+public export
+validateBrokerComplete : (w : ValidBrokerTransition a b) -> validateBrokerTransition a b = Just w
+validateBrokerComplete ClientConnected     = Refl
+validateBrokerComplete ClientSubscribed    = Refl
+validateBrokerComplete AdditionalSubscribe = Refl
+validateBrokerComplete AllUnsubscribed     = Refl
+validateBrokerComplete BeginPublish        = Refl
+validateBrokerComplete BeginPublishSub     = Refl
+validateBrokerComplete PublishDoneNoSub    = Refl
+validateBrokerComplete PublishDoneSub      = Refl
+validateBrokerComplete DisconnectFromConn  = Refl
+validateBrokerComplete DisconnectFromSub   = Refl
+validateBrokerComplete DisconnectFromPub   = Refl
+validateBrokerComplete CleanupDone         = Refl
