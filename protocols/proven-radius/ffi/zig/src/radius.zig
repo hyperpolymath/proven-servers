@@ -10,12 +10,19 @@
 //   - Attribute TLV encoding/storage
 //   - Thread-safe via mutex on global state
 //
-// Tag values MUST match:
-//   - Idris2 ABI (src/abi/Layout.idr)
-//   - Idris2 Transitions (src/abi/Transitions.idr)
-//   - C header (generated/abi/radius.h)
+// Tag values are pinned to the proven Idris ABI by the comptime guard below:
+// they are generated from RADIUSABI.{Layout,Transitions,Foreign} into
+// radius_abi_gen.zig (tools/gen-abi.sh), and any drift fails the build.
 
 const std = @import("std");
+
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh. The
+// comptime guard below pins every enum tag + layout constant to these, so
+// drift from the proofs is a COMPILE error, not a runtime surprise.
+const gen = @import("radius_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
 
 // ── Enums (matching Layout.idr tag assignments exactly) ──────────────────
 
@@ -95,6 +102,64 @@ pub const ATTRIBUTE_HEADER_SIZE: usize = 2;
 /// Maximum attribute value length: 255 - 2 = 253 bytes.
 pub const MAX_ATTRIBUTE_VALUE_LEN: usize = 253;
 
+// ── ABI conformance guard ────────────────────────────────────────────────
+// "Type safety through Zig's particularity": every enum tag and layout
+// constant MUST equal the generated (= proven Idris) value. A mismatch fails
+// `zig build` with the named symbol, before any test runs. Regenerate with
+// `bash tools/gen-abi.sh` if the proofs intentionally change.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version (regenerate: tools/gen-abi.sh)");
+
+    if (@intFromEnum(PacketType.access_request) != gen.PACKET_ACCESS_REQUEST) @compileError("ABI drift: PacketType.access_request");
+    if (@intFromEnum(PacketType.access_accept) != gen.PACKET_ACCESS_ACCEPT) @compileError("ABI drift: PacketType.access_accept");
+    if (@intFromEnum(PacketType.access_reject) != gen.PACKET_ACCESS_REJECT) @compileError("ABI drift: PacketType.access_reject");
+    if (@intFromEnum(PacketType.accounting_request) != gen.PACKET_ACCOUNTING_REQUEST) @compileError("ABI drift: PacketType.accounting_request");
+    if (@intFromEnum(PacketType.accounting_response) != gen.PACKET_ACCOUNTING_RESPONSE) @compileError("ABI drift: PacketType.accounting_response");
+    if (@intFromEnum(PacketType.access_challenge) != gen.PACKET_ACCESS_CHALLENGE) @compileError("ABI drift: PacketType.access_challenge");
+
+    if (@intFromEnum(AttributeType.user_name) != gen.ATTR_USER_NAME) @compileError("ABI drift: AttributeType.user_name");
+    if (@intFromEnum(AttributeType.user_password) != gen.ATTR_USER_PASSWORD) @compileError("ABI drift: AttributeType.user_password");
+    if (@intFromEnum(AttributeType.nas_ip_address) != gen.ATTR_NAS_IP_ADDRESS) @compileError("ABI drift: AttributeType.nas_ip_address");
+    if (@intFromEnum(AttributeType.nas_port) != gen.ATTR_NAS_PORT) @compileError("ABI drift: AttributeType.nas_port");
+    if (@intFromEnum(AttributeType.service_type) != gen.ATTR_SERVICE_TYPE) @compileError("ABI drift: AttributeType.service_type");
+    if (@intFromEnum(AttributeType.framed_protocol) != gen.ATTR_FRAMED_PROTOCOL) @compileError("ABI drift: AttributeType.framed_protocol");
+    if (@intFromEnum(AttributeType.framed_ip_address) != gen.ATTR_FRAMED_IP_ADDRESS) @compileError("ABI drift: AttributeType.framed_ip_address");
+    if (@intFromEnum(AttributeType.reply_message) != gen.ATTR_REPLY_MESSAGE) @compileError("ABI drift: AttributeType.reply_message");
+    if (@intFromEnum(AttributeType.session_timeout) != gen.ATTR_SESSION_TIMEOUT) @compileError("ABI drift: AttributeType.session_timeout");
+
+    if (@intFromEnum(ServiceType.login) != gen.SVC_LOGIN) @compileError("ABI drift: ServiceType.login");
+    if (@intFromEnum(ServiceType.framed) != gen.SVC_FRAMED) @compileError("ABI drift: ServiceType.framed");
+    if (@intFromEnum(ServiceType.callback_login) != gen.SVC_CALLBACK_LOGIN) @compileError("ABI drift: ServiceType.callback_login");
+    if (@intFromEnum(ServiceType.callback_framed) != gen.SVC_CALLBACK_FRAMED) @compileError("ABI drift: ServiceType.callback_framed");
+    if (@intFromEnum(ServiceType.outbound) != gen.SVC_OUTBOUND) @compileError("ABI drift: ServiceType.outbound");
+    if (@intFromEnum(ServiceType.administrative) != gen.SVC_ADMINISTRATIVE) @compileError("ABI drift: ServiceType.administrative");
+
+    if (@intFromEnum(AuthMethod.pap) != gen.AUTH_PAP) @compileError("ABI drift: AuthMethod.pap");
+    if (@intFromEnum(AuthMethod.chap) != gen.AUTH_CHAP) @compileError("ABI drift: AuthMethod.chap");
+    if (@intFromEnum(AuthMethod.mschap) != gen.AUTH_MSCHAP) @compileError("ABI drift: AuthMethod.mschap");
+    if (@intFromEnum(AuthMethod.mschapv2) != gen.AUTH_MSCHAPV2) @compileError("ABI drift: AuthMethod.mschapv2");
+    if (@intFromEnum(AuthMethod.eap) != gen.AUTH_EAP) @compileError("ABI drift: AuthMethod.eap");
+
+    if (@intFromEnum(SessionState.idle) != gen.STATE_IDLE) @compileError("ABI drift: SessionState.idle");
+    if (@intFromEnum(SessionState.authenticating) != gen.STATE_AUTHENTICATING) @compileError("ABI drift: SessionState.authenticating");
+    if (@intFromEnum(SessionState.authorized) != gen.STATE_AUTHORIZED) @compileError("ABI drift: SessionState.authorized");
+    if (@intFromEnum(SessionState.rejected) != gen.STATE_REJECTED) @compileError("ABI drift: SessionState.rejected");
+    if (@intFromEnum(SessionState.challenged) != gen.STATE_CHALLENGED) @compileError("ABI drift: SessionState.challenged");
+    if (@intFromEnum(SessionState.accounting) != gen.STATE_ACCOUNTING) @compileError("ABI drift: SessionState.accounting");
+    if (@intFromEnum(SessionState.complete) != gen.STATE_COMPLETE) @compileError("ABI drift: SessionState.complete");
+
+    if (@intFromEnum(RadiusResult.ok) != gen.RESULT_OK) @compileError("ABI drift: RadiusResult.ok");
+    if (@intFromEnum(RadiusResult.err) != gen.RESULT_ERR) @compileError("ABI drift: RadiusResult.err");
+    if (@intFromEnum(RadiusResult.invalid_param) != gen.RESULT_INVALID_PARAM) @compileError("ABI drift: RadiusResult.invalid_param");
+    if (@intFromEnum(RadiusResult.pool_exhausted) != gen.RESULT_POOL_EXHAUSTED) @compileError("ABI drift: RadiusResult.pool_exhausted");
+    if (@intFromEnum(RadiusResult.bad_secret) != gen.RESULT_BAD_SECRET) @compileError("ABI drift: RadiusResult.bad_secret");
+
+    if (PACKET_HEADER_SIZE != gen.PACKET_HEADER_SIZE) @compileError("ABI drift: PACKET_HEADER_SIZE");
+    if (MAX_PACKET_SIZE != gen.MAX_PACKET_SIZE) @compileError("ABI drift: MAX_PACKET_SIZE");
+    if (ATTRIBUTE_HEADER_SIZE != gen.ATTRIBUTE_HEADER_SIZE) @compileError("ABI drift: ATTRIBUTE_HEADER_SIZE");
+    if (MAX_ATTRIBUTE_VALUE_LEN != gen.MAX_ATTRIBUTE_VALUE_LEN) @compileError("ABI drift: MAX_ATTRIBUTE_VALUE_LEN");
+}
+
 /// Maximum number of attributes per session.
 const MAX_ATTRIBUTES: usize = 32;
 
@@ -151,9 +216,9 @@ var mutex: std.Thread.Mutex = .{};
 
 // ── ABI version ──────────────────────────────────────────────────────────
 
-/// ABI version -- must match RADIUSABI.Foreign.abiVersion (currently 1).
+/// ABI version -- must match RADIUSABI.Foreign.abiVersion (guarded above).
 pub export fn radius_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // ── Session lifecycle ────────────────────────────────────────────────────
