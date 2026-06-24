@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("bfd_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching BFDABI.Types.idr tag assignments)
 // =========================================================================
@@ -125,9 +132,40 @@ fn validSlot(slot: c_int) ?usize {
 // Exported C ABI functions
 // =========================================================================
 
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(BfdState.admin_down) != gen.STATE_ADMIN_DOWN) @compileError("ABI drift: BfdState.admin_down");
+    if (@intFromEnum(BfdState.down) != gen.STATE_DOWN) @compileError("ABI drift: BfdState.down");
+    if (@intFromEnum(BfdState.init) != gen.STATE_INIT) @compileError("ABI drift: BfdState.init");
+    if (@intFromEnum(BfdState.up) != gen.STATE_UP) @compileError("ABI drift: BfdState.up");
+
+    if (@intFromEnum(Diagnostic.no_diagnostic) != gen.DIAG_NO_DIAGNOSTIC) @compileError("ABI drift: Diagnostic.no_diagnostic");
+    if (@intFromEnum(Diagnostic.control_detection_time_expired) != gen.DIAG_CONTROL_DETECTION_TIME_EXPIRED) @compileError("ABI drift: Diagnostic.control_detection_time_expired");
+    if (@intFromEnum(Diagnostic.echo_function_failed) != gen.DIAG_ECHO_FUNCTION_FAILED) @compileError("ABI drift: Diagnostic.echo_function_failed");
+    if (@intFromEnum(Diagnostic.neighbor_signaled_session_down) != gen.DIAG_NEIGHBOR_SIGNALED_SESSION_DOWN) @compileError("ABI drift: Diagnostic.neighbor_signaled_session_down");
+    if (@intFromEnum(Diagnostic.forwarding_plane_reset) != gen.DIAG_FORWARDING_PLANE_RESET) @compileError("ABI drift: Diagnostic.forwarding_plane_reset");
+    if (@intFromEnum(Diagnostic.path_down) != gen.DIAG_PATH_DOWN) @compileError("ABI drift: Diagnostic.path_down");
+    if (@intFromEnum(Diagnostic.concatenated_path_down) != gen.DIAG_CONCATENATED_PATH_DOWN) @compileError("ABI drift: Diagnostic.concatenated_path_down");
+    if (@intFromEnum(Diagnostic.administratively_down) != gen.DIAG_ADMINISTRATIVELY_DOWN) @compileError("ABI drift: Diagnostic.administratively_down");
+    if (@intFromEnum(Diagnostic.reverse_concatenated_path_down) != gen.DIAG_REVERSE_CONCATENATED_PATH_DOWN) @compileError("ABI drift: Diagnostic.reverse_concatenated_path_down");
+
+    if (@intFromEnum(SessionMode.async_mode) != gen.MODE_ASYNC_MODE) @compileError("ABI drift: SessionMode.async_mode");
+    if (@intFromEnum(SessionMode.demand_mode) != gen.MODE_DEMAND_MODE) @compileError("ABI drift: SessionMode.demand_mode");
+
+    if (@intFromEnum(SessionState.idle) != gen.SESSION_IDLE) @compileError("ABI drift: SessionState.idle");
+    if (@intFromEnum(SessionState.ss_down) != gen.SESSION_SS_DOWN) @compileError("ABI drift: SessionState.ss_down");
+    if (@intFromEnum(SessionState.negotiating) != gen.SESSION_NEGOTIATING) @compileError("ABI drift: SessionState.negotiating");
+    if (@intFromEnum(SessionState.established) != gen.SESSION_ESTABLISHED) @compileError("ABI drift: SessionState.established");
+    if (@intFromEnum(SessionState.teardown) != gen.SESSION_TEARDOWN) @compileError("ABI drift: SessionState.teardown");
+}
+
 /// Returns the ABI version number.
 pub export fn bfd_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 /// Create a new BFD session. Returns slot index (>=0) or -1 on failure.

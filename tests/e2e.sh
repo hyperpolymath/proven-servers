@@ -54,37 +54,34 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════════
 bold "Section 0: ABI conformance (Idris -> generated -> Zig comptime guard)"
 
-# Conformance-enabled protocols: each has <Name>ABI.Emit + an abigen ipkg +
-# a generated _abi_gen.zig consumed by a comptime guard in its engine.
-CONF_PROTOCOLS="epistemic radius"
+# Conformance-enabled protocols: every protocol shipping an abigen ipkg
+# (<Name>ABI.Emit + proven-<name>-abigen.ipkg) + a comptime guard. Auto-
+# discovered so newly-onboarded protocols join without editing this script.
+CONF_PROTOCOLS="$(for f in protocols/*/proven-*-abigen.ipkg; do
+    [ -f "$f" ] || continue
+    basename "$f" | sed -e 's/^proven-//' -e 's/-abigen\.ipkg$//'
+done | sort | tr '\n' ' ')"
 
-# Files the generator owns -- regenerated from the proofs and asserted drift-free.
-GEN_FILES=""
+# Generated files asserted drift-free: every _abi_gen.zig, plus the two
+# reference protocols' C headers.
+GEN_FILES="protocols/proven-epistemic/generated/abi/epistemic.h protocols/proven-radius/generated/abi/radius.h"
 for p in $CONF_PROTOCOLS; do
-    GEN_FILES="$GEN_FILES protocols/proven-$p/generated/abi/$p.h"
     GEN_FILES="$GEN_FILES protocols/proven-$p/ffi/zig/src/${p}_abi_gen.zig"
 done
 
 if command -v idris2 >/dev/null 2>&1; then
     green "  Idris2 available: $(idris2 --version | head -1)"
 
-    # 0a. Build each conformance protocol's proven Idris ABI (CI built no Idris before).
-    for p in $CONF_PROTOCOLS; do
-        if (cd "protocols/proven-$p" && idris2 --build "proven-$p.ipkg" >/dev/null 2>&1); then
-            pass "build proven-$p (Idris ABI)"
-        else
-            fail_test "build proven-$p (Idris ABI)"
-        fi
-    done
-
-    # 0b. Run the epistemic engine scenario runner (mirrors integration_test.zig).
-    if ./protocols/proven-epistemic/build/exec/proven-epistemic >/dev/null 2>&1; then
+    # 0a. epistemic engine: build + run the scenario runner (mirrors integration_test.zig).
+    if (cd protocols/proven-epistemic && idris2 --build proven-epistemic.ipkg >/dev/null 2>&1) \
+        && ./protocols/proven-epistemic/build/exec/proven-epistemic >/dev/null 2>&1; then
         pass "proven-epistemic engine conformance scenarios"
     else
         fail_test "proven-epistemic engine conformance scenarios"
     fi
 
-    # 0c. Regenerate all ABI artifacts from the proofs; assert they match what's committed.
+    # 0b. Regenerate all ABI artifacts from the proofs -- this builds every
+    #     protocol's abigen (compiling its ABI proofs) -- and assert no drift.
     if bash tools/gen-abi.sh >/dev/null 2>&1; then
         if git diff --quiet -- $GEN_FILES; then
             pass "generated ABI matches Idris proofs (no drift)"
