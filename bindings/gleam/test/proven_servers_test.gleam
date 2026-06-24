@@ -8,7 +8,6 @@
 //// validation, and domain name validation for all 6 foundational
 //// protocols plus the core module.
 
-import gleam/option.{None, Some}
 import gleeunit
 import proven_servers/core
 import proven_servers/dns
@@ -120,34 +119,10 @@ pub fn status_from_numeric_test() {
   let assert Error(Nil) = http.status_from_numeric(999)
 }
 
-pub fn status_category_test() {
-  let assert True = http.status_is_success(http.StatusOk)
-  let assert True = http.status_is_error(http.NotFound)
-  let assert True = http.status_is_error(http.InternalError)
-  let assert True = http.status_is_redirect(http.MovedPermanently)
-  let assert False = http.status_is_error(http.StatusOk)
-}
-
-pub fn valid_http_transitions_test() {
-  let assert Some(http.StartReceiving) =
-    http.validate_http_transition(http.Idle, http.Receiving)
-  let assert Some(http.ParseHeaders) =
-    http.validate_http_transition(http.Receiving, http.HeadersParsed)
-  let assert Some(http.KeepAliveRecycle) =
-    http.validate_http_transition(http.Sent, http.Idle)
-  let assert Some(http.AbortReceiving) =
-    http.validate_http_transition(http.Receiving, http.Sent)
-}
-
-pub fn invalid_http_transitions_test() {
-  let assert None =
-    http.validate_http_transition(http.Idle, http.PhaseComplete)
-  let assert None =
-    http.validate_http_transition(http.Idle, http.Responding)
-  let assert None =
-    http.validate_http_transition(http.PhaseComplete, http.Receiving)
-  let assert None = http.validate_http_transition(http.Idle, http.Idle)
-}
+// status_category_test removed: exercised http.status_is_success/status_is_error/
+// status_is_redirect, which were removed as unproven reimplementations.
+// valid_http_transitions_test / invalid_http_transitions_test removed: exercised
+// http.validate_http_transition, removed as an unproven reimplementation.
 
 pub fn content_type_roundtrip_test() {
   let assert Ok(ct) = http.content_type_from_int(2)
@@ -197,32 +172,12 @@ pub fn stream_state_data_capabilities_test() {
 
 pub fn closed_is_terminal_test() {
   let assert True = grpc.stream_is_terminal(grpc.Closed)
-  let assert None = grpc.validate_stream_transition(grpc.Closed, grpc.Open)
-  let assert None =
-    grpc.validate_stream_transition(grpc.Closed, grpc.StreamIdle)
-  let assert None =
-    grpc.validate_stream_transition(grpc.Closed, grpc.Closed)
 }
 
-pub fn valid_stream_transitions_test() {
-  let assert Some(grpc.SendHeaders) =
-    grpc.validate_stream_transition(grpc.StreamIdle, grpc.Open)
-  let assert Some(grpc.LocalEndStream) =
-    grpc.validate_stream_transition(grpc.Open, grpc.HalfClosedLocal)
-  let assert Some(grpc.ResetFromOpen) =
-    grpc.validate_stream_transition(grpc.Open, grpc.Closed)
-  let assert Some(grpc.CloseHalfLocal) =
-    grpc.validate_stream_transition(grpc.HalfClosedLocal, grpc.Closed)
-}
-
-pub fn impossible_stream_transitions_test() {
-  let assert None =
-    grpc.validate_stream_transition(grpc.StreamIdle, grpc.HalfClosedLocal)
-  let assert None =
-    grpc.validate_stream_transition(grpc.HalfClosedLocal, grpc.Open)
-  let assert None =
-    grpc.validate_stream_transition(grpc.Reserved, grpc.Open)
-}
+// valid_stream_transitions_test / impossible_stream_transitions_test removed, and
+// the validate_stream_transition assertions dropped from closed_is_terminal_test:
+// they exercised grpc.validate_stream_transition, removed as an unproven
+// reimplementation.
 
 // ===========================================================================
 // GraphQL module tests
@@ -264,18 +219,9 @@ pub fn directive_location_roundtrip_test() {
   let assert Error(Nil) = graphql.directive_location_from_int(18)
 }
 
-pub fn directive_location_classification_test() {
-  let assert True =
-    graphql.directive_location_is_executable(graphql.DlQuery)
-  let assert True =
-    graphql.directive_location_is_executable(graphql.DlField)
-  let assert False =
-    graphql.directive_location_is_executable(graphql.DlSchema)
-  let assert True =
-    graphql.directive_location_is_type_system(graphql.DlSchema)
-  let assert True =
-    graphql.directive_location_is_type_system(graphql.DlFieldDefinition)
-}
+// directive_location_classification_test removed: exercised
+// graphql.directive_location_is_executable / directive_location_is_type_system,
+// removed as unproven reimplementations.
 
 pub fn error_category_roundtrip_test() {
   let assert Ok(ec) = graphql.error_category_from_int(0)
@@ -356,55 +302,12 @@ pub fn close_code_classification_test() {
   let assert False = websocket.close_code_is_sendable(websocket.Abnormal)
 }
 
-pub fn close_code_ranges_test() {
-  let assert True = websocket.is_application_code(4000)
-  let assert True = websocket.is_application_code(4999)
-  let assert False = websocket.is_application_code(3999)
-  let assert False = websocket.is_application_code(5000)
-
-  let assert True = websocket.is_private_code(3000)
-  let assert True = websocket.is_private_code(3999)
-  let assert False = websocket.is_private_code(2999)
-  let assert False = websocket.is_private_code(4000)
-}
-
-pub fn frame_validate_client_unmasked_test() {
-  let frame =
-    websocket.Frame(fin: True, opcode: websocket.Text, masked: False, payload_length: 5)
-  let assert Error(websocket.ClientFrameNotMasked) =
-    websocket.validate_client_frame(frame, 65_536)
-}
-
-pub fn frame_validate_server_masked_test() {
-  let frame =
-    websocket.Frame(fin: True, opcode: websocket.Text, masked: True, payload_length: 5)
-  let assert Error(websocket.ServerFrameMasked) =
-    websocket.validate_server_frame(frame, 65_536)
-}
-
-pub fn frame_validate_control_too_large_test() {
-  let frame =
-    websocket.Frame(
-      fin: True,
-      opcode: websocket.Ping,
-      masked: False,
-      payload_length: 126,
-    )
-  let assert Error(websocket.ControlFrameTooLarge(..)) =
-    websocket.validate_server_frame(frame, 65_536)
-}
-
-pub fn frame_validate_control_fragmented_test() {
-  let frame =
-    websocket.Frame(
-      fin: False,
-      opcode: websocket.Ping,
-      masked: False,
-      payload_length: 3,
-    )
-  let assert Error(websocket.ControlFrameFragmented(..)) =
-    websocket.validate_server_frame(frame, 65_536)
-}
+// close_code_ranges_test removed: exercised websocket.is_application_code /
+// is_private_code, removed as unproven reimplementations.
+// frame_validate_client_unmasked_test, frame_validate_server_masked_test,
+// frame_validate_control_too_large_test and frame_validate_control_fragmented_test
+// removed: exercised websocket.validate_client_frame / validate_server_frame,
+// removed as unproven reimplementations.
 
 // ===========================================================================
 // MQTT module tests
@@ -428,14 +331,8 @@ pub fn qos_ack_requirements_test() {
   let assert 3 = mqtt.qos_ack_packet_count(mqtt.ExactlyOnce)
 }
 
-pub fn qos_negotiation_test() {
-  let assert mqtt.AtLeastOnce =
-    mqtt.qos_effective(mqtt.ExactlyOnce, mqtt.AtLeastOnce)
-  let assert mqtt.AtMostOnce =
-    mqtt.qos_effective(mqtt.AtMostOnce, mqtt.ExactlyOnce)
-  let assert mqtt.AtMostOnce =
-    mqtt.qos_delivery(mqtt.ExactlyOnce, mqtt.AtMostOnce)
-}
+// qos_negotiation_test removed: exercised mqtt.qos_effective / qos_delivery,
+// removed as unproven reimplementations.
 
 pub fn suback_code_roundtrip_test() {
   let assert Ok(mqtt.GrantedQoS0) = mqtt.suback_from_int(0x00)
@@ -520,19 +417,9 @@ pub fn response_code_classification_test() {
   let assert False = dns.response_code_is_nxdomain(dns.NoError)
 }
 
-pub fn domain_name_valid_test() {
-  let assert Ok(Nil) = dns.validate_domain_name("example.com")
-  let assert Ok(Nil) = dns.validate_domain_name("sub.example.com")
-  let assert Ok(Nil) = dns.validate_domain_name("a")
-}
-
-pub fn domain_name_empty_test() {
-  let assert Error(dns.EmptyName) = dns.validate_domain_name("")
-}
-
-pub fn domain_name_empty_label_test() {
-  let assert Error(dns.EmptyLabel) = dns.validate_domain_name("example..com")
-}
+// domain_name_valid_test, domain_name_empty_test and domain_name_empty_label_test
+// removed: exercised dns.validate_domain_name, removed as an unproven
+// reimplementation.
 
 pub fn constants_match_idris_test() {
   let assert 53 = dns.dns_port

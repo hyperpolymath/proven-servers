@@ -15,8 +15,6 @@
 //// - Alert levels and descriptions
 //// - Handshake state machine
 
-import gleam/option.{type Option, None, Some}
-
 // ===========================================================================
 // TLS Constants
 // ===========================================================================
@@ -422,21 +420,7 @@ pub type HandshakeTransition {
   SkipCert
 }
 
-/// Validate a TLS handshake state transition.
-pub fn validate_handshake_transition(
-  from: HandshakeState,
-  to: HandshakeState,
-) -> Option(HandshakeTransition) {
-  case from, to {
-    HsStart, WaitServerHello -> Some(SendClientHello)
-    WaitServerHello, WaitEncryptedExtensions -> Some(ReceiveServerHello)
-    WaitEncryptedExtensions, WaitCertRequest ->
-      Some(ReceiveEncryptedExtensions)
-    WaitCertRequest, WaitCert -> Some(ReceiveCertRequest)
-    WaitCertRequest, WaitFinished -> Some(SkipCert)
-    WaitCert, WaitFinished -> Some(ReceiveCert)
-    WaitFinished, TlsConnected -> Some(ReceiveFinished)
-    WaitEncryptedExtensions, WaitFinished -> Some(SkipCertRequest)
-    _, _ -> None
-  }
-}
+// validate_handshake_transition removed: unproven reimplementation. The verified
+// check lives in the Idris2/Zig core; calling it needs @external FFI wiring not
+// yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md

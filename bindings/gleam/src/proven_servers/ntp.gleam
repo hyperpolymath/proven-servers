@@ -152,16 +152,10 @@ pub fn exchange_state_from_int(tag: Int) -> Result(ExchangeState, Nil) {
   }
 }
 
-/// Validate whether a state transition is allowed.
-pub fn exchange_state_can_transition_to(from: ExchangeState, to: ExchangeState) -> Bool {
-  case from, to {
-    Idle, RequestReceived -> True
-    RequestReceived, TimestampCalculated -> True
-    TimestampCalculated, ResponseSent -> True
-    ResponseSent, Idle -> True
-    _, _ -> False
-  }
-}
+// exchange_state_can_transition_to removed: unproven reimplementation. The verified
+// check lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // ClockDisciplineState

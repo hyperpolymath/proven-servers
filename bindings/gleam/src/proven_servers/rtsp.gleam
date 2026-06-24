@@ -158,20 +158,10 @@ pub fn session_state_from_int(tag: Int) -> Result(SessionState, Nil) {
   }
 }
 
-/// Validate whether a state transition is allowed.
-pub fn session_state_can_transition_to(from: SessionState, to: SessionState) -> Bool {
-  case from, to {
-    Init, Ready -> True
-    Ready, Playing -> True
-    Ready, Recording -> True
-    Playing, Ready -> True
-    Recording, Ready -> True
-    Ready, Init -> True
-    Playing, Init -> True
-    Recording, Init -> True
-    _, _ -> False
-  }
-}
+// session_state_can_transition_to removed: unproven reimplementation. The verified
+// check lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // StatusCode

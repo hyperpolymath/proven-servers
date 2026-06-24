@@ -213,19 +213,10 @@ pub fn dhcp_state_from_int(tag: Int) -> Result(DhcpState, Nil) {
   }
 }
 
-/// Validate whether a state transition is allowed.
-pub fn dhcp_state_can_transition_to(from: DhcpState, to: DhcpState) -> Bool {
-  case from, to {
-    Idle, DiscoverReceived -> True
-    DiscoverReceived, OfferSent -> True
-    OfferSent, RequestReceived -> True
-    RequestReceived, AckSent -> True
-    RequestReceived, NakSent -> True
-    AckSent, Idle -> True
-    NakSent, Idle -> True
-    _, _ -> False
-  }
-}
+// dhcp_state_can_transition_to removed: unproven reimplementation. The verified
+// check lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // LeaseState

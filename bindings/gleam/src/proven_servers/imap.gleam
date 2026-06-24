@@ -139,18 +139,10 @@ pub fn state_from_int(tag: Int) -> Result(State, Nil) {
   }
 }
 
-/// Validate whether a state transition is allowed.
-pub fn state_can_transition_to(from: State, to: State) -> Bool {
-  case from, to {
-    NotAuthenticated, Authenticated -> True
-    Authenticated, Selected -> True
-    Selected, Authenticated -> True
-    NotAuthenticated, StateLogout -> True
-    Authenticated, StateLogout -> True
-    Selected, StateLogout -> True
-    _, _ -> False
-  }
-}
+// state_can_transition_to removed: unproven reimplementation. The verified check
+// lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // Flag

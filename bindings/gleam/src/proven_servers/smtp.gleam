@@ -284,16 +284,10 @@ pub fn reply_code_numeric(code: ReplyCode) -> Int {
   }
 }
 
-/// The reply category for a given reply code.
-pub fn reply_code_category(code: ReplyCode) -> ReplyCategory {
-  let numeric = reply_code_numeric(code)
-  case numeric / 100 {
-    2 -> Positive
-    3 -> Intermediate
-    4 -> TransientNegative
-    _ -> PermanentNegative
-  }
-}
+// reply_code_category removed: unproven reimplementation. The verified check
+// lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // AuthMechanism (tags 0-3)
@@ -453,24 +447,6 @@ pub fn session_state_from_int(tag: Int) -> Result(SmtpSessionState, Nil) {
   }
 }
 
-/// Validate whether an SMTP session state transition is allowed.
-pub fn can_transition(
-  from: SmtpSessionState,
-  to: SmtpSessionState,
-) -> Bool {
-  case from, to {
-    SmtpConnected, SmtpGreeted -> True
-    SmtpGreeted, SmtpAuthStarted -> True
-    SmtpGreeted, SmtpMailFrom -> True
-    SmtpAuthStarted, SmtpAuthenticated -> True
-    SmtpAuthStarted, SmtpGreeted -> True
-    SmtpAuthenticated, SmtpMailFrom -> True
-    SmtpMailFrom, SmtpRcptTo -> True
-    SmtpRcptTo, SmtpRcptTo -> True
-    SmtpRcptTo, SmtpData -> True
-    SmtpData, SmtpMessageReceived -> True
-    SmtpMessageReceived, SmtpMailFrom -> True
-    _, SmtpSessionQuit -> True
-    _, _ -> False
-  }
-}
+// can_transition removed: unproven reimplementation. The verified check lives in
+// the Idris2/Zig core; calling it needs @external FFI wiring not yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
