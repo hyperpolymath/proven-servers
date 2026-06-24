@@ -54,27 +54,39 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════════
 bold "Section 0: ABI conformance (Idris -> generated -> Zig comptime guard)"
 
+# Conformance-enabled protocols: each has <Name>ABI.Emit + an abigen ipkg +
+# a generated _abi_gen.zig consumed by a comptime guard in its engine.
+CONF_PROTOCOLS="epistemic radius"
+
+# Files the generator owns -- regenerated from the proofs and asserted drift-free.
+GEN_FILES=""
+for p in $CONF_PROTOCOLS; do
+    GEN_FILES="$GEN_FILES protocols/proven-$p/generated/abi/$p.h"
+    GEN_FILES="$GEN_FILES protocols/proven-$p/ffi/zig/src/${p}_abi_gen.zig"
+done
+
 if command -v idris2 >/dev/null 2>&1; then
     green "  Idris2 available: $(idris2 --version | head -1)"
 
-    # 0a. Build the proven Idris ABI + engine (CI builds no Idris otherwise).
-    if (cd protocols/proven-epistemic && idris2 --build proven-epistemic.ipkg >/dev/null 2>&1); then
-        pass "build proven-epistemic (Idris engine + ABI)"
-        # 0b. Run the Idris scenarios (mirrors integration_test.zig).
-        if ./protocols/proven-epistemic/build/exec/proven-epistemic >/dev/null 2>&1; then
-            pass "Idris engine conformance scenarios"
+    # 0a. Build each conformance protocol's proven Idris ABI (CI built no Idris before).
+    for p in $CONF_PROTOCOLS; do
+        if (cd "protocols/proven-$p" && idris2 --build "proven-$p.ipkg" >/dev/null 2>&1); then
+            pass "build proven-$p (Idris ABI)"
         else
-            fail_test "Idris engine conformance scenarios"
+            fail_test "build proven-$p (Idris ABI)"
         fi
+    done
+
+    # 0b. Run the epistemic engine scenario runner (mirrors integration_test.zig).
+    if ./protocols/proven-epistemic/build/exec/proven-epistemic >/dev/null 2>&1; then
+        pass "proven-epistemic engine conformance scenarios"
     else
-        fail_test "build proven-epistemic (Idris engine + ABI)"
+        fail_test "proven-epistemic engine conformance scenarios"
     fi
 
-    # 0c. Regenerate ABI artifacts; assert they still match the proofs.
+    # 0c. Regenerate all ABI artifacts from the proofs; assert they match what's committed.
     if bash tools/gen-abi.sh >/dev/null 2>&1; then
-        if git diff --quiet -- \
-            protocols/proven-epistemic/generated/abi/epistemic.h \
-            protocols/proven-epistemic/ffi/zig/src/epistemic_abi_gen.zig; then
+        if git diff --quiet -- $GEN_FILES; then
             pass "generated ABI matches Idris proofs (no drift)"
         else
             fail_test "generated ABI drifted from Idris (run tools/gen-abi.sh and commit)"
@@ -86,13 +98,15 @@ else
     skip_test "Idris ABI build + conformance" "idris2 not installed"
 fi
 
-# 0d. Build the Zig engine WITH the comptime guard active (drift => compile error).
-# Works from the committed generated file even without Idris present.
-if (cd protocols/proven-epistemic/ffi/zig && zig build >/dev/null 2>&1); then
-    pass "Zig engine builds with ABI comptime guard"
-else
-    fail_test "Zig engine comptime guard rejected the build (ABI drift)"
-fi
+# 0d. Build each conformance protocol's Zig WITH the comptime guard active (drift
+# => compile error). Works from the committed generated file even without Idris.
+for p in $CONF_PROTOCOLS; do
+    if (cd "protocols/proven-$p/ffi/zig" && zig build >/dev/null 2>&1); then
+        pass "proven-$p Zig builds with ABI comptime guard"
+    else
+        fail_test "proven-$p Zig comptime guard rejected the build (ABI drift)"
+    fi
+done
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════
