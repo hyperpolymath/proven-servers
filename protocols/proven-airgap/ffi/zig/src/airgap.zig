@@ -16,6 +16,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("airgap_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching AirgapABI.Types.idr tag assignments)
 // =========================================================================
@@ -61,6 +68,40 @@ pub const ValidationCheck = enum(u8) {
     content_inspection = 3,
     malware_scan = 4,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(TransferDirection.import_) != gen.DIR_IMPORT) @compileError("ABI drift: TransferDirection.import_");
+    if (@intFromEnum(TransferDirection.export_) != gen.DIR_EXPORT) @compileError("ABI drift: TransferDirection.export_");
+
+    if (@intFromEnum(MediaType.usb) != gen.MEDIA_USB) @compileError("ABI drift: MediaType.usb");
+    if (@intFromEnum(MediaType.optical_disc) != gen.MEDIA_OPTICAL_DISC) @compileError("ABI drift: MediaType.optical_disc");
+    if (@intFromEnum(MediaType.tape_cartridge) != gen.MEDIA_TAPE_CARTRIDGE) @compileError("ABI drift: MediaType.tape_cartridge");
+    if (@intFromEnum(MediaType.diode_link) != gen.MEDIA_DIODE_LINK) @compileError("ABI drift: MediaType.diode_link");
+
+    if (@intFromEnum(ScanResult.clean) != gen.SCAN_CLEAN) @compileError("ABI drift: ScanResult.clean");
+    if (@intFromEnum(ScanResult.suspicious) != gen.SCAN_SUSPICIOUS) @compileError("ABI drift: ScanResult.suspicious");
+    if (@intFromEnum(ScanResult.malicious) != gen.SCAN_MALICIOUS) @compileError("ABI drift: ScanResult.malicious");
+    if (@intFromEnum(ScanResult.unscannable) != gen.SCAN_UNSCANNABLE) @compileError("ABI drift: ScanResult.unscannable");
+
+    if (@intFromEnum(TransferState.pending) != gen.STATE_PENDING) @compileError("ABI drift: TransferState.pending");
+    if (@intFromEnum(TransferState.scanning) != gen.STATE_SCANNING) @compileError("ABI drift: TransferState.scanning");
+    if (@intFromEnum(TransferState.approved) != gen.STATE_APPROVED) @compileError("ABI drift: TransferState.approved");
+    if (@intFromEnum(TransferState.rejected) != gen.STATE_REJECTED) @compileError("ABI drift: TransferState.rejected");
+    if (@intFromEnum(TransferState.in_progress) != gen.STATE_IN_PROGRESS) @compileError("ABI drift: TransferState.in_progress");
+    if (@intFromEnum(TransferState.complete) != gen.STATE_COMPLETE) @compileError("ABI drift: TransferState.complete");
+    if (@intFromEnum(TransferState.failed) != gen.STATE_FAILED) @compileError("ABI drift: TransferState.failed");
+
+    if (@intFromEnum(ValidationCheck.hash_verify) != gen.CHECK_HASH_VERIFY) @compileError("ABI drift: ValidationCheck.hash_verify");
+    if (@intFromEnum(ValidationCheck.signature_verify) != gen.CHECK_SIGNATURE_VERIFY) @compileError("ABI drift: ValidationCheck.signature_verify");
+    if (@intFromEnum(ValidationCheck.format_check) != gen.CHECK_FORMAT_CHECK) @compileError("ABI drift: ValidationCheck.format_check");
+    if (@intFromEnum(ValidationCheck.content_inspection) != gen.CHECK_CONTENT_INSPECTION) @compileError("ABI drift: ValidationCheck.content_inspection");
+    if (@intFromEnum(ValidationCheck.malware_scan) != gen.CHECK_MALWARE_SCAN) @compileError("ABI drift: ValidationCheck.malware_scan");
+}
 
 // =========================================================================
 // Internal data structures
@@ -145,7 +186,7 @@ fn validSlot(slot: c_int) ?usize {
 
 /// Returns the ABI version number. Must match Foreign.abiVersion in Idris2.
 pub export fn airgap_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Lifecycle ----------------------------------------------------------------

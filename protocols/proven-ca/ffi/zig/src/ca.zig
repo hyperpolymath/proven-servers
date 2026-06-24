@@ -14,6 +14,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("ca_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // -- Enums (matching CAABI.Layout.idr tag assignments) ------------------------
 
 pub const CertType = enum(u8) {
@@ -102,6 +109,77 @@ pub const KeyUsageBit = enum(u8) {
     encipher_only = 7,
     decipher_only = 8,
 };
+
+// -- ABI conformance guard ----------------------------------------------------
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(CertType.root) != gen.CT_ROOT) @compileError("ABI drift: CertType.root");
+    if (@intFromEnum(CertType.intermediate) != gen.CT_INTERMEDIATE) @compileError("ABI drift: CertType.intermediate");
+    if (@intFromEnum(CertType.end_entity) != gen.CT_END_ENTITY) @compileError("ABI drift: CertType.end_entity");
+    if (@intFromEnum(CertType.cross_signed) != gen.CT_CROSS_SIGNED) @compileError("ABI drift: CertType.cross_signed");
+    if (@intFromEnum(CertType.code_signing) != gen.CT_CODE_SIGNING) @compileError("ABI drift: CertType.code_signing");
+    if (@intFromEnum(CertType.email_protection) != gen.CT_EMAIL_PROTECTION) @compileError("ABI drift: CertType.email_protection");
+    if (@intFromEnum(CertType.ocsp_signing) != gen.CT_OCSP_SIGNING) @compileError("ABI drift: CertType.ocsp_signing");
+
+    if (@intFromEnum(KeyAlgorithm.rsa2048) != gen.KA_RSA2048) @compileError("ABI drift: KeyAlgorithm.rsa2048");
+    if (@intFromEnum(KeyAlgorithm.rsa4096) != gen.KA_RSA4096) @compileError("ABI drift: KeyAlgorithm.rsa4096");
+    if (@intFromEnum(KeyAlgorithm.ecdsa_p256) != gen.KA_ECDSA_P256) @compileError("ABI drift: KeyAlgorithm.ecdsa_p256");
+    if (@intFromEnum(KeyAlgorithm.ecdsa_p384) != gen.KA_ECDSA_P384) @compileError("ABI drift: KeyAlgorithm.ecdsa_p384");
+    if (@intFromEnum(KeyAlgorithm.ed25519) != gen.KA_ED25519) @compileError("ABI drift: KeyAlgorithm.ed25519");
+    if (@intFromEnum(KeyAlgorithm.ed448) != gen.KA_ED448) @compileError("ABI drift: KeyAlgorithm.ed448");
+
+    if (@intFromEnum(SignatureAlgorithm.sha256_with_rsa) != gen.SA_SHA256_WITH_RSA) @compileError("ABI drift: SignatureAlgorithm.sha256_with_rsa");
+    if (@intFromEnum(SignatureAlgorithm.sha384_with_rsa) != gen.SA_SHA384_WITH_RSA) @compileError("ABI drift: SignatureAlgorithm.sha384_with_rsa");
+    if (@intFromEnum(SignatureAlgorithm.sha512_with_rsa) != gen.SA_SHA512_WITH_RSA) @compileError("ABI drift: SignatureAlgorithm.sha512_with_rsa");
+    if (@intFromEnum(SignatureAlgorithm.sha256_with_ecdsa) != gen.SA_SHA256_WITH_ECDSA) @compileError("ABI drift: SignatureAlgorithm.sha256_with_ecdsa");
+    if (@intFromEnum(SignatureAlgorithm.sha384_with_ecdsa) != gen.SA_SHA384_WITH_ECDSA) @compileError("ABI drift: SignatureAlgorithm.sha384_with_ecdsa");
+    if (@intFromEnum(SignatureAlgorithm.pure_ed25519) != gen.SA_PURE_ED25519) @compileError("ABI drift: SignatureAlgorithm.pure_ed25519");
+    if (@intFromEnum(SignatureAlgorithm.pure_ed448) != gen.SA_PURE_ED448) @compileError("ABI drift: SignatureAlgorithm.pure_ed448");
+
+    if (@intFromEnum(CertState.pending) != gen.CS_PENDING) @compileError("ABI drift: CertState.pending");
+    if (@intFromEnum(CertState.active) != gen.CS_ACTIVE) @compileError("ABI drift: CertState.active");
+    if (@intFromEnum(CertState.revoked) != gen.CS_REVOKED) @compileError("ABI drift: CertState.revoked");
+    if (@intFromEnum(CertState.expired) != gen.CS_EXPIRED) @compileError("ABI drift: CertState.expired");
+    if (@intFromEnum(CertState.suspended) != gen.CS_SUSPENDED) @compileError("ABI drift: CertState.suspended");
+
+    if (@intFromEnum(RevocationReason.unspecified) != gen.RR_UNSPECIFIED) @compileError("ABI drift: RevocationReason.unspecified");
+    if (@intFromEnum(RevocationReason.key_compromise) != gen.RR_KEY_COMPROMISE) @compileError("ABI drift: RevocationReason.key_compromise");
+    if (@intFromEnum(RevocationReason.ca_compromise) != gen.RR_CA_COMPROMISE) @compileError("ABI drift: RevocationReason.ca_compromise");
+    if (@intFromEnum(RevocationReason.affiliation_changed) != gen.RR_AFFILIATION_CHANGED) @compileError("ABI drift: RevocationReason.affiliation_changed");
+    if (@intFromEnum(RevocationReason.superseded) != gen.RR_SUPERSEDED) @compileError("ABI drift: RevocationReason.superseded");
+    if (@intFromEnum(RevocationReason.cessation_of_operation) != gen.RR_CESSATION_OF_OPERATION) @compileError("ABI drift: RevocationReason.cessation_of_operation");
+    if (@intFromEnum(RevocationReason.certificate_hold) != gen.RR_CERTIFICATE_HOLD) @compileError("ABI drift: RevocationReason.certificate_hold");
+
+    if (@intFromEnum(CRLStatus.current) != gen.CRL_CURRENT) @compileError("ABI drift: CRLStatus.current");
+    if (@intFromEnum(CRLStatus.crl_expired) != gen.CRL_EXPIRED) @compileError("ABI drift: CRLStatus.crl_expired");
+    if (@intFromEnum(CRLStatus.crl_pending) != gen.CRL_PENDING) @compileError("ABI drift: CRLStatus.crl_pending");
+    if (@intFromEnum(CRLStatus.crl_error) != gen.CRL_ERROR) @compileError("ABI drift: CRLStatus.crl_error");
+
+    if (@intFromEnum(OCSPStatus.good) != gen.OCSP_GOOD) @compileError("ABI drift: OCSPStatus.good");
+    if (@intFromEnum(OCSPStatus.ocsp_revoked) != gen.OCSP_REVOKED) @compileError("ABI drift: OCSPStatus.ocsp_revoked");
+    if (@intFromEnum(OCSPStatus.unknown) != gen.OCSP_UNKNOWN) @compileError("ABI drift: OCSPStatus.unknown");
+    if (@intFromEnum(OCSPStatus.unavailable) != gen.OCSP_UNAVAILABLE) @compileError("ABI drift: OCSPStatus.unavailable");
+
+    if (@intFromEnum(Extension.basic_constraints) != gen.EXT_BASIC_CONSTRAINTS) @compileError("ABI drift: Extension.basic_constraints");
+    if (@intFromEnum(Extension.key_usage) != gen.EXT_KEY_USAGE) @compileError("ABI drift: Extension.key_usage");
+    if (@intFromEnum(Extension.ext_key_usage) != gen.EXT_EXT_KEY_USAGE) @compileError("ABI drift: Extension.ext_key_usage");
+    if (@intFromEnum(Extension.subject_alt_name) != gen.EXT_SUBJECT_ALT_NAME) @compileError("ABI drift: Extension.subject_alt_name");
+    if (@intFromEnum(Extension.authority_info_access) != gen.EXT_AUTHORITY_INFO_ACCESS) @compileError("ABI drift: Extension.authority_info_access");
+    if (@intFromEnum(Extension.crl_distribution_points) != gen.EXT_CRL_DISTRIBUTION_POINTS) @compileError("ABI drift: Extension.crl_distribution_points");
+
+    if (@intFromEnum(KeyUsageBit.digital_signature) != gen.KU_DIGITAL_SIGNATURE) @compileError("ABI drift: KeyUsageBit.digital_signature");
+    if (@intFromEnum(KeyUsageBit.non_repudiation) != gen.KU_NON_REPUDIATION) @compileError("ABI drift: KeyUsageBit.non_repudiation");
+    if (@intFromEnum(KeyUsageBit.key_encipherment) != gen.KU_KEY_ENCIPHERMENT) @compileError("ABI drift: KeyUsageBit.key_encipherment");
+    if (@intFromEnum(KeyUsageBit.data_encipherment) != gen.KU_DATA_ENCIPHERMENT) @compileError("ABI drift: KeyUsageBit.data_encipherment");
+    if (@intFromEnum(KeyUsageBit.key_agreement) != gen.KU_KEY_AGREEMENT) @compileError("ABI drift: KeyUsageBit.key_agreement");
+    if (@intFromEnum(KeyUsageBit.key_cert_sign) != gen.KU_KEY_CERT_SIGN) @compileError("ABI drift: KeyUsageBit.key_cert_sign");
+    if (@intFromEnum(KeyUsageBit.crl_sign) != gen.KU_CRL_SIGN) @compileError("ABI drift: KeyUsageBit.crl_sign");
+    if (@intFromEnum(KeyUsageBit.encipher_only) != gen.KU_ENCIPHER_ONLY) @compileError("ABI drift: KeyUsageBit.encipher_only");
+    if (@intFromEnum(KeyUsageBit.decipher_only) != gen.KU_DECIPHER_ONLY) @compileError("ABI drift: KeyUsageBit.decipher_only");
+}
 
 // -- Certificate record -------------------------------------------------------
 
@@ -212,7 +290,7 @@ fn canTransitionCheck(from: u8, to: u8) bool {
 // -- ABI version --------------------------------------------------------------
 
 pub export fn ca_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Context lifecycle --------------------------------------------------------

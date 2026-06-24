@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("backup_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching BackupABI.Types.idr tag assignments)
 // =========================================================================
@@ -73,6 +80,48 @@ pub const RetentionPolicy = enum(u8) {
     keep_weekly = 3,
     keep_monthly = 4,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(BackupType.full) != gen.TYPE_FULL) @compileError("ABI drift: BackupType.full");
+    if (@intFromEnum(BackupType.incremental) != gen.TYPE_INCREMENTAL) @compileError("ABI drift: BackupType.incremental");
+    if (@intFromEnum(BackupType.differential) != gen.TYPE_DIFFERENTIAL) @compileError("ABI drift: BackupType.differential");
+    if (@intFromEnum(BackupType.snapshot) != gen.TYPE_SNAPSHOT) @compileError("ABI drift: BackupType.snapshot");
+    if (@intFromEnum(BackupType.mirror) != gen.TYPE_MIRROR) @compileError("ABI drift: BackupType.mirror");
+
+    if (@intFromEnum(ScheduleFreq.hourly) != gen.FREQ_HOURLY) @compileError("ABI drift: ScheduleFreq.hourly");
+    if (@intFromEnum(ScheduleFreq.daily) != gen.FREQ_DAILY) @compileError("ABI drift: ScheduleFreq.daily");
+    if (@intFromEnum(ScheduleFreq.weekly) != gen.FREQ_WEEKLY) @compileError("ABI drift: ScheduleFreq.weekly");
+    if (@intFromEnum(ScheduleFreq.monthly) != gen.FREQ_MONTHLY) @compileError("ABI drift: ScheduleFreq.monthly");
+    if (@intFromEnum(ScheduleFreq.on_demand) != gen.FREQ_ON_DEMAND) @compileError("ABI drift: ScheduleFreq.on_demand");
+
+    if (@intFromEnum(CompressionAlg.none) != gen.COMP_NONE) @compileError("ABI drift: CompressionAlg.none");
+    if (@intFromEnum(CompressionAlg.gzip) != gen.COMP_GZIP) @compileError("ABI drift: CompressionAlg.gzip");
+    if (@intFromEnum(CompressionAlg.zstd) != gen.COMP_ZSTD) @compileError("ABI drift: CompressionAlg.zstd");
+    if (@intFromEnum(CompressionAlg.lz4) != gen.COMP_LZ4) @compileError("ABI drift: CompressionAlg.lz4");
+    if (@intFromEnum(CompressionAlg.xz) != gen.COMP_XZ) @compileError("ABI drift: CompressionAlg.xz");
+
+    if (@intFromEnum(EncryptionAlg.no_encryption) != gen.ENC_NO_ENCRYPTION) @compileError("ABI drift: EncryptionAlg.no_encryption");
+    if (@intFromEnum(EncryptionAlg.aes256gcm) != gen.ENC_AES256GCM) @compileError("ABI drift: EncryptionAlg.aes256gcm");
+    if (@intFromEnum(EncryptionAlg.chacha20poly1305) != gen.ENC_CHACHA20POLY1305) @compileError("ABI drift: EncryptionAlg.chacha20poly1305");
+
+    if (@intFromEnum(BackupState.idle) != gen.STATE_IDLE) @compileError("ABI drift: BackupState.idle");
+    if (@intFromEnum(BackupState.running) != gen.STATE_RUNNING) @compileError("ABI drift: BackupState.running");
+    if (@intFromEnum(BackupState.verifying) != gen.STATE_VERIFYING) @compileError("ABI drift: BackupState.verifying");
+    if (@intFromEnum(BackupState.complete) != gen.STATE_COMPLETE) @compileError("ABI drift: BackupState.complete");
+    if (@intFromEnum(BackupState.failed) != gen.STATE_FAILED) @compileError("ABI drift: BackupState.failed");
+    if (@intFromEnum(BackupState.cancelled) != gen.STATE_CANCELLED) @compileError("ABI drift: BackupState.cancelled");
+
+    if (@intFromEnum(RetentionPolicy.keep_all) != gen.RET_KEEP_ALL) @compileError("ABI drift: RetentionPolicy.keep_all");
+    if (@intFromEnum(RetentionPolicy.keep_last) != gen.RET_KEEP_LAST) @compileError("ABI drift: RetentionPolicy.keep_last");
+    if (@intFromEnum(RetentionPolicy.keep_daily) != gen.RET_KEEP_DAILY) @compileError("ABI drift: RetentionPolicy.keep_daily");
+    if (@intFromEnum(RetentionPolicy.keep_weekly) != gen.RET_KEEP_WEEKLY) @compileError("ABI drift: RetentionPolicy.keep_weekly");
+    if (@intFromEnum(RetentionPolicy.keep_monthly) != gen.RET_KEEP_MONTHLY) @compileError("ABI drift: RetentionPolicy.keep_monthly");
+}
 
 // =========================================================================
 // Internal data structures
@@ -140,7 +189,7 @@ fn validSlot(slot: c_int) ?usize {
 
 /// Returns the ABI version number. Must match Foreign.abiVersion in Idris2.
 pub export fn backup_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Lifecycle ----------------------------------------------------------------
