@@ -12,8 +12,10 @@
   state-machine GADTs, and the FFI contract. Type-checking *is* proof checking.
 * *FFI / engines*: Zig 0.15+ in `ffi/zig/`, exporting a C ABI.
 * *Bridge*: generated C headers in `generated/abi/`.
-* *Bindings*: Rust, Zig, C, ReScript, Gleam, Elixir, Haskell, OCaml, Ada, Julia
-  (`bindings/`) — all calling the same C ABI.
+* *Bindings*: 20 languages in `bindings/` — Ada, C++, C#, Dart, Elixir, Gleam,
+  Go, Haskell, Java, JavaScript, Julia, Kotlin, Lua, OCaml, PHP, Python, ReScript,
+  Ruby, Rust, Swift — thin wrappers over the same C ABI (Elixir/Gleam/ReScript are
+  constants-only scaffolds pending FFI; see ADR 0003).
 
 == Set Up Development Environment
 

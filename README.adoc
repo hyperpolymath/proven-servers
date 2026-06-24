@@ -29,8 +29,8 @@ You get the verified bones. You build the rest.
 **If you want to learn Idris 2:** Read the source. It's clean, documented, and teaches you
 both the protocol and the language.
 
-**If you never want to touch Idris 2:** Use the FFI bindings from Rust, Zig, Elixir, or
-any of the 10 supported languages. Your server core is still formally verified. You don't
+**If you never want to touch Idris 2:** Use the FFI bindings from Rust, Go, Python, Elixir, or
+any of the 20 supported languages. Your server core is still formally verified. You don't
 care how. It just is.
 
 Either way, your server's protocol handling is *proven correct*.
@@ -56,8 +56,10 @@ proven-servers/
 │   └── proven-storageconn/  # Object storage
 ├── abi/               # Idris2 ABI definitions (src/abi/*.idr)
 ├── ffi/               # Zig FFI layer (ffi/zig/)
-└── bindings/          # Language bindings (Rust, Zig, C, ReScript, Gleam,
-                       #   Elixir, Haskell, OCaml, Ada, Julia)
+└── bindings/          # 20 language bindings over the C ABI (Ada, C++, C#,
+                       #   Dart, Elixir, Gleam, Go, Haskell, Java, JavaScript,
+                       #   Julia, Kotlin, Lua, OCaml, PHP, Python, ReScript,
+                       #   Ruby, Rust, Swift)
 ----
 
 == Protocol Catalog (95 skeletons)
@@ -129,7 +131,7 @@ and integration tests. See `connectors/README.adoc` for details.
 
 * **ABI** (Idris 2): Interface definitions with dependent type proofs → `abi/`
 * **FFI** (Zig): C-compatible implementation → `ffi/`
-* **Bindings**: Thin wrappers for 10 languages → `bindings/`
+* **Bindings**: Thin wrappers for 20 languages → `bindings/`
 
 See `ABI-FFI-README.md` for the full standard.
 

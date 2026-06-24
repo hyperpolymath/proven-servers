@@ -22,7 +22,7 @@ ABI-FFI status:
 * 8/8 core primitives: complete ABI-FFI pairs
 * 26 protocols: full ABI-FFI pairs
 * 58 protocols: type definitions only (skeleton, no ABI-FFI yet)
-* 10 language bindings: Rust, Zig, C, ReScript, Gleam, Elixir, Haskell, OCaml, Ada, Julia
+* 20 language bindings (thin wrappers over the C ABI): Ada, C++, C#, Dart, Elixir, Gleam, Go, Haskell, Java, JavaScript, Julia, Kotlin, Lua, OCaml, PHP, Python, ReScript, Ruby, Rust, Swift
 
 19 not-proven modules: authconn, bgp, config, container, dbserver, deception, dhcp,
 firewall, httpd, nfs, ntp, nts, socket, ssh-bastion, syslog, tftp, tls,
@@ -34,7 +34,7 @@ typed-frame-router, wire.
 * [x] 8/8 core primitive ABI-FFI pairs (socket, frame, fsm, wire, compose, tls, config, audit)
 * [x] Generated C headers for all ABI-FFI pairs
 * [x] Zig FFI implementations with integration tests
-* [x] 10-language bindings (Rust, Zig, C, ReScript, Gleam, Elixir, Haskell, OCaml, Ada, Julia)
+* [x] 20-language bindings (Ada, C++, C#, Dart, Elixir, Gleam, Go, Haskell, Java, JavaScript, Julia, Kotlin, Lua, OCaml, PHP, Python, ReScript, Ruby, Rust, Swift)
 
 == v0.10.0 -- Protocol ABI-FFI Expansion (In Progress)
 
