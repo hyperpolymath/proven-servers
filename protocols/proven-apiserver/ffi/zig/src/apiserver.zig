@@ -16,6 +16,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("apiserver_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching ApiserverABI.Types.idr tag assignments)
 // =========================================================================
@@ -66,12 +73,52 @@ pub const GatewayError = enum(u8) {
 };
 
 /// Gateway lifecycle states (ABI tags 0-3).
+/// NOTE: GatewayState has no proven `*ToTag` encoder in ApiserverABI.Types, so
+/// it is intentionally NOT guarded below (the generated manifest is the single
+/// source of truth; we only pin tags that the proofs actually emit).
 pub const GatewayState = enum(u8) {
     ready = 0,
     serving = 1,
     draining = 2,
     stopped = 3,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(AuthScheme.api_key) != gen.AUTH_API_KEY) @compileError("ABI drift: AuthScheme.api_key");
+    if (@intFromEnum(AuthScheme.bearer) != gen.AUTH_BEARER) @compileError("ABI drift: AuthScheme.bearer");
+    if (@intFromEnum(AuthScheme.basic) != gen.AUTH_BASIC) @compileError("ABI drift: AuthScheme.basic");
+    if (@intFromEnum(AuthScheme.oauth2) != gen.AUTH_OAUTH2) @compileError("ABI drift: AuthScheme.oauth2");
+    if (@intFromEnum(AuthScheme.hmac) != gen.AUTH_HMAC) @compileError("ABI drift: AuthScheme.hmac");
+    if (@intFromEnum(AuthScheme.mtls) != gen.AUTH_MTLS) @compileError("ABI drift: AuthScheme.mtls");
+
+    if (@intFromEnum(RateLimitStrategy.fixed_window) != gen.RATE_FIXED_WINDOW) @compileError("ABI drift: RateLimitStrategy.fixed_window");
+    if (@intFromEnum(RateLimitStrategy.sliding_window) != gen.RATE_SLIDING_WINDOW) @compileError("ABI drift: RateLimitStrategy.sliding_window");
+    if (@intFromEnum(RateLimitStrategy.token_bucket) != gen.RATE_TOKEN_BUCKET) @compileError("ABI drift: RateLimitStrategy.token_bucket");
+    if (@intFromEnum(RateLimitStrategy.leaky_bucket) != gen.RATE_LEAKY_BUCKET) @compileError("ABI drift: RateLimitStrategy.leaky_bucket");
+
+    if (@intFromEnum(APIVersion.v1) != gen.VER_V1) @compileError("ABI drift: APIVersion.v1");
+    if (@intFromEnum(APIVersion.v2) != gen.VER_V2) @compileError("ABI drift: APIVersion.v2");
+    if (@intFromEnum(APIVersion.v3) != gen.VER_V3) @compileError("ABI drift: APIVersion.v3");
+    if (@intFromEnum(APIVersion.latest) != gen.VER_LATEST) @compileError("ABI drift: APIVersion.latest");
+    if (@intFromEnum(APIVersion.deprecated) != gen.VER_DEPRECATED) @compileError("ABI drift: APIVersion.deprecated");
+
+    if (@intFromEnum(ResponseFormat.json) != gen.FMT_JSON) @compileError("ABI drift: ResponseFormat.json");
+    if (@intFromEnum(ResponseFormat.xml) != gen.FMT_XML) @compileError("ABI drift: ResponseFormat.xml");
+    if (@intFromEnum(ResponseFormat.protobuf) != gen.FMT_PROTOBUF) @compileError("ABI drift: ResponseFormat.protobuf");
+    if (@intFromEnum(ResponseFormat.messagepack) != gen.FMT_MESSAGEPACK) @compileError("ABI drift: ResponseFormat.messagepack");
+
+    if (@intFromEnum(GatewayError.unauthorized) != gen.ERR_UNAUTHORIZED) @compileError("ABI drift: GatewayError.unauthorized");
+    if (@intFromEnum(GatewayError.rate_limited) != gen.ERR_RATE_LIMITED) @compileError("ABI drift: GatewayError.rate_limited");
+    if (@intFromEnum(GatewayError.not_found) != gen.ERR_NOT_FOUND) @compileError("ABI drift: GatewayError.not_found");
+    if (@intFromEnum(GatewayError.bad_request) != gen.ERR_BAD_REQUEST) @compileError("ABI drift: GatewayError.bad_request");
+    if (@intFromEnum(GatewayError.service_unavailable) != gen.ERR_SERVICE_UNAVAILABLE) @compileError("ABI drift: GatewayError.service_unavailable");
+    if (@intFromEnum(GatewayError.circuit_open) != gen.ERR_CIRCUIT_OPEN) @compileError("ABI drift: GatewayError.circuit_open");
+}
 
 // =========================================================================
 // Internal data structures
@@ -185,7 +232,7 @@ fn findRoute(idx: usize, path: []const u8) ?usize {
 
 /// Returns the ABI version number. Must match Foreign.abiVersion in Idris2.
 pub export fn apiserver_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Lifecycle ----------------------------------------------------------------

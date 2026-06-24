@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("appserver_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching AppserverABI.Types.idr tag assignments)
 // =========================================================================
@@ -62,6 +69,40 @@ pub const ErrorCategory = enum(u8) {
     circuit_open = 3,
     rate_limited = 4,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(RequestType.http) != gen.REQ_HTTP) @compileError("ABI drift: RequestType.http");
+    if (@intFromEnum(RequestType.websocket) != gen.REQ_WEBSOCKET) @compileError("ABI drift: RequestType.websocket");
+    if (@intFromEnum(RequestType.grpc) != gen.REQ_GRPC) @compileError("ABI drift: RequestType.grpc");
+    if (@intFromEnum(RequestType.graphql) != gen.REQ_GRAPHQL) @compileError("ABI drift: RequestType.graphql");
+
+    if (@intFromEnum(LifecycleState.initializing) != gen.LIFECYCLE_INITIALIZING) @compileError("ABI drift: LifecycleState.initializing");
+    if (@intFromEnum(LifecycleState.starting) != gen.LIFECYCLE_STARTING) @compileError("ABI drift: LifecycleState.starting");
+    if (@intFromEnum(LifecycleState.running) != gen.LIFECYCLE_RUNNING) @compileError("ABI drift: LifecycleState.running");
+    if (@intFromEnum(LifecycleState.draining) != gen.LIFECYCLE_DRAINING) @compileError("ABI drift: LifecycleState.draining");
+    if (@intFromEnum(LifecycleState.stopping) != gen.LIFECYCLE_STOPPING) @compileError("ABI drift: LifecycleState.stopping");
+    if (@intFromEnum(LifecycleState.stopped) != gen.LIFECYCLE_STOPPED) @compileError("ABI drift: LifecycleState.stopped");
+
+    if (@intFromEnum(HealthCheck.liveness) != gen.HEALTH_LIVENESS) @compileError("ABI drift: HealthCheck.liveness");
+    if (@intFromEnum(HealthCheck.readiness) != gen.HEALTH_READINESS) @compileError("ABI drift: HealthCheck.readiness");
+    if (@intFromEnum(HealthCheck.startup) != gen.HEALTH_STARTUP) @compileError("ABI drift: HealthCheck.startup");
+
+    if (@intFromEnum(DeployStrategy.rolling_update) != gen.DEPLOY_ROLLING_UPDATE) @compileError("ABI drift: DeployStrategy.rolling_update");
+    if (@intFromEnum(DeployStrategy.blue_green) != gen.DEPLOY_BLUE_GREEN) @compileError("ABI drift: DeployStrategy.blue_green");
+    if (@intFromEnum(DeployStrategy.canary) != gen.DEPLOY_CANARY) @compileError("ABI drift: DeployStrategy.canary");
+    if (@intFromEnum(DeployStrategy.recreate) != gen.DEPLOY_RECREATE) @compileError("ABI drift: DeployStrategy.recreate");
+
+    if (@intFromEnum(ErrorCategory.client_error) != gen.ERR_CLIENT_ERROR) @compileError("ABI drift: ErrorCategory.client_error");
+    if (@intFromEnum(ErrorCategory.server_error) != gen.ERR_SERVER_ERROR) @compileError("ABI drift: ErrorCategory.server_error");
+    if (@intFromEnum(ErrorCategory.timeout) != gen.ERR_TIMEOUT) @compileError("ABI drift: ErrorCategory.timeout");
+    if (@intFromEnum(ErrorCategory.circuit_open) != gen.ERR_CIRCUIT_OPEN) @compileError("ABI drift: ErrorCategory.circuit_open");
+    if (@intFromEnum(ErrorCategory.rate_limited) != gen.ERR_RATE_LIMITED) @compileError("ABI drift: ErrorCategory.rate_limited");
+}
 
 // =========================================================================
 // Internal data structures
@@ -163,7 +204,7 @@ fn findHandler(idx: usize, path: []const u8) ?usize {
 
 /// Returns the ABI version number. Must match Foreign.abiVersion in Idris2.
 pub export fn appserver_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Lifecycle ----------------------------------------------------------------

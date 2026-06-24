@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("authserver_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching AuthserverABI.Types.idr tag assignments)
 // =========================================================================
@@ -67,6 +74,45 @@ pub const SessionState = enum(u8) {
     revoked = 2,
     locked = 3,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(AuthMethod.password) != gen.AUTHM_PASSWORD) @compileError("ABI drift: AuthMethod.password");
+    if (@intFromEnum(AuthMethod.certificate) != gen.AUTHM_CERTIFICATE) @compileError("ABI drift: AuthMethod.certificate");
+    if (@intFromEnum(AuthMethod.oauth2) != gen.AUTHM_OAUTH2) @compileError("ABI drift: AuthMethod.oauth2");
+    if (@intFromEnum(AuthMethod.saml) != gen.AUTHM_SAML) @compileError("ABI drift: AuthMethod.saml");
+    if (@intFromEnum(AuthMethod.fido2) != gen.AUTHM_FIDO2) @compileError("ABI drift: AuthMethod.fido2");
+    if (@intFromEnum(AuthMethod.kerberos) != gen.AUTHM_KERBEROS) @compileError("ABI drift: AuthMethod.kerberos");
+    if (@intFromEnum(AuthMethod.ldap) != gen.AUTHM_LDAP) @compileError("ABI drift: AuthMethod.ldap");
+    if (@intFromEnum(AuthMethod.radius) != gen.AUTHM_RADIUS) @compileError("ABI drift: AuthMethod.radius");
+
+    if (@intFromEnum(TokenType.access) != gen.TOKEN_ACCESS) @compileError("ABI drift: TokenType.access");
+    if (@intFromEnum(TokenType.refresh) != gen.TOKEN_REFRESH) @compileError("ABI drift: TokenType.refresh");
+    if (@intFromEnum(TokenType.id) != gen.TOKEN_ID) @compileError("ABI drift: TokenType.id");
+    if (@intFromEnum(TokenType.api) != gen.TOKEN_API) @compileError("ABI drift: TokenType.api");
+
+    if (@intFromEnum(AuthResult.success) != gen.RESULT_SUCCESS) @compileError("ABI drift: AuthResult.success");
+    if (@intFromEnum(AuthResult.invalid_credentials) != gen.RESULT_INVALID_CREDENTIALS) @compileError("ABI drift: AuthResult.invalid_credentials");
+    if (@intFromEnum(AuthResult.account_locked) != gen.RESULT_ACCOUNT_LOCKED) @compileError("ABI drift: AuthResult.account_locked");
+    if (@intFromEnum(AuthResult.account_expired) != gen.RESULT_ACCOUNT_EXPIRED) @compileError("ABI drift: AuthResult.account_expired");
+    if (@intFromEnum(AuthResult.mfa_required) != gen.RESULT_MFA_REQUIRED) @compileError("ABI drift: AuthResult.mfa_required");
+    if (@intFromEnum(AuthResult.ip_blocked) != gen.RESULT_IP_BLOCKED) @compileError("ABI drift: AuthResult.ip_blocked");
+
+    if (@intFromEnum(MFAMethod.totp) != gen.MFA_TOTP) @compileError("ABI drift: MFAMethod.totp");
+    if (@intFromEnum(MFAMethod.sms) != gen.MFA_SMS) @compileError("ABI drift: MFAMethod.sms");
+    if (@intFromEnum(MFAMethod.push) != gen.MFA_PUSH) @compileError("ABI drift: MFAMethod.push");
+    if (@intFromEnum(MFAMethod.fido2_mfa) != gen.MFA_FIDO2_MFA) @compileError("ABI drift: MFAMethod.fido2_mfa");
+    if (@intFromEnum(MFAMethod.email) != gen.MFA_EMAIL) @compileError("ABI drift: MFAMethod.email");
+
+    if (@intFromEnum(SessionState.active) != gen.SESSION_ACTIVE) @compileError("ABI drift: SessionState.active");
+    if (@intFromEnum(SessionState.expired) != gen.SESSION_EXPIRED) @compileError("ABI drift: SessionState.expired");
+    if (@intFromEnum(SessionState.revoked) != gen.SESSION_REVOKED) @compileError("ABI drift: SessionState.revoked");
+    if (@intFromEnum(SessionState.locked) != gen.SESSION_LOCKED) @compileError("ABI drift: SessionState.locked");
+}
 
 // =========================================================================
 // Internal data structures
@@ -160,7 +206,7 @@ fn validSlot(slot: c_int) ?usize {
 
 /// Returns the ABI version number. Must match Foreign.abiVersion in Idris2.
 pub export fn authserver_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Lifecycle ----------------------------------------------------------------
