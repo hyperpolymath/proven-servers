@@ -43,6 +43,11 @@ jobs:
       # needs a different method, e2e.sh Section 0 skips the Idris steps
       # gracefully and the Zig comptime guard still runs.
       - name: Install Idris2 0.7.0
+        # Best-effort: a from-source build can vary by runner. If it fails,
+        # e2e.sh Section 0 skips the Idris steps and the Zig comptime guard
+        # still runs -- so the conformance check degrades gracefully rather
+        # than blocking the whole E2E job at this step.
+        continue-on-error: true
         run: |
           sudo apt-get update
           sudo apt-get install -y chezscheme libgmp-dev
