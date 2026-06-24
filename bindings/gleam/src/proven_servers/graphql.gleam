@@ -201,15 +201,10 @@ pub fn directive_location_from_int(tag: Int) -> Result(DirectiveLocation, Nil) {
   }
 }
 
-/// Whether this is an executable location (tags 0-6).
-pub fn directive_location_is_executable(loc: DirectiveLocation) -> Bool {
-  directive_location_to_int(loc) <= 6
-}
-
-/// Whether this is a type system location (tags 7-17).
-pub fn directive_location_is_type_system(loc: DirectiveLocation) -> Bool {
-  !directive_location_is_executable(loc)
-}
+// directive_location_is_executable and directive_location_is_type_system removed:
+// unproven reimplementation (tag-range classification). The verified check lives
+// in the Idris2/Zig core; calling it needs @external FFI wiring not yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 /// Display name for a directive location.
 pub fn directive_location_to_string(loc: DirectiveLocation) -> String {

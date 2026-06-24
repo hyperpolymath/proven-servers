@@ -8,8 +8,6 @@
 //// - `MQTT.QoS`         -- quality of service levels (MQTT 3.1.1 Section 4.3)
 //// - `MQTT.PacketType`  -- control packet types (MQTT 3.1.1 Section 2.2)
 
-import gleam/order.{type Order, Eq, Gt, Lt}
-
 // ===========================================================================
 // QoS (MQTT.QoS, MQTT 3.1.1 Section 4.3)
 // ===========================================================================
@@ -45,19 +43,9 @@ pub fn qos_from_int(code: Int) -> Result(QoS, Nil) {
   }
 }
 
-/// Compare two QoS levels for ordering.
-pub fn qos_compare(a: QoS, b: QoS) -> Order {
-  let ai = qos_to_int(a)
-  let bi = qos_to_int(b)
-  case ai < bi {
-    True -> Lt
-    False ->
-      case ai > bi {
-        True -> Gt
-        False -> Eq
-      }
-  }
-}
+// qos_compare removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @external FFI wiring not yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 /// Whether this QoS level requires acknowledgement from the receiver.
 pub fn qos_requires_ack(qos: QoS) -> Bool {
@@ -78,22 +66,10 @@ pub fn qos_ack_packet_count(qos: QoS) -> Int {
   }
 }
 
-/// Determine the effective QoS for a subscription.
-///
-/// MQTT 3.1.1 Section 3.8.4: minimum of requested and granted.
-pub fn qos_effective(requested: QoS, granted: QoS) -> QoS {
-  case qos_compare(requested, granted) {
-    Lt | Eq -> requested
-    Gt -> granted
-  }
-}
-
-/// Determine the QoS for delivering a message to a subscriber.
-///
-/// MQTT 3.1.1 Section 3.3.1.2: minimum of message QoS and subscription max.
-pub fn qos_delivery(message_qos: QoS, subscription_max: QoS) -> QoS {
-  qos_effective(message_qos, subscription_max)
-}
+// qos_effective and qos_delivery removed: unproven reimplementation (MQTT QoS
+// negotiation rules). The verified check lives in the Idris2/Zig core; calling it
+// needs @external FFI wiring not yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // SUBACK Return Code (MQTT.QoS.SubAckCode)

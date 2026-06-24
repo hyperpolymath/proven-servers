@@ -59,35 +59,6 @@ defmodule ProvenServers.DnsTest do
     end
   end
 
-  describe "domain name validation" do
-    test "valid names" do
-      assert Dns.validate_domain_name("example.com") == :ok
-      assert Dns.validate_domain_name("sub.example.com") == :ok
-      assert Dns.validate_domain_name("a") == :ok
-    end
-
-    test "empty name" do
-      assert Dns.validate_domain_name("") == {:error, :empty_name}
-    end
-
-    test "label too long" do
-      long_label = String.duplicate("a", 64)
-      name = "#{long_label}.com"
-      assert {:error, {:label_too_long, ^long_label, 64}} = Dns.validate_domain_name(name)
-    end
-
-    test "name too long" do
-      label = String.duplicate("a", 63)
-      name = "#{label}.#{label}.#{label}.#{label}.x"
-      assert byte_size(name) > 253
-      assert {:error, {:name_too_long, ^name, _len}} = Dns.validate_domain_name(name)
-    end
-
-    test "empty label" do
-      assert Dns.validate_domain_name("example..com") == {:error, :empty_label}
-    end
-  end
-
   describe "constants match Idris2" do
     test "all constants are correct" do
       assert Dns.dns_port() == 53

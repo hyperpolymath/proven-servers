@@ -217,11 +217,9 @@ let connectionStateToTag = (v: connectionState): int =>
   | Closing => 4
   }
 
-/// Validate whether a state transition is allowed.
-let connectionStateCanTransitionTo = (from: connectionState, to: connectionState): bool =>
-  switch (from, to) {
-  | _ => false
-  }
+// connectionStateCanTransitionTo removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // ChannelState (tags 0-3)
@@ -253,11 +251,9 @@ let channelStateToTag = (v: channelState): int =>
   | ChClosing => 3
   }
 
-/// Validate whether a state transition is allowed.
-let channelStateCanTransitionTo = (from: channelState, to: channelState): bool =>
-  switch (from, to) {
-  | _ => false
-  }
+// channelStateCanTransitionTo removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // BrokerState (tags 0-5)
@@ -295,9 +291,7 @@ let brokerStateToTag = (v: brokerState): int =>
   | Disconnecting => 5
   }
 
-/// Validate whether a state transition is allowed.
-let brokerStateCanTransitionTo = (from: brokerState, to: brokerState): bool =>
-  switch (from, to) {
-  | _ => false
-  }
+// brokerStateCanTransitionTo removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 

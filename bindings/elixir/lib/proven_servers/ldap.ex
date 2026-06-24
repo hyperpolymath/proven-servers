@@ -74,18 +74,9 @@ defmodule ProvenServers.Ldap do
   @spec all_session_states() :: [session_state()]
   def all_session_states, do: [:anonymous, :bound, :closed, :binding]
 
-  @doc """
-  Validate whether a `SessionState` state transition is allowed.
-
-  Mirrors the formally verified transitions from the Idris2 source.
-  """
-  @spec validate_session_state_transition(session_state(), session_state()) :: boolean()
-  def validate_session_state_transition(:anonymous, :binding), do: true
-  def validate_session_state_transition(:binding, :bound), do: true
-  def validate_session_state_transition(:binding, :anonymous), do: true
-  def validate_session_state_transition(:bound, :anonymous), do: true
-  def validate_session_state_transition(_from, :closed), do: true
-  def validate_session_state_transition(_from, _to), do: false
+  # validate_session_state_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   @doc """
   Decode from an ABI tag value.

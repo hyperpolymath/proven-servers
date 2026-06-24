@@ -10,8 +10,6 @@
 //// - `HTTPABI.Layout`       -- C-ABI tag values
 //// - `HTTPABI.Transitions`  -- request lifecycle state machine
 
-import gleam/option.{type Option, None, Some}
-
 // ===========================================================================
 // HTTP Method (HTTPABI.Layout.HttpMethod, tags 0-8)
 // ===========================================================================
@@ -426,35 +424,11 @@ pub fn status_reason_phrase(code: StatusCode) -> String {
   }
 }
 
-/// Categorise this status code.
-pub fn status_category(code: StatusCode) -> StatusCategory {
-  let tag = status_to_int(code)
-  case tag {
-    t if t <= 1 -> Informational
-    t if t <= 5 -> Success
-    t if t <= 10 -> Redirect
-    t if t <= 23 -> ClientError
-    _ -> ServerError
-  }
-}
-
-/// Whether this is a success code (2xx).
-pub fn status_is_success(code: StatusCode) -> Bool {
-  status_category(code) == Success
-}
-
-/// Whether this is an error code (4xx or 5xx).
-pub fn status_is_error(code: StatusCode) -> Bool {
-  case status_category(code) {
-    ClientError | ServerError -> True
-    _ -> False
-  }
-}
-
-/// Whether this is a redirect code (3xx).
-pub fn status_is_redirect(code: StatusCode) -> Bool {
-  status_category(code) == Redirect
-}
+// status_category (and the classifiers status_is_success, status_is_error and
+// status_is_redirect that delegate to it) removed: unproven reimplementation.
+// The verified check lives in the Idris2/Zig core; calling it needs @external
+// FFI wiring not yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // Content Type (HTTPABI.Layout.ContentType, tags 0-7)
@@ -583,30 +557,10 @@ pub type HttpTransition {
   AbortComplete
 }
 
-/// Validate whether a transition between two request phases is legal.
-///
-/// Mirrors `validateHttpTransition` in `HTTPABI.Transitions`.
-/// Returns `Some(transition)` for valid transitions, `None` for invalid.
-pub fn validate_http_transition(
-  from: RequestPhase,
-  to: RequestPhase,
-) -> Option(HttpTransition) {
-  case from, to {
-    Idle, Receiving -> Some(StartReceiving)
-    Receiving, HeadersParsed -> Some(ParseHeaders)
-    HeadersParsed, BodyReceiving -> Some(StartBody)
-    HeadersParsed, PhaseComplete -> Some(NoBodyComplete)
-    BodyReceiving, PhaseComplete -> Some(BodyDone)
-    PhaseComplete, Responding -> Some(BeginResponse)
-    Responding, Sent -> Some(FinishSend)
-    Sent, Idle -> Some(KeepAliveRecycle)
-    Receiving, Sent -> Some(AbortReceiving)
-    HeadersParsed, Sent -> Some(AbortHeadersParsed)
-    BodyReceiving, Sent -> Some(AbortBodyReceiving)
-    PhaseComplete, Sent -> Some(AbortComplete)
-    _, _ -> None
-  }
-}
+// validate_http_transition removed: unproven reimplementation. The verified
+// check lives in the Idris2/Zig core; calling it needs @external FFI wiring not
+// yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 /// The source phase of a transition.
 pub fn transition_from_phase(transition: HttpTransition) -> RequestPhase {

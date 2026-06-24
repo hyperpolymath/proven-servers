@@ -11,8 +11,6 @@
 //// All constants match the values in the Idris2 `DNS` module, which
 //// are derived from RFC 1035, RFC 6891, and related RFCs.
 
-import gleam/string
-
 // ===========================================================================
 // DNS Constants
 // ===========================================================================
@@ -208,39 +206,7 @@ pub type DomainNameError {
   EmptyLabel
 }
 
-/// Validate a domain name against RFC 1035 length constraints.
-///
-/// Checks that no label exceeds `max_label_length` bytes and that
-/// the total name does not exceed `max_name_length` bytes.
-pub fn validate_domain_name(name: String) -> Result(Nil, DomainNameError) {
-  let name_length = string.length(name)
-  case name_length {
-    0 -> Error(EmptyName)
-    _ ->
-      case name_length > max_name_length {
-        True -> Error(NameTooLong(name: name, length: name_length))
-        False -> {
-          let labels = string.split(name, ".")
-          validate_labels(labels)
-        }
-      }
-  }
-}
-
-/// Validate each label in a domain name.
-fn validate_labels(labels: List(String)) -> Result(Nil, DomainNameError) {
-  case labels {
-    [] -> Ok(Nil)
-    [label, ..rest] -> {
-      let label_length = string.length(label)
-      case label_length {
-        0 -> Error(EmptyLabel)
-        _ ->
-          case label_length > max_label_length {
-            True -> Error(LabelTooLong(label: label, length: label_length))
-            False -> validate_labels(rest)
-          }
-      }
-    }
-  }
-}
+// validate_domain_name (and its helper validate_labels) removed: unproven
+// reimplementation. The verified check lives in the Idris2/Zig core; calling it
+// needs @external FFI wiring not yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md

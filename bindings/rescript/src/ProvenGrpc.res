@@ -242,19 +242,6 @@ type streamTransition =
   | ReservedToHalf
   | ReservedReset
 
-/// Validate whether a stream state transition is legal.
-/// Mirrors validateStreamTransition in GRPCABI.Transitions.
-/// Key invariant: Closed is terminal -- no transitions originate from it.
-let validateStreamTransition = (from: streamState, to: streamState): option<streamTransition> =>
-  switch (from, to) {
-  | (StreamIdle, StreamOpen) => Some(SendHeaders)
-  | (StreamOpen, HalfClosedLocal) => Some(LocalEndStream)
-  | (StreamOpen, HalfClosedRemote) => Some(RemoteEndStream)
-  | (StreamOpen, Closed) => Some(ResetFromOpen)
-  | (HalfClosedLocal, Closed) => Some(CloseHalfLocal)
-  | (HalfClosedRemote, Closed) => Some(CloseHalfRemote)
-  | (StreamIdle, Reserved) => Some(PushPromiseRecv)
-  | (Reserved, HalfClosedRemote) => Some(ReservedToHalf)
-  | (Reserved, Closed) => Some(ReservedReset)
-  | _ => None
-  }
+// validateStreamTransition removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md

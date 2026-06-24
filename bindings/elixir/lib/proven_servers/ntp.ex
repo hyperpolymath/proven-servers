@@ -225,17 +225,9 @@ defmodule ProvenServers.Ntp do
   @spec all_exchange_states() :: [exchange_state()]
   def all_exchange_states, do: [:idle, :request_received, :timestamp_calculated, :response_sent]
 
-  @doc """
-  Validate whether a `ExchangeState` state transition is allowed.
-
-  Mirrors the formally verified transitions from the Idris2 source.
-  """
-  @spec validate_exchange_state_transition(exchange_state(), exchange_state()) :: boolean()
-  def validate_exchange_state_transition(:idle, :request_received), do: true
-  def validate_exchange_state_transition(:request_received, :timestamp_calculated), do: true
-  def validate_exchange_state_transition(:timestamp_calculated, :response_sent), do: true
-  def validate_exchange_state_transition(:response_sent, :idle), do: true
-  def validate_exchange_state_transition(_from, _to), do: false
+  # validate_exchange_state_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ===========================================================================
   # ClockDisciplineState (tags 0-4)

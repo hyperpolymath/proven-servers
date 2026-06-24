@@ -120,9 +120,9 @@ defmodule ProvenServers.Ssh do
   @spec bastion_state_to_tag(bastion_state()) :: non_neg_integer()
   defdelegate bastion_state_to_tag(state), to: ProvenServers.SshBastion
 
-  @doc "Validate whether a bastion state transition is allowed."
-  @spec bastion_can_transition?(bastion_state(), bastion_state()) :: boolean()
-  defdelegate bastion_can_transition?(from, to), to: ProvenServers.SshBastion
+  # bastion_can_transition? removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ---------------------------------------------------------------------------
   # ChannelState delegates
@@ -136,9 +136,9 @@ defmodule ProvenServers.Ssh do
   @spec channel_state_to_tag(channel_state()) :: non_neg_integer()
   defdelegate channel_state_to_tag(state), to: ProvenServers.SshBastion
 
-  @doc "Validate whether a channel state transition is allowed."
-  @spec channel_can_transition?(channel_state(), channel_state()) :: boolean()
-  defdelegate channel_can_transition?(from, to), to: ProvenServers.SshBastion
+  # channel_can_transition? removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ---------------------------------------------------------------------------
   # DisconnectReason delegates

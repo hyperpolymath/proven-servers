@@ -56,20 +56,10 @@ pub fn session_state_from_int(tag: Int) -> Result(SessionState, Nil) {
   }
 }
 
-/// Validate whether a state transition is allowed.
-pub fn session_state_can_transition_to(from: SessionState, to: SessionState) -> Bool {
-  case from, to {
-    Anonymous, Binding -> True
-    Binding, Bound -> True
-    Binding, Anonymous -> True
-    Bound, Anonymous -> True
-    Anonymous, Closed -> True
-    Bound, Closed -> True
-    Closed, Closed -> True
-    Binding, Closed -> True
-    _, _ -> False
-  }
-}
+// session_state_can_transition_to removed: unproven reimplementation. The verified
+// check lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // Operation

@@ -9,8 +9,6 @@
 //// - `GRPCABI.Layout`       -- C-ABI tag values for stream states
 //// - `GRPCABI.Transitions`  -- HTTP/2 stream state machine (RFC 7540 Section 5.1)
 
-import gleam/option.{type Option, None, Some}
-
 // ===========================================================================
 // gRPC Status Code (GRPC.Types.StatusCode)
 // ===========================================================================
@@ -249,23 +247,7 @@ pub type StreamTransition {
   ReservedReset
 }
 
-/// Validate whether a stream state transition is legal.
-///
-/// Key invariant: `Closed` is terminal -- no transitions originate from it.
-pub fn validate_stream_transition(
-  from: StreamState,
-  to: StreamState,
-) -> Option(StreamTransition) {
-  case from, to {
-    StreamIdle, Open -> Some(SendHeaders)
-    Open, HalfClosedLocal -> Some(LocalEndStream)
-    Open, HalfClosedRemote -> Some(RemoteEndStream)
-    Open, Closed -> Some(ResetFromOpen)
-    HalfClosedLocal, Closed -> Some(CloseHalfLocal)
-    HalfClosedRemote, Closed -> Some(CloseHalfRemote)
-    StreamIdle, Reserved -> Some(PushPromiseRecv)
-    Reserved, HalfClosedRemote -> Some(ReservedToHalf)
-    Reserved, Closed -> Some(ReservedReset)
-    _, _ -> None
-  }
-}
+// validate_stream_transition removed: unproven reimplementation. The verified
+// check lives in the Idris2/Zig core; calling it needs @external FFI wiring not
+// yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md

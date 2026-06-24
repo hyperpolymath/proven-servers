@@ -289,20 +289,9 @@ defmodule ProvenServers.Dhcp do
     ]
   end
 
-  @doc """
-  Validate whether a `DhcpState` state transition is allowed.
-
-  Mirrors the formally verified transitions from the Idris2 source.
-  """
-  @spec validate_dhcp_state_transition(dhcp_state(), dhcp_state()) :: boolean()
-  def validate_dhcp_state_transition(:idle, :discover_received), do: true
-  def validate_dhcp_state_transition(:discover_received, :offer_sent), do: true
-  def validate_dhcp_state_transition(:offer_sent, :request_received), do: true
-  def validate_dhcp_state_transition(:request_received, :ack_sent), do: true
-  def validate_dhcp_state_transition(:request_received, :nak_sent), do: true
-  def validate_dhcp_state_transition(:ack_sent, :idle), do: true
-  def validate_dhcp_state_transition(:nak_sent, :idle), do: true
-  def validate_dhcp_state_transition(_from, _to), do: false
+  # validate_dhcp_state_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ===========================================================================
   # LeaseState (tags 0-5)

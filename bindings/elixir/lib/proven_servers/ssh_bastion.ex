@@ -180,24 +180,9 @@ defmodule ProvenServers.SshBastion do
     Map.fetch!(@bastion_state_tags, state)
   end
 
-  @doc """
-  Validate whether a bastion state transition is allowed.
-
-  ## Examples
-
-      iex> ProvenServers.SshBastion.bastion_can_transition?(:connected, :key_exchanged)
-      true
-
-      iex> ProvenServers.SshBastion.bastion_can_transition?(:connected, :active)
-      false
-  """
-  @spec bastion_can_transition?(bastion_state(), bastion_state()) :: boolean()
-  def bastion_can_transition?(:connected, :key_exchanged), do: true
-  def bastion_can_transition?(:key_exchanged, :authenticated), do: true
-  def bastion_can_transition?(:authenticated, :channel_open), do: true
-  def bastion_can_transition?(:channel_open, :active), do: true
-  def bastion_can_transition?(_, :closed), do: true
-  def bastion_can_transition?(_, _), do: false
+  # bastion_can_transition? removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ===========================================================================
   # ChannelState (tags 0-3)
@@ -222,13 +207,9 @@ defmodule ProvenServers.SshBastion do
     Map.fetch!(@channel_state_tags, state)
   end
 
-  @doc "Validate whether a channel state transition is allowed."
-  @spec channel_can_transition?(channel_state(), channel_state()) :: boolean()
-  def channel_can_transition?(:opening, :open), do: true
-  def channel_can_transition?(:opening, :channel_closed), do: true
-  def channel_can_transition?(:open, :closing), do: true
-  def channel_can_transition?(:closing, :channel_closed), do: true
-  def channel_can_transition?(_, _), do: false
+  # channel_can_transition? removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ===========================================================================
   # DisconnectReason (tags 0-11)

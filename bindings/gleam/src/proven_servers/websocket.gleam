@@ -211,15 +211,10 @@ pub fn close_code_reason(code: CloseCode) -> String {
   }
 }
 
-/// Check if a raw 16-bit value is in the application-use range (4000-4999).
-pub fn is_application_code(code: Int) -> Bool {
-  code >= 4000 && code <= 4999
-}
-
-/// Check if a raw 16-bit value is in the private-use range (3000-3999).
-pub fn is_private_code(code: Int) -> Bool {
-  code >= 3000 && code <= 3999
-}
+// is_application_code and is_private_code removed: unproven reimplementation.
+// The verified check lives in the Idris2/Zig core; calling it needs @external
+// FFI wiring not yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // Frame validation (WS.Frame)
@@ -256,61 +251,7 @@ pub type Frame {
   )
 }
 
-/// Validate a frame received from a client.
-///
-/// Checks: masking required, control frame size and fragmentation.
-pub fn validate_client_frame(
-  frame: Frame,
-  max_frame_size: Int,
-) -> Result(Nil, FrameError) {
-  case frame.masked {
-    False -> Error(ClientFrameNotMasked)
-    True -> validate_common(frame, max_frame_size)
-  }
-}
-
-/// Validate a frame received from a server.
-///
-/// Server frames MUST NOT be masked.
-pub fn validate_server_frame(
-  frame: Frame,
-  max_frame_size: Int,
-) -> Result(Nil, FrameError) {
-  case frame.masked {
-    True -> Error(ServerFrameMasked)
-    False -> validate_common(frame, max_frame_size)
-  }
-}
-
-/// Common validation shared between client and server frames.
-fn validate_common(frame: Frame, max_frame_size: Int) -> Result(Nil, FrameError) {
-  case opcode_is_control(frame.opcode), frame.payload_length > max_control_payload {
-    True, True ->
-      Error(ControlFrameTooLarge(
-        opcode: frame.opcode,
-        size: frame.payload_length,
-      ))
-    True, False ->
-      case frame.fin {
-        False -> Error(ControlFrameFragmented(opcode: frame.opcode))
-        True ->
-          case frame.payload_length > max_frame_size {
-            True ->
-              Error(PayloadTooLarge(
-                size: frame.payload_length,
-                max_size: max_frame_size,
-              ))
-            False -> Ok(Nil)
-          }
-      }
-    False, _ ->
-      case frame.payload_length > max_frame_size {
-        True ->
-          Error(PayloadTooLarge(
-            size: frame.payload_length,
-            max_size: max_frame_size,
-          ))
-        False -> Ok(Nil)
-      }
-  }
-}
+// validate_client_frame, validate_server_frame and their helper validate_common
+// removed: unproven reimplementation. The verified check lives in the Idris2/Zig
+// core; calling it needs @external FFI wiring not yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md

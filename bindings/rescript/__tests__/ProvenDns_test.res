@@ -53,48 +53,9 @@ let testResponseCodeClassification = () => {
   assert(!responseCodeIsNxdomain(NoError))
 }
 
-// ---------------------------------------------------------------------------
-// Domain name validation tests
-// ---------------------------------------------------------------------------
-
-let testDomainNameValid = () => {
-  assert(validateDomainName("example.com") == Ok())
-  assert(validateDomainName("sub.example.com") == Ok())
-  assert(validateDomainName("a") == Ok())
-}
-
-let testDomainNameEmpty = () =>
-  switch validateDomainName("") {
-  | Error(EmptyName) => ()
-  | _ => assert(false)
-  }
-
-let testDomainNameEmptyLabel = () =>
-  switch validateDomainName("example..com") {
-  | Error(EmptyLabel) => ()
-  | _ => assert(false)
-  }
-
-let testDomainNameLabelTooLong = () => {
-  // Build a 64-character label (exceeds 63 limit)
-  let longLabel = Js.String2.repeat("a", 64)
-  let name = longLabel ++ ".com"
-  switch validateDomainName(name) {
-  | Error(LabelTooLong(_)) => ()
-  | _ => assert(false)
-  }
-}
-
-let testDomainNameTooLong = () => {
-  // Build a name over 253 characters
-  let label = Js.String2.repeat("a", 63)
-  let name = label ++ "." ++ label ++ "." ++ label ++ "." ++ label ++ ".x"
-  assert(Js.String2.length(name) > maxNameLength)
-  switch validateDomainName(name) {
-  | Error(NameTooLong(_)) => ()
-  | _ => assert(false)
-  }
-}
+// Domain name validation tests removed: validateDomainName was an unproven
+// reimplementation deleted from ProvenDns. The verified check lives in the
+// Idris2/Zig core. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ---------------------------------------------------------------------------
 // Constants tests
@@ -120,11 +81,6 @@ let () = {
   testResponseCodeRoundtrip()
   testResponseCodeInvalid()
   testResponseCodeClassification()
-  testDomainNameValid()
-  testDomainNameEmpty()
-  testDomainNameEmptyLabel()
-  testDomainNameLabelTooLong()
-  testDomainNameTooLong()
   testConstantsMatchIdris()
   Js.log("ProvenDns: all tests passed")
 }

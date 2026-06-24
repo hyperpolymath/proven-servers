@@ -165,15 +165,9 @@ defmodule ProvenServers.Pop3 do
   @spec all_states() :: [state()]
   def all_states, do: [:authorization, :transaction, :update]
 
-  @doc """
-  Validate whether a `State` state transition is allowed.
-
-  Mirrors the formally verified transitions from the Idris2 source.
-  """
-  @spec validate_state_transition(state(), state()) :: boolean()
-  def validate_state_transition(:authorization, :transaction), do: true
-  def validate_state_transition(:transaction, :update), do: true
-  def validate_state_transition(_from, _to), do: false
+  # validate_state_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ===========================================================================
   # Response (tags 0-1)

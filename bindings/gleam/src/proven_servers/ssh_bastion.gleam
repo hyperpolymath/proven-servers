@@ -267,20 +267,10 @@ pub fn bastion_state_from_int(tag: Int) -> Result(BastionState, Nil) {
   }
 }
 
-/// Validate whether a bastion state transition is allowed.
-pub fn bastion_can_transition(
-  from: BastionState,
-  to: BastionState,
-) -> Bool {
-  case from, to {
-    BastionConnected, KeyExchanged -> True
-    KeyExchanged, BastionAuthenticated -> True
-    BastionAuthenticated, BastionChannelOpen -> True
-    BastionChannelOpen, BastionActive -> True
-    _, BastionClosed -> True
-    _, _ -> False
-  }
-}
+// bastion_can_transition removed: unproven reimplementation. The verified check
+// lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // ChannelState (tags 0-3)
@@ -315,19 +305,10 @@ pub fn channel_state_from_int(tag: Int) -> Result(ChannelState, Nil) {
   }
 }
 
-/// Validate whether a channel state transition is allowed.
-pub fn channel_can_transition(
-  from: ChannelState,
-  to: ChannelState,
-) -> Bool {
-  case from, to {
-    Opening, ChannelOpened -> True
-    Opening, ChannelClosed -> True
-    ChannelOpened, Closing -> True
-    Closing, ChannelClosed -> True
-    _, _ -> False
-  }
-}
+// channel_can_transition removed: unproven reimplementation. The verified check
+// lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // DisconnectReason (tags 0-11)

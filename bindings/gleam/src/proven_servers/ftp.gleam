@@ -68,21 +68,10 @@ pub fn session_state_from_int(tag: Int) -> Result(SessionState, Nil) {
   }
 }
 
-/// Validate whether an FTP session state transition is allowed.
-pub fn session_can_transition(
-  from: SessionState,
-  to: SessionState,
-) -> Bool {
-  case from, to {
-    FtpConnected, UserOk -> True
-    UserOk, FtpAuthenticated -> True
-    UserOk, FtpConnected -> True
-    FtpAuthenticated, Renaming -> True
-    Renaming, FtpAuthenticated -> True
-    _, FtpQuit -> True
-    _, _ -> False
-  }
-}
+// session_can_transition removed: unproven reimplementation. The verified check
+// lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // TransferType (tags 0-1)

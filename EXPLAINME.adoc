@@ -31,16 +31,16 @@ ____
 
 **Caveat**: Proofs are about *abstract models* (memory-safe type structure). The Zig FFI implementation (`ffi/zig/src/main.zig`) is NOT formally connected to the ABI proofs via mechanized extraction—mapping is manual.
 
-=== Claim 3: "ABI-FFI Standard: 10 Language Bindings"
+=== Claim 3: "ABI-FFI Standard: 20 Language Bindings"
 
 **From README** (lines 124-130):
 ____
 * **ABI** (Idris 2): Interface definitions with dependent type proofs → `abi/`
 * **FFI** (Zig): C-compatible implementation → `ffi/`
-* **Bindings**: Thin wrappers for 10 languages → `bindings/`
+* **Bindings**: Thin wrappers for 20 languages → `bindings/`
 ____
 
-**Evidence**: `/var/mnt/eclipse/repos/proven-servers/bindings/` contains ReScript, Gleam, Elixir, Haskell, OCaml, Ada, Julia bindings. Each language can import the C ABI from `/var/mnt/eclipse/repos/proven-servers/generated/abi/*.h`. Rust bindings verified in `/var/mnt/eclipse/repos/proven-servers/bindings/rust/`.
+**Evidence**: `bindings/` contains 20 language bindings — Ada, C++, C#, Dart, Elixir, Gleam, Go, Haskell, Java, JavaScript, Julia, Kotlin, Lua, OCaml, PHP, Python, ReScript, Ruby, Rust, Swift. Each calls the generated C ABI in `generated/abi/*.h` (per-protocol `libproven_<proto>`). Ada (`pragma Import (C, …)`) and Java (JNI) are fully FFI-wired reference bindings; Elixir, Gleam and ReScript are currently constants-only scaffolds with FFI wiring pending — their unproven reimplementations were removed (see `docs/decisions/0003-keep-bindings-thin-abi-wrappers.md`). Per-binding tiers: `.machine_readable/BINDINGS.a2ml`.
 
 **Caveat**: Bindings are thin (mostly type mirrors). Language-specific type safety depends on that language's type system matching the C header contract—no formal proof of equivalence across language boundaries (yet).
 
@@ -72,7 +72,7 @@ This standardization ensures verified components can be composed across projects
 
 | `generated/abi/` | Auto-generated C headers (one per connector) — contracts that any language can call
 
-| `bindings/` | Language-specific thin wrappers: rust/, rescript/, gleam/, elixir/, haskell/, ocaml/, ada/, julia/ — type mirrors of C ABI
+| `bindings/` | 20 language-specific thin wrappers over the C ABI (ada/, cpp/, csharp/, dart/, elixir/, gleam/, go/, haskell/, java/, javascript/, julia/, kotlin/, lua/, ocaml/, php/, python/, rescript/, ruby/, rust/, swift/). No safety logic in bindings — see ADR 0003 + `.machine_readable/BINDINGS.a2ml`
 
 | `test/` | Test suite verifying protocol type correctness across all 94 protocols
 |===

@@ -288,11 +288,9 @@ let authStateToTag = (v: authState): int =>
   | AuthFailed => 4
   }
 
-/// Validate whether a state transition is allowed.
-let authStateCanTransitionTo = (from: authState, to: authState): bool =>
-  switch (from, to) {
-  | _ => false
-  }
+// authStateCanTransitionTo removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // EncStrength (tags 0-2)

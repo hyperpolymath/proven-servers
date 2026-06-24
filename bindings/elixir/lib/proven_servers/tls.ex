@@ -287,26 +287,7 @@ defmodule ProvenServers.Tls do
           | :receive_cert_request | :receive_cert | :receive_finished
           | :skip_cert_request | :skip_cert
 
-  @doc """
-  Validate a TLS handshake state transition.
-
-  ## Examples
-
-      iex> ProvenServers.Tls.validate_handshake_transition(:start, :wait_server_hello)
-      {:ok, :send_client_hello}
-
-      iex> ProvenServers.Tls.validate_handshake_transition(:start, :connected)
-      :error
-  """
-  @spec validate_handshake_transition(handshake_state(), handshake_state()) ::
-          {:ok, handshake_transition()} | :error
-  def validate_handshake_transition(:start, :wait_server_hello), do: {:ok, :send_client_hello}
-  def validate_handshake_transition(:wait_server_hello, :wait_encrypted_extensions), do: {:ok, :receive_server_hello}
-  def validate_handshake_transition(:wait_encrypted_extensions, :wait_cert_request), do: {:ok, :receive_encrypted_extensions}
-  def validate_handshake_transition(:wait_cert_request, :wait_cert), do: {:ok, :receive_cert_request}
-  def validate_handshake_transition(:wait_cert_request, :wait_finished), do: {:ok, :skip_cert}
-  def validate_handshake_transition(:wait_cert, :wait_finished), do: {:ok, :receive_cert}
-  def validate_handshake_transition(:wait_finished, :connected), do: {:ok, :receive_finished}
-  def validate_handshake_transition(:wait_encrypted_extensions, :wait_finished), do: {:ok, :skip_cert_request}
-  def validate_handshake_transition(_, _), do: :error
+  # validate_handshake_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 end

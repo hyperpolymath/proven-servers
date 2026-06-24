@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+#
+# Binding registry & policy for proven-servers.
+# Single source of truth for tools/check-binding-policy.sh (the CI tripwire)
+# and for the "20 language bindings" claim in README / EXPLAINME / READINESS.
+#
+# Policy: a binding is a THIN wrapper over the generated C ABI — it either calls
+# the ABI via that language's FFI, or declares ABI-conformant constants/types —
+# and carries NO reimplemented safety logic (validation, parsing, state
+# machines). See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
+
+[policy]
+model = "thin-abi-wrapper"
+no-logic = true
+abi-source = "generated/abi — per-protocol C headers; shared libs libproven_<proto>"
+reference-bindings = ["ada", "java"]
+decision = "docs/decisions/0003-keep-bindings-thin-abi-wrappers.md"
+
+[registry]
+# Directory names under bindings/ — the authoritative set. The tripwire asserts
+# that `bindings/*` on disk equals this list exactly (no unregistered binding).
+count = 20
+languages = [
+  "ada", "cpp", "csharp", "dart", "elixir", "gleam", "go", "haskell",
+  "java", "javascript", "julia", "kotlin", "lua", "ocaml", "php",
+  "python", "rescript", "ruby", "rust", "swift",
+]
+
+# Per-binding tier:
+#   wired    = calls the C ABI via FFI; no reimplemented logic
+#   scaffold = constants/types only; FFI wiring pending; NO logic permitted
+[tier]
+ada      = { status = "wired",    ffi = "pragma Import (C)",     note = "reference binding" }
+java     = { status = "wired",    ffi = "JNI (System.loadLibrary)", note = "reference binding" }
+rust     = { status = "wired",    ffi = "extern \"C\"" }
+go       = { status = "wired",    ffi = "cgo" }
+python   = { status = "wired",    ffi = "ctypes" }
+ocaml    = { status = "wired",    ffi = "external (C stubs)" }
+julia    = { status = "wired",    ffi = "ccall" }
+cpp      = { status = "wired",    ffi = "extern \"C\"" }
+csharp   = { status = "wired",    ffi = "DllImport (P/Invoke)" }
+dart     = { status = "wired",    ffi = "dart:ffi" }
+haskell  = { status = "wired",    ffi = "foreign import" }
+kotlin   = { status = "wired",    ffi = "external (JNI)" }
+lua      = { status = "wired",    ffi = "luajit ffi" }
+php      = { status = "wired",    ffi = "FFI" }
+ruby     = { status = "wired",    ffi = "Fiddle/FFI" }
+swift    = { status = "wired",    ffi = "@_silgen_name" }
+elixir   = { status = "scaffold", ffi = "none",    note = "unproven logic removed 2026-06-24; NIF wiring pending — ADR 0003" }
+gleam    = { status = "scaffold", ffi = "none",    note = "unproven logic removed 2026-06-24; @external wiring pending — ADR 0003" }
+rescript = { status = "scaffold", ffi = "partial", note = "unproven logic removed 2026-06-24; @module wiring partial — ADR 0003" }
+
+[audit]
+# Depth of the 2026-06-24 logic audit. Deep audit = manually verified
+# logic-free / logic-removed. FFI-linked = confirmed to call libproven_* but
+# not line-by-line audited for stray logic in that pass.
+deep-audited = ["ada", "java", "elixir", "gleam", "rescript"]
+ffi-linked-not-deep-audited = [
+  "rust", "go", "python", "ocaml", "julia", "cpp", "csharp",
+  "dart", "haskell", "kotlin", "lua", "php", "ruby", "swift",
+]
+date = "2026-06-24"

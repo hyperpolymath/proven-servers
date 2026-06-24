@@ -128,27 +128,4 @@ defmodule ProvenServers.WebsocketTest do
       assert frame.payload == <<3, 232, "bye">>
     end
   end
-
-  describe "frame validation" do
-    test "client frame must be masked" do
-      frame = Websocket.text_frame("hello")
-      assert {:error, :client_frame_not_masked} = Websocket.validate_client_frame(frame, 65536)
-    end
-
-    test "server frame must not be masked" do
-      frame = %{Websocket.text_frame("hello") | masked: true, masking_key: <<0, 0, 0, 0>>}
-      assert {:error, :server_frame_masked} = Websocket.validate_server_frame(frame, 65536)
-    end
-
-    test "control frame too large" do
-      payload = :binary.copy(<<0>>, 126)
-      frame = Websocket.ping_frame(payload)
-      assert {:error, {:control_frame_too_large, :ping, 126}} = Websocket.validate_server_frame(frame, 65536)
-    end
-
-    test "control frame fragmented" do
-      frame = %{Websocket.ping_frame(<<1, 2, 3>>) | fin: false}
-      assert {:error, {:control_frame_fragmented, :ping}} = Websocket.validate_server_frame(frame, 65536)
-    end
-  end
 end

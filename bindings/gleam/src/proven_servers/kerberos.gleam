@@ -328,18 +328,10 @@ pub fn auth_state_from_int(tag: Int) -> Result(AuthState, Nil) {
   }
 }
 
-/// Validate whether a state transition is allowed.
-pub fn auth_state_can_transition_to(from: AuthState, to: AuthState) -> Bool {
-  case from, to {
-    Initial, TgtObtained -> True
-    TgtObtained, ServiceTicketObtained -> True
-    ServiceTicketObtained, Authenticated -> True
-    Initial, AuthFailed -> True
-    TgtObtained, AuthFailed -> True
-    ServiceTicketObtained, AuthFailed -> True
-    _, _ -> False
-  }
-}
+// auth_state_can_transition_to removed: unproven reimplementation. The verified
+// check lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // EncStrength

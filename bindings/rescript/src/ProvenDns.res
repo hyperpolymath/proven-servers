@@ -187,34 +187,6 @@ type nameError =
   | EmptyName
   | EmptyLabel
 
-/// Validate a domain name against RFC 1035 length constraints.
-/// Checks that no label exceeds maxLabelLength bytes and that
-/// the total name does not exceed maxNameLength bytes.
-/// Mirrors the validation logic in the Idris2 DNS.Name module.
-let validateDomainName = (name: string): result<unit, nameError> => {
-  let len = Js.String2.length(name)
-  if len == 0 {
-    Error(EmptyName)
-  } else if len > maxNameLength {
-    Error(NameTooLong({name, length: len}))
-  } else {
-    let labels = Js.String2.split(name, ".")
-    let numLabels = Belt.Array.length(labels)
-    let rec checkLabels = (idx: int): result<unit, nameError> => {
-      if idx >= numLabels {
-        Ok()
-      } else {
-        let label = Belt.Array.getExn(labels, idx)
-        let labelLen = Js.String2.length(label)
-        if labelLen == 0 {
-          Error(EmptyLabel)
-        } else if labelLen > maxLabelLength {
-          Error(LabelTooLong({label, length: labelLen}))
-        } else {
-          checkLabels(idx + 1)
-        }
-      }
-    }
-    checkLabels(0)
-  }
-}
+// validateDomainName removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md

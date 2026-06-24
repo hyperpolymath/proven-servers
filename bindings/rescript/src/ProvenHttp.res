@@ -640,22 +640,6 @@ let transitionToPhase = (t: httpTransition): requestPhase =>
   | KeepAliveRecycle => Idle
   }
 
-/// Validate whether a transition between two request phases is legal.
-/// Mirrors validateHttpTransition in HTTPABI.Transitions.
-/// Returns Some(transition) for valid transitions, None for invalid.
-let validateHttpTransition = (from: requestPhase, to: requestPhase): option<httpTransition> =>
-  switch (from, to) {
-  | (Idle, Receiving) => Some(StartReceiving)
-  | (Receiving, HeadersParsed) => Some(ParseHeaders)
-  | (HeadersParsed, BodyReceiving) => Some(StartBody)
-  | (HeadersParsed, Complete) => Some(NoBodyComplete)
-  | (BodyReceiving, Complete) => Some(BodyDone)
-  | (Complete, Responding) => Some(BeginResponse)
-  | (Responding, Sent) => Some(FinishSend)
-  | (Sent, Idle) => Some(KeepAliveRecycle)
-  | (Receiving, Sent) => Some(AbortReceiving)
-  | (HeadersParsed, Sent) => Some(AbortHeadersParsed)
-  | (BodyReceiving, Sent) => Some(AbortBodyReceiving)
-  | (Complete, Sent) => Some(AbortComplete)
-  | _ => None
-  }
+// validateHttpTransition removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md

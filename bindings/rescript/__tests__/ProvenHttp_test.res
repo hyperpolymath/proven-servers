@@ -73,42 +73,9 @@ let testStatusCategoryClassification = () => {
   assert(!statusIsError(StatusOk))
 }
 
-// ---------------------------------------------------------------------------
-// Transition tests
-// ---------------------------------------------------------------------------
-
-let testValidHttpTransitions = () => {
-  let validPairs = [
-    (Idle, Receiving),
-    (Receiving, HeadersParsed),
-    (HeadersParsed, BodyReceiving),
-    (HeadersParsed, Complete),
-    (BodyReceiving, Complete),
-    (Complete, Responding),
-    (Responding, Sent),
-    (Sent, Idle),
-    (Receiving, Sent),
-    (HeadersParsed, Sent),
-    (BodyReceiving, Sent),
-    (Complete, Sent),
-  ]
-  Belt.Array.forEach(validPairs, ((from, to_)) => {
-    assert(validateHttpTransition(from, to_) != None)
-  })
-}
-
-let testInvalidHttpTransitions = () => {
-  let invalidPairs = [
-    (Idle, Complete),
-    (Idle, Responding),
-    (Complete, Receiving),
-    (Responding, HeadersParsed),
-    (Idle, Idle),
-  ]
-  Belt.Array.forEach(invalidPairs, ((from, to_)) => {
-    assert(validateHttpTransition(from, to_) == None)
-  })
-}
+// HTTP transition tests removed: validateHttpTransition was an unproven
+// reimplementation deleted from ProvenHttp. The verified check lives in the
+// Idris2/Zig core. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ---------------------------------------------------------------------------
 // Content type and version tests
@@ -142,8 +109,6 @@ let () = {
   testStatusNumericCode()
   testStatusFromNumeric()
   testStatusCategoryClassification()
-  testValidHttpTransitions()
-  testInvalidHttpTransitions()
   testContentTypeRoundtrip()
   testVersionOrdering()
   Js.log("ProvenHttp: all tests passed")

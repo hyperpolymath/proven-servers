@@ -36,7 +36,7 @@ proofs; `zig build test` exercises the engines.
 | Protocol cores (`protocols/proven-*`) | 88 | C | Beta | Idris2 types + proofs compile under `%default total` (96/96 packages); Zig engines pass FFI tests (98/98). In-memory skeletons, dogfooded; not externally validated. | 2026-06-23 |
 | Reference servers (`proven-timestamp`, `proven-quic`, `proven-http3`) | 3 | C | Beta | As above, plus deeper proofs (validator decidability, exhaustive conformance, universal safety theorems) and reproducible RFC/test vectors. | 2026-06-23 |
 | Core primitives (`core/proven-*`) | 8 | C | Beta | Idris2 cores compile; Zig engines pass where present. | 2026-06-23 |
-| Language bindings (`bindings/`) | 10 langs | D | Alpha | Present for 10 languages; only Rust/Gleam/Elixir carry tests (ReScript has none); not conformance-tested against the C ABI. | 2026-06-23 |
+| Language bindings (`bindings/`) | 20 langs | D | Alpha | 20 bindings over the generated C ABI. Ada (`pragma Import`) and Java (JNI) are fully FFI-wired (reference); most others (Rust/Go/Python/OCaml/Julia/…) call `libproven_*` via FFI; Elixir/Gleam/ReScript are constants-only scaffolds after unproven reimplementations were removed (ADR 0003). Binding constants not yet cross-tested against the C ABI. | 2026-06-24 |
 
 ## Detailed Assessment
 

@@ -322,29 +322,7 @@ defmodule ProvenServers.Smtp do
     Map.fetch!(@session_state_tags, state)
   end
 
-  @doc """
-  Validate whether an SMTP session state transition is allowed.
-
-  ## Examples
-
-      iex> ProvenServers.Smtp.can_transition?(:connected, :greeted)
-      true
-
-      iex> ProvenServers.Smtp.can_transition?(:connected, :data)
-      false
-  """
-  @spec can_transition?(session_state(), session_state()) :: boolean()
-  def can_transition?(:connected, :greeted), do: true
-  def can_transition?(:greeted, :auth_started), do: true
-  def can_transition?(:greeted, :mail_from), do: true
-  def can_transition?(:auth_started, :authenticated), do: true
-  def can_transition?(:auth_started, :greeted), do: true
-  def can_transition?(:authenticated, :mail_from), do: true
-  def can_transition?(:mail_from, :rcpt_to), do: true
-  def can_transition?(:rcpt_to, :rcpt_to), do: true
-  def can_transition?(:rcpt_to, :data), do: true
-  def can_transition?(:data, :message_received), do: true
-  def can_transition?(:message_received, :mail_from), do: true
-  def can_transition?(_, :session_quit), do: true
-  def can_transition?(_, _), do: false
+  # can_transition? removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 end

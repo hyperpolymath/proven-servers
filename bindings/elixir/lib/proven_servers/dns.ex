@@ -282,50 +282,7 @@ defmodule ProvenServers.Dns do
           | :empty_name
           | :empty_label
 
-  @doc """
-  Validate a domain name against RFC 1035 length constraints.
-
-  Checks that no label exceeds `max_label_length/0` bytes and that
-  the total name does not exceed `max_name_length/0` bytes.
-  Mirrors the validation logic in the Idris2 `DNS.Name` module.
-
-  ## Examples
-
-      iex> ProvenServers.Dns.validate_domain_name("example.com")
-      :ok
-
-      iex> ProvenServers.Dns.validate_domain_name("")
-      {:error, :empty_name}
-
-      iex> ProvenServers.Dns.validate_domain_name("example..com")
-      {:error, :empty_label}
-  """
-  @spec validate_domain_name(String.t()) :: :ok | {:error, name_error()}
-  def validate_domain_name(""), do: {:error, :empty_name}
-
-  def validate_domain_name(name) when is_binary(name) do
-    cond do
-      byte_size(name) > @max_name_length ->
-        {:error, {:name_too_long, name, byte_size(name)}}
-
-      true ->
-        name
-        |> String.split(".")
-        |> validate_labels()
-    end
-  end
-
-  @doc false
-  @spec validate_labels([String.t()]) :: :ok | {:error, name_error()}
-  defp validate_labels([]), do: :ok
-
-  defp validate_labels(["" | _rest]), do: {:error, :empty_label}
-
-  defp validate_labels([label | rest]) do
-    if byte_size(label) > @max_label_length do
-      {:error, {:label_too_long, label, byte_size(label)}}
-    else
-      validate_labels(rest)
-    end
-  end
+  # validate_domain_name/validate_labels removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 end

@@ -251,20 +251,10 @@ pub fn connection_state_from_int(tag: Int) -> Result(ConnectionState, Nil) {
   }
 }
 
-/// Validate whether a state transition is allowed.
-pub fn connection_state_can_transition_to(from: ConnectionState, to: ConnectionState) -> Bool {
-  case from, to {
-    ConnectionStateIdle, Negotiating -> True
-    Negotiating, TuningOk -> True
-    TuningOk, Open -> True
-    Open, Closing -> True
-    ConnectionStateIdle, Closing -> True
-    Negotiating, Closing -> True
-    TuningOk, Closing -> True
-    Closing, Closing -> True
-    _, _ -> False
-  }
-}
+// connection_state_can_transition_to removed: unproven reimplementation. The
+// verified check lives in the Idris2/Zig core; calling it needs @external FFI
+// wiring not yet present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // ChannelState
@@ -305,17 +295,10 @@ pub fn channel_state_from_int(tag: Int) -> Result(ChannelState, Nil) {
   }
 }
 
-/// Validate whether a state transition is allowed.
-pub fn channel_state_can_transition_to(from: ChannelState, to: ChannelState) -> Bool {
-  case from, to {
-    Closed, Opening -> True
-    Opening, ChOpen -> True
-    Opening, Closed -> True
-    ChOpen, ChClosing -> True
-    ChClosing, Closed -> True
-    _, _ -> False
-  }
-}
+// channel_state_can_transition_to removed: unproven reimplementation. The verified
+// check lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // BrokerState
@@ -364,20 +347,8 @@ pub fn broker_state_from_int(tag: Int) -> Result(BrokerState, Nil) {
   }
 }
 
-/// Validate whether a state transition is allowed.
-pub fn broker_state_can_transition_to(from: BrokerState, to: BrokerState) -> Bool {
-  case from, to {
-    BrokerStateIdle, Connected -> True
-    Connected, ChannelOpen -> True
-    ChannelOpen, Consuming -> True
-    ChannelOpen, Publishing -> True
-    Consuming, Disconnecting -> True
-    Publishing, Disconnecting -> True
-    BrokerStateIdle, Disconnecting -> True
-    Connected, Disconnecting -> True
-    ChannelOpen, Disconnecting -> True
-    Disconnecting, Disconnecting -> True
-    _, _ -> False
-  }
-}
+// broker_state_can_transition_to removed: unproven reimplementation. The verified
+// check lives in the Idris2/Zig core; calling it needs @external FFI wiring not yet
+// present here.
+// Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
