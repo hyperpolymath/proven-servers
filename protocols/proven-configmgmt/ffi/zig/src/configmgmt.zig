@@ -75,6 +75,45 @@ pub const ApplyMode = enum(u8) {
     audit = 2,
 };
 
+// ABI conformance: pin every enum tag to the proof-generated constant so any
+// drift from the proven ConfigmgmtABI encoders is a compile error (not a comment).
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(ResourceType.file) != gen.RT_FILE) @compileError("ABI drift: ResourceType.file");
+    if (@intFromEnum(ResourceType.package) != gen.RT_PACKAGE) @compileError("ABI drift: ResourceType.package");
+    if (@intFromEnum(ResourceType.service) != gen.RT_SERVICE) @compileError("ABI drift: ResourceType.service");
+    if (@intFromEnum(ResourceType.user) != gen.RT_USER) @compileError("ABI drift: ResourceType.user");
+    if (@intFromEnum(ResourceType.group) != gen.RT_GROUP) @compileError("ABI drift: ResourceType.group");
+    if (@intFromEnum(ResourceType.cron) != gen.RT_CRON) @compileError("ABI drift: ResourceType.cron");
+    if (@intFromEnum(ResourceType.mount) != gen.RT_MOUNT) @compileError("ABI drift: ResourceType.mount");
+    if (@intFromEnum(ResourceType.firewall) != gen.RT_FIREWALL) @compileError("ABI drift: ResourceType.firewall");
+    if (@intFromEnum(ResourceType.registry) != gen.RT_REGISTRY) @compileError("ABI drift: ResourceType.registry");
+
+    if (@intFromEnum(ResourceState.present) != gen.RS_PRESENT) @compileError("ABI drift: ResourceState.present");
+    if (@intFromEnum(ResourceState.absent) != gen.RS_ABSENT) @compileError("ABI drift: ResourceState.absent");
+    if (@intFromEnum(ResourceState.running) != gen.RS_RUNNING) @compileError("ABI drift: ResourceState.running");
+    if (@intFromEnum(ResourceState.stopped) != gen.RS_STOPPED) @compileError("ABI drift: ResourceState.stopped");
+    if (@intFromEnum(ResourceState.enabled) != gen.RS_ENABLED) @compileError("ABI drift: ResourceState.enabled");
+    if (@intFromEnum(ResourceState.disabled) != gen.RS_DISABLED) @compileError("ABI drift: ResourceState.disabled");
+
+    if (@intFromEnum(ChangeAction.create) != gen.ACT_CREATE) @compileError("ABI drift: ChangeAction.create");
+    if (@intFromEnum(ChangeAction.modify) != gen.ACT_MODIFY) @compileError("ABI drift: ChangeAction.modify");
+    if (@intFromEnum(ChangeAction.delete) != gen.ACT_DELETE) @compileError("ABI drift: ChangeAction.delete");
+    if (@intFromEnum(ChangeAction.restart) != gen.ACT_RESTART) @compileError("ABI drift: ChangeAction.restart");
+    if (@intFromEnum(ChangeAction.reload) != gen.ACT_RELOAD) @compileError("ABI drift: ChangeAction.reload");
+    if (@intFromEnum(ChangeAction.skip) != gen.ACT_SKIP) @compileError("ABI drift: ChangeAction.skip");
+
+    if (@intFromEnum(DriftStatus.in_sync) != gen.DS_IN_SYNC) @compileError("ABI drift: DriftStatus.in_sync");
+    if (@intFromEnum(DriftStatus.drifted) != gen.DS_DRIFTED) @compileError("ABI drift: DriftStatus.drifted");
+    if (@intFromEnum(DriftStatus.unknown) != gen.DS_UNKNOWN) @compileError("ABI drift: DriftStatus.unknown");
+    if (@intFromEnum(DriftStatus.unmanaged) != gen.DS_UNMANAGED) @compileError("ABI drift: DriftStatus.unmanaged");
+
+    if (@intFromEnum(ApplyMode.enforce) != gen.AM_ENFORCE) @compileError("ABI drift: ApplyMode.enforce");
+    if (@intFromEnum(ApplyMode.dry_run) != gen.AM_DRY_RUN) @compileError("ABI drift: ApplyMode.dry_run");
+    if (@intFromEnum(ApplyMode.audit) != gen.AM_AUDIT) @compileError("ABI drift: ApplyMode.audit");
+}
+
 // =========================================================================
 // Internal data structures
 // =========================================================================
@@ -157,7 +196,7 @@ fn computeAction(desired: ResourceState, observed: ResourceState) ChangeAction {
 
 /// Returns the ABI version number.
 pub export fn configmgmt_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 /// Create a new resource session. Returns slot index (>=0) or -1.
