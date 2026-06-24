@@ -13,8 +13,16 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders (EpistemicABI.{Types,Foreign})
+// by tools/gen-abi.sh. The comptime guard below pins every enum tag to these,
+// so any drift from the proofs is a COMPILE error -- not a runtime surprise.
+const gen = @import("epistemic_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
-// Enums (tags must match EpistemicABI.Types.idr)
+// Enums (tags pinned to the generated/proven values by the comptime guard)
 // =========================================================================
 
 pub const Tier = enum(u8) { band = 0, relational = 1, full = 2 };
@@ -22,14 +30,65 @@ pub const Revealingness = enum(u8) { innocuous = 0, contextual = 1, sensitive = 
 pub const Purpose = enum(u8) { identification = 0, eligibility = 1, compatibility = 2, contractual = 3, audit = 4 };
 pub const SessionPhase = enum(u8) { initiated = 0, tiers_agreed = 1, disclosing = 2, closed = 3 };
 
-// epistemic_disclose result: 0 = disclosed, else DisclosureError tag + 1.
-const DiscloseResult = struct {
-    const disclosed: u8 = 0;
-    const tier_exceeded: u8 = 1; // DisclosureError.TierExceeded (0) + 1
-    const no_active_session: u8 = 3; // NoActiveSession (2) + 1
-    const session_closed: u8 = 4; // SessionAlreadyClosed (3) + 1
-    const ill_governed: u8 = 5; // IllGoverned (4) + 1
+/// Raw disclosure errors. Tags match EpistemicABI.Types.errorToTag exactly.
+pub const DisclosureError = enum(u8) {
+    tier_exceeded = 0,
+    unknown_field = 1,
+    no_active_session = 2,
+    session_already_closed = 3,
+    ill_governed = 4,
 };
+
+/// Wire result of epistemic_disclose: 0 = disclosed, else raw error tag + 1.
+/// UnknownField is absent here -- field lookup is a higher-layer concern.
+pub const DiscloseResult = enum(u8) {
+    disclosed = 0,
+    tier_exceeded = @intFromEnum(DisclosureError.tier_exceeded) + 1, // 1
+    no_active_session = @intFromEnum(DisclosureError.no_active_session) + 1, // 3
+    session_closed = @intFromEnum(DisclosureError.session_already_closed) + 1, // 4
+    ill_governed = @intFromEnum(DisclosureError.ill_governed) + 1, // 5
+};
+
+// =========================================================================
+// ABI conformance guard -- "type safety through Zig's particularity".
+// Every enum tag MUST equal the generated (= proven Idris) value. A mismatch
+// fails `zig build` with the named symbol, before any test runs. Regenerate
+// the constants with `bash tools/gen-abi.sh` if the proofs intentionally change.
+// =========================================================================
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version (regenerate: tools/gen-abi.sh)");
+
+    if (@intFromEnum(Tier.band) != gen.TIER_BAND) @compileError("ABI drift: Tier.band");
+    if (@intFromEnum(Tier.relational) != gen.TIER_RELATIONAL) @compileError("ABI drift: Tier.relational");
+    if (@intFromEnum(Tier.full) != gen.TIER_FULL) @compileError("ABI drift: Tier.full");
+
+    if (@intFromEnum(Revealingness.innocuous) != gen.REVEAL_INNOCUOUS) @compileError("ABI drift: Revealingness.innocuous");
+    if (@intFromEnum(Revealingness.contextual) != gen.REVEAL_CONTEXTUAL) @compileError("ABI drift: Revealingness.contextual");
+    if (@intFromEnum(Revealingness.sensitive) != gen.REVEAL_SENSITIVE) @compileError("ABI drift: Revealingness.sensitive");
+
+    if (@intFromEnum(Purpose.identification) != gen.PURPOSE_IDENTIFICATION) @compileError("ABI drift: Purpose.identification");
+    if (@intFromEnum(Purpose.eligibility) != gen.PURPOSE_ELIGIBILITY) @compileError("ABI drift: Purpose.eligibility");
+    if (@intFromEnum(Purpose.compatibility) != gen.PURPOSE_COMPATIBILITY) @compileError("ABI drift: Purpose.compatibility");
+    if (@intFromEnum(Purpose.contractual) != gen.PURPOSE_CONTRACTUAL) @compileError("ABI drift: Purpose.contractual");
+    if (@intFromEnum(Purpose.audit) != gen.PURPOSE_AUDIT) @compileError("ABI drift: Purpose.audit");
+
+    if (@intFromEnum(SessionPhase.initiated) != gen.PHASE_INITIATED) @compileError("ABI drift: SessionPhase.initiated");
+    if (@intFromEnum(SessionPhase.tiers_agreed) != gen.PHASE_TIERS_AGREED) @compileError("ABI drift: SessionPhase.tiers_agreed");
+    if (@intFromEnum(SessionPhase.disclosing) != gen.PHASE_DISCLOSING) @compileError("ABI drift: SessionPhase.disclosing");
+    if (@intFromEnum(SessionPhase.closed) != gen.PHASE_CLOSED) @compileError("ABI drift: SessionPhase.closed");
+
+    if (@intFromEnum(DisclosureError.tier_exceeded) != gen.ERR_TIER_EXCEEDED) @compileError("ABI drift: DisclosureError.tier_exceeded");
+    if (@intFromEnum(DisclosureError.unknown_field) != gen.ERR_UNKNOWN_FIELD) @compileError("ABI drift: DisclosureError.unknown_field");
+    if (@intFromEnum(DisclosureError.no_active_session) != gen.ERR_NO_ACTIVE_SESSION) @compileError("ABI drift: DisclosureError.no_active_session");
+    if (@intFromEnum(DisclosureError.session_already_closed) != gen.ERR_SESSION_ALREADY_CLOSED) @compileError("ABI drift: DisclosureError.session_already_closed");
+    if (@intFromEnum(DisclosureError.ill_governed) != gen.ERR_ILL_GOVERNED) @compileError("ABI drift: DisclosureError.ill_governed");
+
+    // Offset law: each wire code (except disclosed=0) is the raw error tag + 1.
+    if (@intFromEnum(DiscloseResult.tier_exceeded) != @intFromEnum(DisclosureError.tier_exceeded) + 1) @compileError("ABI drift: disclose offset tier_exceeded");
+    if (@intFromEnum(DiscloseResult.no_active_session) != @intFromEnum(DisclosureError.no_active_session) + 1) @compileError("ABI drift: disclose offset no_active_session");
+    if (@intFromEnum(DiscloseResult.session_closed) != @intFromEnum(DisclosureError.session_already_closed) + 1) @compileError("ABI drift: disclose offset session_closed");
+    if (@intFromEnum(DiscloseResult.ill_governed) != @intFromEnum(DisclosureError.ill_governed) + 1) @compileError("ABI drift: disclose offset ill_governed");
+}
 
 // =========================================================================
 // Lattice (mirrors Epistemic.Lattice)
@@ -73,9 +132,9 @@ fn validSlot(slot: c_int) ?usize {
     return idx;
 }
 
-/// ABI version. Must match EpistemicABI.Foreign.abiVersion.
+/// ABI version. Must match EpistemicABI.Foreign.abiVersion (guarded above).
 pub export fn epistemic_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 /// Open a disclosure session in the Initiated phase. Returns slot or -1.
@@ -163,16 +222,16 @@ pub export fn epistemic_close(slot: c_int) callconv(.c) u8 {
 pub export fn epistemic_disclose(slot: c_int, min_tier: u8, revealingness: u8) callconv(.c) u8 {
     mutex.lock();
     defer mutex.unlock();
-    const idx = validSlot(slot) orelse return DiscloseResult.no_active_session;
+    const idx = validSlot(slot) orelse return @intFromEnum(DiscloseResult.no_active_session);
     const s = &sessions[idx];
-    if (s.phase == .closed) return DiscloseResult.session_closed;
-    if (s.phase != .disclosing) return DiscloseResult.no_active_session;
-    if (min_tier > 2 or revealingness > 2) return DiscloseResult.ill_governed;
+    if (s.phase == .closed) return @intFromEnum(DiscloseResult.session_closed);
+    if (s.phase != .disclosing) return @intFromEnum(DiscloseResult.no_active_session);
+    if (min_tier > 2 or revealingness > 2) return @intFromEnum(DiscloseResult.ill_governed);
     // Well-governedness: a Sensitive field must be governed at Full.
-    if (epistemic_well_governed(revealingness, min_tier) == 0) return DiscloseResult.ill_governed;
+    if (epistemic_well_governed(revealingness, min_tier) == 0) return @intFromEnum(DiscloseResult.ill_governed);
     // Gate: minTier <= effective tier (chain order).
-    if (min_tier <= @intFromEnum(s.eff_tier)) return DiscloseResult.disclosed;
-    return DiscloseResult.tier_exceeded;
+    if (min_tier <= @intFromEnum(s.eff_tier)) return @intFromEnum(DiscloseResult.disclosed);
+    return @intFromEnum(DiscloseResult.tier_exceeded);
 }
 
 // --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
