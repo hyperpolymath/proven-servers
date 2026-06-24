@@ -1,0 +1,20 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- Dev tool: emits the canonical ABI tag manifest from the proven encoders.
+-- Consumed by tools/gen-abi.sh to render telnet_abi_gen.zig.
+
+package proven-telnet-abigen
+version = "0.1.0"
+authors = "Jonathan D.A. Jewell"
+license = "MPL-2.0"
+brief   = "ABI tag-manifest emitter for proven-telnet"
+
+sourcedir = "src"
+main = TelnetABI.Emit
+executable = "telnet-abigen"
+
+modules = Telnet.Types
+        , TelnetABI.Types
+        , TelnetABI.Foreign
+        , TelnetABI.Emit

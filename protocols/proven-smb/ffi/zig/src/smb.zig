@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("smb_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching SMBABI.Types.idr tag assignments)
 // =========================================================================
@@ -177,9 +184,50 @@ fn validSlot(slot: c_int) ?usize {
 // Exported C ABI functions
 // =========================================================================
 
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(Command.negotiate) != gen.COMMAND_NEGOTIATE) @compileError("ABI drift: Command.negotiate");
+    if (@intFromEnum(Command.session_setup) != gen.COMMAND_SESSION_SETUP) @compileError("ABI drift: Command.session_setup");
+    if (@intFromEnum(Command.logoff) != gen.COMMAND_LOGOFF) @compileError("ABI drift: Command.logoff");
+    if (@intFromEnum(Command.tree_connect) != gen.COMMAND_TREE_CONNECT) @compileError("ABI drift: Command.tree_connect");
+    if (@intFromEnum(Command.tree_disconnect) != gen.COMMAND_TREE_DISCONNECT) @compileError("ABI drift: Command.tree_disconnect");
+    if (@intFromEnum(Command.create) != gen.COMMAND_CREATE) @compileError("ABI drift: Command.create");
+    if (@intFromEnum(Command.close) != gen.COMMAND_CLOSE) @compileError("ABI drift: Command.close");
+    if (@intFromEnum(Command.read) != gen.COMMAND_READ) @compileError("ABI drift: Command.read");
+    if (@intFromEnum(Command.write) != gen.COMMAND_WRITE) @compileError("ABI drift: Command.write");
+    if (@intFromEnum(Command.lock) != gen.COMMAND_LOCK) @compileError("ABI drift: Command.lock");
+    if (@intFromEnum(Command.ioctl) != gen.COMMAND_IOCTL) @compileError("ABI drift: Command.ioctl");
+    if (@intFromEnum(Command.cancel) != gen.COMMAND_CANCEL) @compileError("ABI drift: Command.cancel");
+    if (@intFromEnum(Command.query_directory) != gen.COMMAND_QUERY_DIRECTORY) @compileError("ABI drift: Command.query_directory");
+    if (@intFromEnum(Command.change_notify) != gen.COMMAND_CHANGE_NOTIFY) @compileError("ABI drift: Command.change_notify");
+    if (@intFromEnum(Command.query_info) != gen.COMMAND_QUERY_INFO) @compileError("ABI drift: Command.query_info");
+    if (@intFromEnum(Command.set_info) != gen.COMMAND_SET_INFO) @compileError("ABI drift: Command.set_info");
+
+    if (@intFromEnum(Dialect.smb2_0_2) != gen.DIALECT_SMB2_0_2) @compileError("ABI drift: Dialect.smb2_0_2");
+    if (@intFromEnum(Dialect.smb2_1) != gen.DIALECT_SMB2_1) @compileError("ABI drift: Dialect.smb2_1");
+    if (@intFromEnum(Dialect.smb3_0) != gen.DIALECT_SMB3_0) @compileError("ABI drift: Dialect.smb3_0");
+    if (@intFromEnum(Dialect.smb3_0_2) != gen.DIALECT_SMB3_0_2) @compileError("ABI drift: Dialect.smb3_0_2");
+    if (@intFromEnum(Dialect.smb3_1_1) != gen.DIALECT_SMB3_1_1) @compileError("ABI drift: Dialect.smb3_1_1");
+
+    if (@intFromEnum(ShareType.disk) != gen.SHARE_DISK) @compileError("ABI drift: ShareType.disk");
+    if (@intFromEnum(ShareType.pipe) != gen.SHARE_PIPE) @compileError("ABI drift: ShareType.pipe");
+    if (@intFromEnum(ShareType.print) != gen.SHARE_PRINT) @compileError("ABI drift: ShareType.print");
+
+    if (@intFromEnum(SessionState.idle) != gen.SESSION_IDLE) @compileError("ABI drift: SessionState.idle");
+    if (@intFromEnum(SessionState.negotiated) != gen.SESSION_NEGOTIATED) @compileError("ABI drift: SessionState.negotiated");
+    if (@intFromEnum(SessionState.authenticated) != gen.SESSION_AUTHENTICATED) @compileError("ABI drift: SessionState.authenticated");
+    if (@intFromEnum(SessionState.tree_connected) != gen.SESSION_TREE_CONNECTED) @compileError("ABI drift: SessionState.tree_connected");
+    if (@intFromEnum(SessionState.file_open) != gen.SESSION_FILE_OPEN) @compileError("ABI drift: SessionState.file_open");
+    if (@intFromEnum(SessionState.disconnecting) != gen.SESSION_DISCONNECTING) @compileError("ABI drift: SessionState.disconnecting");
+}
+
 /// Returns the ABI version number.
 pub export fn smb_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 /// Create a new SMB session. Returns slot index or -1 on failure.

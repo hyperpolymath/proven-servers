@@ -2,9 +2,50 @@
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("imap_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 pub const Command = enum(u8) { login=0,logout=1,select=2,examine=3,create=4,delete=5,rename=6,list=7,fetch=8,store=9,search=10,copy=11,noop=12,capability=13 };
 pub const ImapState = enum(u8) { not_authenticated=0,authenticated=1,selected=2,logout_state=3 };
 pub const Flag = enum(u8) { seen=0,answered=1,flagged=2,deleted=3,draft=4,recent=5 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(Command.login) != gen.COMMAND_LOGIN) @compileError("ABI drift: Command.login");
+    if (@intFromEnum(Command.logout) != gen.COMMAND_LOGOUT) @compileError("ABI drift: Command.logout");
+    if (@intFromEnum(Command.select) != gen.COMMAND_SELECT) @compileError("ABI drift: Command.select");
+    if (@intFromEnum(Command.examine) != gen.COMMAND_EXAMINE) @compileError("ABI drift: Command.examine");
+    if (@intFromEnum(Command.create) != gen.COMMAND_CREATE) @compileError("ABI drift: Command.create");
+    if (@intFromEnum(Command.delete) != gen.COMMAND_DELETE) @compileError("ABI drift: Command.delete");
+    if (@intFromEnum(Command.rename) != gen.COMMAND_RENAME) @compileError("ABI drift: Command.rename");
+    if (@intFromEnum(Command.list) != gen.COMMAND_LIST) @compileError("ABI drift: Command.list");
+    if (@intFromEnum(Command.fetch) != gen.COMMAND_FETCH) @compileError("ABI drift: Command.fetch");
+    if (@intFromEnum(Command.store) != gen.COMMAND_STORE) @compileError("ABI drift: Command.store");
+    if (@intFromEnum(Command.search) != gen.COMMAND_SEARCH) @compileError("ABI drift: Command.search");
+    if (@intFromEnum(Command.copy) != gen.COMMAND_COPY) @compileError("ABI drift: Command.copy");
+    if (@intFromEnum(Command.noop) != gen.COMMAND_NOOP) @compileError("ABI drift: Command.noop");
+    if (@intFromEnum(Command.capability) != gen.COMMAND_CAPABILITY) @compileError("ABI drift: Command.capability");
+
+    if (@intFromEnum(ImapState.not_authenticated) != gen.STATE_NOT_AUTHENTICATED) @compileError("ABI drift: ImapState.not_authenticated");
+    if (@intFromEnum(ImapState.authenticated) != gen.STATE_AUTHENTICATED) @compileError("ABI drift: ImapState.authenticated");
+    if (@intFromEnum(ImapState.selected) != gen.STATE_SELECTED) @compileError("ABI drift: ImapState.selected");
+    if (@intFromEnum(ImapState.logout_state) != gen.STATE_LOGOUT_STATE) @compileError("ABI drift: ImapState.logout_state");
+
+    if (@intFromEnum(Flag.seen) != gen.FLAG_SEEN) @compileError("ABI drift: Flag.seen");
+    if (@intFromEnum(Flag.answered) != gen.FLAG_ANSWERED) @compileError("ABI drift: Flag.answered");
+    if (@intFromEnum(Flag.flagged) != gen.FLAG_FLAGGED) @compileError("ABI drift: Flag.flagged");
+    if (@intFromEnum(Flag.deleted) != gen.FLAG_DELETED) @compileError("ABI drift: Flag.deleted");
+    if (@intFromEnum(Flag.draft) != gen.FLAG_DRAFT) @compileError("ABI drift: Flag.draft");
+    if (@intFromEnum(Flag.recent) != gen.FLAG_RECENT) @compileError("ABI drift: Flag.recent");
+}
 
 const MAX_SESSIONS: usize = 64;
 const MAX_NAME_LEN: usize = 256;
@@ -35,7 +76,7 @@ fn validSlot(slot: c_int) ?usize {
     return idx;
 }
 
-pub export fn imap_abi_version() callconv(.c) u32 { return 1; }
+pub export fn imap_abi_version() callconv(.c) u32 { return ABI_VERSION; }
 
 pub export fn imap_create() callconv(.c) c_int {
     mutex.lock(); defer mutex.unlock();
