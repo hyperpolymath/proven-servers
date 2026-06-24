@@ -149,7 +149,10 @@ echo "K9: Rollback complete."
   pedigree = {
     name = component_pedigree.metadata.name,
     version = component_pedigree.metadata.version,
-    leash = component_pedigree.security.trust_level,
+    # Literal tier: k9-validate-action text-parses this line and cannot
+    # resolve a Nickel reference, so the leash must be a bare "kennel"/"yard"/
+    # "hunt" string here (it mirrors security.trust_level above).
+    leash = "hunt",
   } & component_pedigree,
   deployment = deployment_def,
   scripts = scripts_def,
