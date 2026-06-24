@@ -40,7 +40,7 @@ let component_pedigree = {
   # L3: The Leash — Security
   # ─────────────────────────────────────────────────────────────
   security = {
-    trust_level = 'hunt,
+    trust_level = "hunt",
     allow_network = true,
     allow_filesystem_write = true,
     allow_subprocess = true,
