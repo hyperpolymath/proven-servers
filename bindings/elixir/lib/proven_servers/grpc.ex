@@ -342,32 +342,7 @@ defmodule ProvenServers.Grpc do
           | :reserved_to_half
           | :reserved_reset
 
-  @doc """
-  Validate whether a stream state transition is legal.
-
-  Mirrors `validateStreamTransition` in `GRPCABI.Transitions`.
-  Returns `{:ok, transition_name}` for valid transitions, `:error` for invalid.
-
-  Key invariant: `:closed` is terminal -- no transitions originate from it.
-
-  ## Examples
-
-      iex> ProvenServers.Grpc.validate_stream_transition(:idle, :open)
-      {:ok, :send_headers}
-
-      iex> ProvenServers.Grpc.validate_stream_transition(:closed, :open)
-      :error
-  """
-  @spec validate_stream_transition(stream_state(), stream_state()) ::
-          {:ok, stream_transition()} | :error
-  def validate_stream_transition(:idle, :open), do: {:ok, :send_headers}
-  def validate_stream_transition(:open, :half_closed_local), do: {:ok, :local_end_stream}
-  def validate_stream_transition(:open, :half_closed_remote), do: {:ok, :remote_end_stream}
-  def validate_stream_transition(:open, :closed), do: {:ok, :reset_from_open}
-  def validate_stream_transition(:half_closed_local, :closed), do: {:ok, :close_half_local}
-  def validate_stream_transition(:half_closed_remote, :closed), do: {:ok, :close_half_remote}
-  def validate_stream_transition(:idle, :reserved), do: {:ok, :push_promise_recv}
-  def validate_stream_transition(:reserved, :half_closed_remote), do: {:ok, :reserved_to_half}
-  def validate_stream_transition(:reserved, :closed), do: {:ok, :reserved_reset}
-  def validate_stream_transition(_from, _to), do: :error
+  # validate_stream_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 end

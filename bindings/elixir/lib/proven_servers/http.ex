@@ -731,36 +731,9 @@ defmodule ProvenServers.Http do
           | :abort_body_receiving
           | :abort_complete
 
-  @doc """
-  Validate whether a transition between two request phases is legal.
-
-  Mirrors `validateHttpTransition` in `HTTPABI.Transitions`.
-  Returns `{:ok, transition_name}` for valid transitions, `:error` for invalid.
-
-  ## Examples
-
-      iex> ProvenServers.Http.validate_http_transition(:idle, :receiving)
-      {:ok, :start_receiving}
-
-      iex> ProvenServers.Http.validate_http_transition(:idle, :complete)
-      :error
-  """
-  @spec validate_http_transition(request_phase(), request_phase()) ::
-          {:ok, http_transition()} | :error
-  def validate_http_transition(:idle, :receiving), do: {:ok, :start_receiving}
-  def validate_http_transition(:receiving, :headers_parsed), do: {:ok, :parse_headers}
-  def validate_http_transition(:headers_parsed, :body_receiving), do: {:ok, :start_body}
-  def validate_http_transition(:headers_parsed, :complete), do: {:ok, :no_body_complete}
-  def validate_http_transition(:body_receiving, :complete), do: {:ok, :body_done}
-  def validate_http_transition(:complete, :responding), do: {:ok, :begin_response}
-  def validate_http_transition(:responding, :sent), do: {:ok, :finish_send}
-  def validate_http_transition(:sent, :idle), do: {:ok, :keep_alive_recycle}
-  # Abort transitions
-  def validate_http_transition(:receiving, :sent), do: {:ok, :abort_receiving}
-  def validate_http_transition(:headers_parsed, :sent), do: {:ok, :abort_headers_parsed}
-  def validate_http_transition(:body_receiving, :sent), do: {:ok, :abort_body_receiving}
-  def validate_http_transition(:complete, :sent), do: {:ok, :abort_complete}
-  def validate_http_transition(_from, _to), do: :error
+  # validate_http_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   @doc """
   The source phase of a named transition.

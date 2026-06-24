@@ -58,49 +58,4 @@ defmodule ProvenServers.GrpcTest do
       refute Grpc.can_receive_data?(:closed)
     end
   end
-
-  describe "closed is terminal" do
-    test "no transitions from closed" do
-      for to_tag <- 0..5 do
-        {:ok, to} = Grpc.stream_state_from_tag(to_tag)
-
-        assert Grpc.validate_stream_transition(:closed, to) == :error,
-               "Closed -> #{to} should be impossible"
-      end
-    end
-  end
-
-  describe "valid stream transitions" do
-    test "all valid transitions succeed" do
-      valid_pairs = [
-        {:idle, :open},
-        {:open, :half_closed_local},
-        {:open, :half_closed_remote},
-        {:open, :closed},
-        {:half_closed_local, :closed},
-        {:half_closed_remote, :closed},
-        {:idle, :reserved},
-        {:reserved, :half_closed_remote},
-        {:reserved, :closed}
-      ]
-
-      for {from, to} <- valid_pairs do
-        assert {:ok, _transition} = Grpc.validate_stream_transition(from, to),
-               "transition #{from} -> #{to} should be valid"
-      end
-    end
-
-    test "impossible transitions fail" do
-      impossible_pairs = [
-        {:idle, :half_closed_local},
-        {:half_closed_local, :open},
-        {:reserved, :open}
-      ]
-
-      for {from, to} <- impossible_pairs do
-        assert Grpc.validate_stream_transition(from, to) == :error,
-               "transition #{from} -> #{to} should be impossible"
-      end
-    end
-  end
 end

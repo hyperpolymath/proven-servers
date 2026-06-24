@@ -355,20 +355,9 @@ defmodule ProvenServers.Irc do
   @spec all_states() :: [state()]
   def all_states, do: [:disconnected, :connecting, :registered, :in_channel, :quitting]
 
-  @doc """
-  Validate whether a `State` state transition is allowed.
-
-  Mirrors the formally verified transitions from the Idris2 source.
-  """
-  @spec validate_state_transition(state(), state()) :: boolean()
-  def validate_state_transition(:disconnected, :connecting), do: true
-  def validate_state_transition(:connecting, :registered), do: true
-  def validate_state_transition(:registered, :in_channel), do: true
-  def validate_state_transition(:in_channel, :registered), do: true
-  def validate_state_transition(:registered, :quitting), do: true
-  def validate_state_transition(:in_channel, :quitting), do: true
-  def validate_state_transition(:quitting, :disconnected), do: true
-  def validate_state_transition(_from, _to), do: false
+  # validate_state_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ===========================================================================
   # IrcError (tags 0-5)

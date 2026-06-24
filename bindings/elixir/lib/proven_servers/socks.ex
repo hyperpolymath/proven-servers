@@ -324,19 +324,8 @@ defmodule ProvenServers.Socks do
     ]
   end
 
-  @doc """
-  Validate whether a `State` state transition is allowed.
-
-  Mirrors the formally verified transitions from the Idris2 source.
-  """
-  @spec validate_state_transition(state(), state()) :: boolean()
-  def validate_state_transition(:initial, :authenticating), do: true
-  def validate_state_transition(:initial, :authenticated), do: true
-  def validate_state_transition(:authenticating, :authenticated), do: true
-  def validate_state_transition(:authenticated, :connecting), do: true
-  def validate_state_transition(:connecting, :established), do: true
-  def validate_state_transition(:connecting, :closed), do: true
-  def validate_state_transition(:established, :closed), do: true
-  def validate_state_transition(_from, _to), do: false
+  # validate_state_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 end

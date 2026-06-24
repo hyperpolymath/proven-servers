@@ -381,68 +381,9 @@ defmodule ProvenServers.Websocket do
           | {:reserved_opcode, non_neg_integer()}
           | {:payload_length_mismatch, non_neg_integer(), non_neg_integer()}
 
-  @doc """
-  Validate a frame received from a client.
-
-  Checks: masking required, control frame size and fragmentation,
-  payload length consistency.
-  Matches `validateClientFrame` in `WS.Frame`.
-
-  ## Parameters
-
-    * `frame` — the frame map to validate
-    * `max_frame_size` — maximum allowed payload size
-
-  ## Returns
-
-    * `:ok` if the frame is valid
-    * `{:error, frame_error}` describing the validation failure
-  """
-  @spec validate_client_frame(frame(), non_neg_integer()) :: :ok | {:error, frame_error()}
-  def validate_client_frame(%{masked: false}, _max_frame_size) do
-    {:error, :client_frame_not_masked}
-  end
-
-  def validate_client_frame(frame, max_frame_size) do
-    validate_common(frame, max_frame_size)
-  end
-
-  @doc """
-  Validate a frame received from a server.
-
-  Server frames MUST NOT be masked (RFC 6455 Section 5.1).
-  Matches `validateServerFrame` in `WS.Frame`.
-  """
-  @spec validate_server_frame(frame(), non_neg_integer()) :: :ok | {:error, frame_error()}
-  def validate_server_frame(%{masked: true}, _max_frame_size) do
-    {:error, :server_frame_masked}
-  end
-
-  def validate_server_frame(frame, max_frame_size) do
-    validate_common(frame, max_frame_size)
-  end
-
-  @doc false
-  @spec validate_common(frame(), non_neg_integer()) :: :ok | {:error, frame_error()}
-  defp validate_common(frame, max_frame_size) do
-    cond do
-      opcode_control?(frame.opcode) and frame.payload_length > @max_control_payload ->
-        {:error, {:control_frame_too_large, frame.opcode, frame.payload_length}}
-
-      opcode_control?(frame.opcode) and not frame.fin ->
-        {:error, {:control_frame_fragmented, frame.opcode}}
-
-      frame.payload_length > max_frame_size ->
-        {:error, {:payload_too_large, frame.payload_length, max_frame_size}}
-
-      frame.payload_length != byte_size(frame.payload) ->
-        {:error,
-         {:payload_length_mismatch, frame.payload_length, byte_size(frame.payload)}}
-
-      true ->
-        :ok
-    end
-  end
+  # validate_client_frame/validate_server_frame/validate_common removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   @doc """
   Build a server-to-client text frame (unmasked, FIN set).

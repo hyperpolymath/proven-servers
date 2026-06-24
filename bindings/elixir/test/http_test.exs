@@ -119,44 +119,4 @@ defmodule ProvenServers.HttpTest do
       assert Http.version_to_tag(:http20) < Http.version_to_tag(:http30)
     end
   end
-
-  describe "HTTP transition state machine" do
-    test "valid transitions succeed" do
-      valid_pairs = [
-        {:idle, :receiving},
-        {:receiving, :headers_parsed},
-        {:headers_parsed, :body_receiving},
-        {:headers_parsed, :complete},
-        {:body_receiving, :complete},
-        {:complete, :responding},
-        {:responding, :sent},
-        {:sent, :idle},
-        # Abort transitions
-        {:receiving, :sent},
-        {:headers_parsed, :sent},
-        {:body_receiving, :sent},
-        {:complete, :sent}
-      ]
-
-      for {from, to} <- valid_pairs do
-        assert {:ok, _transition} = Http.validate_http_transition(from, to),
-               "transition #{from} -> #{to} should be valid"
-      end
-    end
-
-    test "invalid transitions fail" do
-      invalid_pairs = [
-        {:idle, :complete},
-        {:idle, :responding},
-        {:complete, :receiving},
-        {:responding, :headers_parsed},
-        {:idle, :idle}
-      ]
-
-      for {from, to} <- invalid_pairs do
-        assert Http.validate_http_transition(from, to) == :error,
-               "transition #{from} -> #{to} should be invalid"
-      end
-    end
-  end
 end

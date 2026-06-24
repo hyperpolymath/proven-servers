@@ -366,18 +366,9 @@ defmodule ProvenServers.Amqp do
   @spec all_connection_states() :: [connection_state()]
   def all_connection_states, do: [:idle, :negotiating, :tuning_ok, :open, :closing]
 
-  @doc """
-  Validate whether a `ConnectionState` state transition is allowed.
-
-  Mirrors the formally verified transitions from the Idris2 source.
-  """
-  @spec validate_connection_state_transition(connection_state(), connection_state()) :: boolean()
-  def validate_connection_state_transition(:idle, :negotiating), do: true
-  def validate_connection_state_transition(:negotiating, :tuning_ok), do: true
-  def validate_connection_state_transition(:tuning_ok, :open), do: true
-  def validate_connection_state_transition(:open, :closing), do: true
-  def validate_connection_state_transition(_from, :closing), do: true
-  def validate_connection_state_transition(_from, _to), do: false
+  # validate_connection_state_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ===========================================================================
   # ChannelState (tags 0-3)
@@ -430,18 +421,9 @@ defmodule ProvenServers.Amqp do
   @spec all_channel_states() :: [channel_state()]
   def all_channel_states, do: [:closed, :opening, :ch_open, :ch_closing]
 
-  @doc """
-  Validate whether a `ChannelState` state transition is allowed.
-
-  Mirrors the formally verified transitions from the Idris2 source.
-  """
-  @spec validate_channel_state_transition(channel_state(), channel_state()) :: boolean()
-  def validate_channel_state_transition(:closed, :opening), do: true
-  def validate_channel_state_transition(:opening, :ch_open), do: true
-  def validate_channel_state_transition(:opening, :closed), do: true
-  def validate_channel_state_transition(:ch_open, :ch_closing), do: true
-  def validate_channel_state_transition(:ch_closing, :closed), do: true
-  def validate_channel_state_transition(_from, _to), do: false
+  # validate_channel_state_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ===========================================================================
   # BrokerState (tags 0-5)
@@ -506,19 +488,8 @@ defmodule ProvenServers.Amqp do
     ]
   end
 
-  @doc """
-  Validate whether a `BrokerState` state transition is allowed.
-
-  Mirrors the formally verified transitions from the Idris2 source.
-  """
-  @spec validate_broker_state_transition(broker_state(), broker_state()) :: boolean()
-  def validate_broker_state_transition(:idle, :connected), do: true
-  def validate_broker_state_transition(:connected, :channel_open), do: true
-  def validate_broker_state_transition(:channel_open, :consuming), do: true
-  def validate_broker_state_transition(:channel_open, :publishing), do: true
-  def validate_broker_state_transition(:consuming, :disconnecting), do: true
-  def validate_broker_state_transition(:publishing, :disconnecting), do: true
-  def validate_broker_state_transition(_from, :disconnecting), do: true
-  def validate_broker_state_transition(_from, _to), do: false
+  # validate_broker_state_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 end

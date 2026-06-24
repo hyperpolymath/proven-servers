@@ -53,25 +53,9 @@ defmodule ProvenServers.Ftp do
     Map.fetch!(@session_state_tags, state)
   end
 
-  @doc """
-  Validate whether an FTP session state transition is allowed.
-
-  ## Examples
-
-      iex> ProvenServers.Ftp.session_can_transition?(:connected, :user_ok)
-      true
-
-      iex> ProvenServers.Ftp.session_can_transition?(:connected, :authenticated)
-      false
-  """
-  @spec session_can_transition?(session_state(), session_state()) :: boolean()
-  def session_can_transition?(:connected, :user_ok), do: true
-  def session_can_transition?(:user_ok, :authenticated), do: true
-  def session_can_transition?(:user_ok, :connected), do: true
-  def session_can_transition?(:authenticated, :renaming), do: true
-  def session_can_transition?(:renaming, :authenticated), do: true
-  def session_can_transition?(_, :quit), do: true
-  def session_can_transition?(_, _), do: false
+  # session_can_transition? removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ===========================================================================
   # TransferType (tags 0-1)

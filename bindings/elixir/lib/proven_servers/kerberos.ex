@@ -479,19 +479,9 @@ defmodule ProvenServers.Kerberos do
     ]
   end
 
-  @doc """
-  Validate whether a `AuthState` state transition is allowed.
-
-  Mirrors the formally verified transitions from the Idris2 source.
-  """
-  @spec validate_auth_state_transition(auth_state(), auth_state()) :: boolean()
-  def validate_auth_state_transition(:initial, :tgt_obtained), do: true
-  def validate_auth_state_transition(:tgt_obtained, :service_ticket_obtained), do: true
-  def validate_auth_state_transition(:service_ticket_obtained, :authenticated), do: true
-  def validate_auth_state_transition(:initial, :auth_failed), do: true
-  def validate_auth_state_transition(:tgt_obtained, :auth_failed), do: true
-  def validate_auth_state_transition(:service_ticket_obtained, :auth_failed), do: true
-  def validate_auth_state_transition(_from, _to), do: false
+  # validate_auth_state_transition removed: unproven reimplementation. The verified check lives in the
+  # Idris2/Zig core; calling it needs FFI wiring not yet present in this binding.
+  # Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
   # ===========================================================================
   # EncStrength (tags 0-2)
