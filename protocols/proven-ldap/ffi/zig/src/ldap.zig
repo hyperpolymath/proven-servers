@@ -13,6 +13,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("ldap_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // -- Enums (matching LDAPABI.Layout.idr tag assignments) ---------------------
 
 /// LDAP session states (4 constructors, tags 0-3).
@@ -58,6 +65,45 @@ pub const ResultCode = enum(u8) {
     busy = 9,
     unavailable = 10,
 };
+
+// -- ABI conformance guard ---------------------------------------------------
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(SessionState.anonymous) != gen.SESSION_ANONYMOUS) @compileError("ABI drift: SessionState.anonymous");
+    if (@intFromEnum(SessionState.bound) != gen.SESSION_BOUND) @compileError("ABI drift: SessionState.bound");
+    if (@intFromEnum(SessionState.closed) != gen.SESSION_CLOSED) @compileError("ABI drift: SessionState.closed");
+    if (@intFromEnum(SessionState.binding) != gen.SESSION_BINDING) @compileError("ABI drift: SessionState.binding");
+
+    if (@intFromEnum(Operation.bind) != gen.OP_BIND) @compileError("ABI drift: Operation.bind");
+    if (@intFromEnum(Operation.unbind) != gen.OP_UNBIND) @compileError("ABI drift: Operation.unbind");
+    if (@intFromEnum(Operation.search) != gen.OP_SEARCH) @compileError("ABI drift: Operation.search");
+    if (@intFromEnum(Operation.modify) != gen.OP_MODIFY) @compileError("ABI drift: Operation.modify");
+    if (@intFromEnum(Operation.add) != gen.OP_ADD) @compileError("ABI drift: Operation.add");
+    if (@intFromEnum(Operation.delete) != gen.OP_DELETE) @compileError("ABI drift: Operation.delete");
+    if (@intFromEnum(Operation.mod_dn) != gen.OP_MOD_DN) @compileError("ABI drift: Operation.mod_dn");
+    if (@intFromEnum(Operation.compare) != gen.OP_COMPARE) @compileError("ABI drift: Operation.compare");
+    if (@intFromEnum(Operation.abandon) != gen.OP_ABANDON) @compileError("ABI drift: Operation.abandon");
+    if (@intFromEnum(Operation.extended) != gen.OP_EXTENDED) @compileError("ABI drift: Operation.extended");
+
+    if (@intFromEnum(SearchScope.base_object) != gen.SCOPE_BASE_OBJECT) @compileError("ABI drift: SearchScope.base_object");
+    if (@intFromEnum(SearchScope.single_level) != gen.SCOPE_SINGLE_LEVEL) @compileError("ABI drift: SearchScope.single_level");
+    if (@intFromEnum(SearchScope.whole_subtree) != gen.SCOPE_WHOLE_SUBTREE) @compileError("ABI drift: SearchScope.whole_subtree");
+
+    if (@intFromEnum(ResultCode.success) != gen.RESULT_SUCCESS) @compileError("ABI drift: ResultCode.success");
+    if (@intFromEnum(ResultCode.operations_error) != gen.RESULT_OPERATIONS_ERROR) @compileError("ABI drift: ResultCode.operations_error");
+    if (@intFromEnum(ResultCode.protocol_error) != gen.RESULT_PROTOCOL_ERROR) @compileError("ABI drift: ResultCode.protocol_error");
+    if (@intFromEnum(ResultCode.time_limit_exceeded) != gen.RESULT_TIME_LIMIT_EXCEEDED) @compileError("ABI drift: ResultCode.time_limit_exceeded");
+    if (@intFromEnum(ResultCode.size_limit_exceeded) != gen.RESULT_SIZE_LIMIT_EXCEEDED) @compileError("ABI drift: ResultCode.size_limit_exceeded");
+    if (@intFromEnum(ResultCode.auth_method_not_supported) != gen.RESULT_AUTH_METHOD_NOT_SUPPORTED) @compileError("ABI drift: ResultCode.auth_method_not_supported");
+    if (@intFromEnum(ResultCode.no_such_object) != gen.RESULT_NO_SUCH_OBJECT) @compileError("ABI drift: ResultCode.no_such_object");
+    if (@intFromEnum(ResultCode.invalid_credentials) != gen.RESULT_INVALID_CREDENTIALS) @compileError("ABI drift: ResultCode.invalid_credentials");
+    if (@intFromEnum(ResultCode.insufficient_access_rights) != gen.RESULT_INSUFFICIENT_ACCESS_RIGHTS) @compileError("ABI drift: ResultCode.insufficient_access_rights");
+    if (@intFromEnum(ResultCode.busy) != gen.RESULT_BUSY) @compileError("ABI drift: ResultCode.busy");
+    if (@intFromEnum(ResultCode.unavailable) != gen.RESULT_UNAVAILABLE) @compileError("ABI drift: ResultCode.unavailable");
+}
 
 // -- LDAP session ------------------------------------------------------------
 
@@ -114,7 +160,7 @@ fn unlockSlot(idx: usize) void {
 // -- ABI version ------------------------------------------------------------
 
 pub export fn ldap_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Lifecycle --------------------------------------------------------------
