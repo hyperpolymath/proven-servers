@@ -285,3 +285,9 @@ pub export fn odns_is_ready(slot: c_int) callconv(.c) u8 {
     const idx = validSlot(slot) orelse return 0;
     return if (sessions[idx].state == .ready) 1 else 0;
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
+        @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}

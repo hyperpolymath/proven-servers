@@ -50,6 +50,63 @@ fi
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════
+# Section 0: ABI conformance (Idris is the single source of truth)
+# ═══════════════════════════════════════════════════════════════════════
+bold "Section 0: ABI conformance (Idris -> generated -> Zig comptime guard)"
+
+# Conformance-enabled protocols: every protocol shipping an abigen ipkg
+# (<Name>ABI.Emit + proven-<name>-abigen.ipkg) + a comptime guard. Auto-
+# discovered so newly-onboarded protocols join without editing this script.
+CONF_PROTOCOLS="$(for f in protocols/*/proven-*-abigen.ipkg; do
+    [ -f "$f" ] || continue
+    basename "$f" | sed -e 's/^proven-//' -e 's/-abigen\.ipkg$//'
+done | sort | tr '\n' ' ')"
+
+# Generated files asserted drift-free: every _abi_gen.zig, plus the two
+# reference protocols' C headers.
+GEN_FILES="protocols/proven-epistemic/generated/abi/epistemic.h protocols/proven-radius/generated/abi/radius.h"
+for p in $CONF_PROTOCOLS; do
+    GEN_FILES="$GEN_FILES protocols/proven-$p/ffi/zig/src/${p}_abi_gen.zig"
+done
+
+if command -v idris2 >/dev/null 2>&1; then
+    green "  Idris2 available: $(idris2 --version | head -1)"
+
+    # 0a. epistemic engine: build + run the scenario runner (mirrors integration_test.zig).
+    if (cd protocols/proven-epistemic && idris2 --build proven-epistemic.ipkg >/dev/null 2>&1) \
+        && ./protocols/proven-epistemic/build/exec/proven-epistemic >/dev/null 2>&1; then
+        pass "proven-epistemic engine conformance scenarios"
+    else
+        fail_test "proven-epistemic engine conformance scenarios"
+    fi
+
+    # 0b. Regenerate all ABI artifacts from the proofs -- this builds every
+    #     protocol's abigen (compiling its ABI proofs) -- and assert no drift.
+    if bash tools/gen-abi.sh >/dev/null 2>&1; then
+        if git diff --quiet -- $GEN_FILES; then
+            pass "generated ABI matches Idris proofs (no drift)"
+        else
+            fail_test "generated ABI drifted from Idris (run tools/gen-abi.sh and commit)"
+        fi
+    else
+        fail_test "tools/gen-abi.sh failed"
+    fi
+else
+    skip_test "Idris ABI build + conformance" "idris2 not installed"
+fi
+
+# 0d. Build each conformance protocol's Zig WITH the comptime guard active (drift
+# => compile error). Works from the committed generated file even without Idris.
+for p in $CONF_PROTOCOLS; do
+    if (cd "protocols/proven-$p/ffi/zig" && zig build >/dev/null 2>&1); then
+        pass "proven-$p Zig builds with ABI comptime guard"
+    else
+        fail_test "proven-$p Zig comptime guard rejected the build (ABI drift)"
+    fi
+done
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════
 # Section 1: Connector FFI Build + Test
 # ═══════════════════════════════════════════════════════════════════════
 bold "Section 1: Connector FFI build + integration tests"
@@ -151,8 +208,11 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════════
 bold "Section 5: Safety aspects"
 
-# No believe_me/assert_total in Idris2 ABI
-DANGEROUS_IDRIS=$(grep -rn 'believe_me\|assert_total\|really_believe_me' src/ connectors/*/src/ protocols/*/src/ core/*/src/ 2>/dev/null | grep -v test || true)
+# No believe_me/assert_total in Idris2 ABI -- ACTIVE CODE ONLY.
+# Exclude Idris comment lines (-- and |||) so documentation that merely *names*
+# a pattern (e.g. proven-nesy/src/NeSy/Types.idr's "equivalent of believe_me"
+# note) is not a false positive. A real escape hatch in code is still caught.
+DANGEROUS_IDRIS=$(grep -rn 'believe_me\|assert_total\|really_believe_me' src/ connectors/*/src/ protocols/*/src/ core/*/src/ 2>/dev/null | grep -v test | grep -vE ':[0-9]+:[[:space:]]*(--|\|\|\|)' || true)
 if [ -n "$DANGEROUS_IDRIS" ]; then
     fail_test "Dangerous Idris2 patterns ($(echo "$DANGEROUS_IDRIS" | wc -l) occurrences)"
     echo "$DANGEROUS_IDRIS" | head -5

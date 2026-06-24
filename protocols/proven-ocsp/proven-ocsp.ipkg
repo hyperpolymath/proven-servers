@@ -12,5 +12,7 @@ main = Main
 executable = "proven-ocsp"
 
 modules = OCSP
+        , OCSPABI.Types
+        , OCSPABI.Foreign
         , OCSP.Types
         , Main

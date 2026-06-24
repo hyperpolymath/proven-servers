@@ -18,6 +18,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("telnet_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching TelnetABI.Types tag assignments)
 // =========================================================================
@@ -143,9 +150,55 @@ fn validSlot(slot: c_int) ?usize {
 // Exported C ABI functions
 // =========================================================================
 
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(Command.se) != gen.CMD_SE) @compileError("ABI drift: Command.se");
+    if (@intFromEnum(Command.nop) != gen.CMD_NOP) @compileError("ABI drift: Command.nop");
+    if (@intFromEnum(Command.data_mark) != gen.CMD_DATA_MARK) @compileError("ABI drift: Command.data_mark");
+    if (@intFromEnum(Command.brk) != gen.CMD_BRK) @compileError("ABI drift: Command.brk");
+    if (@intFromEnum(Command.interrupt_process) != gen.CMD_INTERRUPT_PROCESS) @compileError("ABI drift: Command.interrupt_process");
+    if (@intFromEnum(Command.abort_output) != gen.CMD_ABORT_OUTPUT) @compileError("ABI drift: Command.abort_output");
+    if (@intFromEnum(Command.are_you_there) != gen.CMD_ARE_YOU_THERE) @compileError("ABI drift: Command.are_you_there");
+    if (@intFromEnum(Command.erase_char) != gen.CMD_ERASE_CHAR) @compileError("ABI drift: Command.erase_char");
+    if (@intFromEnum(Command.erase_line) != gen.CMD_ERASE_LINE) @compileError("ABI drift: Command.erase_line");
+    if (@intFromEnum(Command.go_ahead) != gen.CMD_GO_AHEAD) @compileError("ABI drift: Command.go_ahead");
+    if (@intFromEnum(Command.sb) != gen.CMD_SB) @compileError("ABI drift: Command.sb");
+    if (@intFromEnum(Command.will) != gen.CMD_WILL) @compileError("ABI drift: Command.will");
+    if (@intFromEnum(Command.wont) != gen.CMD_WONT) @compileError("ABI drift: Command.wont");
+    if (@intFromEnum(Command.do_) != gen.CMD_DO_) @compileError("ABI drift: Command.do_");
+    if (@intFromEnum(Command.dont) != gen.CMD_DONT) @compileError("ABI drift: Command.dont");
+    if (@intFromEnum(Command.iac) != gen.CMD_IAC) @compileError("ABI drift: Command.iac");
+
+    if (@intFromEnum(TelnetOption.echo) != gen.OPT_ECHO) @compileError("ABI drift: TelnetOption.echo");
+    if (@intFromEnum(TelnetOption.suppress_go_ahead) != gen.OPT_SUPPRESS_GO_AHEAD) @compileError("ABI drift: TelnetOption.suppress_go_ahead");
+    if (@intFromEnum(TelnetOption.status) != gen.OPT_STATUS) @compileError("ABI drift: TelnetOption.status");
+    if (@intFromEnum(TelnetOption.timing_mark) != gen.OPT_TIMING_MARK) @compileError("ABI drift: TelnetOption.timing_mark");
+    if (@intFromEnum(TelnetOption.terminal_type) != gen.OPT_TERMINAL_TYPE) @compileError("ABI drift: TelnetOption.terminal_type");
+    if (@intFromEnum(TelnetOption.window_size) != gen.OPT_WINDOW_SIZE) @compileError("ABI drift: TelnetOption.window_size");
+    if (@intFromEnum(TelnetOption.terminal_speed) != gen.OPT_TERMINAL_SPEED) @compileError("ABI drift: TelnetOption.terminal_speed");
+    if (@intFromEnum(TelnetOption.remote_flow_control) != gen.OPT_REMOTE_FLOW_CONTROL) @compileError("ABI drift: TelnetOption.remote_flow_control");
+    if (@intFromEnum(TelnetOption.linemode) != gen.OPT_LINEMODE) @compileError("ABI drift: TelnetOption.linemode");
+    if (@intFromEnum(TelnetOption.environment) != gen.OPT_ENVIRONMENT) @compileError("ABI drift: TelnetOption.environment");
+
+    if (@intFromEnum(NegotiationState.inactive) != gen.NEG_INACTIVE) @compileError("ABI drift: NegotiationState.inactive");
+    if (@intFromEnum(NegotiationState.will_sent) != gen.NEG_WILL_SENT) @compileError("ABI drift: NegotiationState.will_sent");
+    if (@intFromEnum(NegotiationState.do_sent) != gen.NEG_DO_SENT) @compileError("ABI drift: NegotiationState.do_sent");
+    if (@intFromEnum(NegotiationState.active) != gen.NEG_ACTIVE) @compileError("ABI drift: NegotiationState.active");
+
+    if (@intFromEnum(SessionState.idle) != gen.SESSION_IDLE) @compileError("ABI drift: SessionState.idle");
+    if (@intFromEnum(SessionState.negotiating) != gen.SESSION_NEGOTIATING) @compileError("ABI drift: SessionState.negotiating");
+    if (@intFromEnum(SessionState.active) != gen.SESSION_ACTIVE) @compileError("ABI drift: SessionState.active");
+    if (@intFromEnum(SessionState.subneg) != gen.SESSION_SUBNEG) @compileError("ABI drift: SessionState.subneg");
+    if (@intFromEnum(SessionState.closing) != gen.SESSION_CLOSING) @compileError("ABI drift: SessionState.closing");
+}
+
 /// Returns the ABI version number.
 pub export fn telnet_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 /// Create a new Telnet session. Returns slot index (>=0) or -1 on failure.
@@ -367,4 +420,10 @@ pub export fn telnet_session_count() callconv(.c) u32 {
         if (s.active) count += 1;
     }
     return count;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
+        @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

@@ -76,7 +76,7 @@ pub const StoreState = enum(u8) {
 // =========================================================================
 
 /// Maximum concurrent sessions.
-const MAX_SESSIONS: usize = 64;
+const MAX_SESSIONS: usize = 8;
 
 /// Maximum triples per store session.
 const MAX_TRIPLES: usize = 256;
@@ -496,4 +496,10 @@ pub export fn triplestore_session_count() callconv(.c) u32 {
         if (s.active) count += 1;
     }
     return count;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
+        @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

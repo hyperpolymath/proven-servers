@@ -12,6 +12,8 @@ main = Main
 executable = "proven-ws"
 
 modules = WS
+        , WSABI.Types
+        , WSABI.Foreign
         , WS.Opcode
         , WS.Frame
         , WS.Handshake

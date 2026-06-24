@@ -1,0 +1,84 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= proven-http3
+:toc: macro
+:toclevels: 2
+
+The *structural core* of HTTP/3 (RFC 9114) over QUIC, in the proven house
+style: frame and stream identity, the frame-vs-stream placement rules, and
+the request-stream frame-sequence state machine as dependently-typed data
+with machine-checked proofs (Idris2), plus a small Zig engine that parses
+frame headers and runs the state machine.
+
+It sits on top of `proven-quic` (RFC 9000), reusing the QUIC
+variable-length-integer codec for HTTP/3 frame headers.
+
+toc::[]
+
+== What it does (the proven core)
+
+* *Frame & stream identity* (RFC 9114 6.2, 7.2) — `H3Frame` and
+  `H3StreamType` with their on-the-wire varint codes and round-trip proofs
+  (`frameFromWire (frameWireCode f) = Just f`).
+* *Frame-vs-stream rules* (RFC 9114 7.2) — `allowedOnControl` /
+  `allowedOnRequest`, with a proof that the two sets are disjoint
+  (`controlAndRequestDisjoint`) and pinned facts (DATA never on the control
+  stream; SETTINGS never on a request stream).
+* *Request-stream frame sequence* (RFC 9114 4.1) — HEADERS → DATA* →
+  trailing HEADERS, as the `ValidReqTransition` relation. Illegal orderings
+  are ruled out by `impossible` proofs: DATA before HEADERS, body after
+  trailers, and any move out of the terminal Done state.
+* *Frame-header parsing* — the Zig engine decodes the two leading varints
+  (type, length) and classifies the frame.
+
+== What it does NOT do
+
+This is the structural core, not a full HTTP/3 implementation. Out of scope
+(layered on top): QPACK field compression (RFC 9204) and its encoder/decoder
+streams, the SETTINGS exchange, server push (PUSH_PROMISE + push streams),
+0-RTT, and the HTTP message/semantics layer (RFC 9110). The request state
+machine tracks message framing (DATA/HEADERS ordering), not header contents.
+Plug-in points are marked `TODO(qpack)` / `TODO(settings)` / `TODO(semantics)`.
+
+== Layout
+
+[cols="1,3"]
+|===
+| Module / file | Role
+| `Http3.Types`       | Enums: frames, stream types, settings, errors, request states.
+| `Http3.Frames`      | Wire codes + classification + frame-vs-stream rules + proofs.
+| `Http3.Request`     | The request-stream state machine + impossibility proofs.
+| `Http3ABI.Types`    | C-ABI tag encodings + round-trip proofs.
+| `Http3ABI.Foreign`  | Opaque handle + the FFI contract.
+| `ffi/zig/src/http3.zig` | The engine: frame-header parsing, classification, request state machine.
+| `ffi/zig/test/`         | Frame-parsing + sequence FFI tests.
+|===
+
+Idris modules live under the package `src` tree (package root
+`protocols/proven-http3`); the Zig engine is under `ffi/zig`.
+
+== Build and test locally
+
+Requires Idris2 (core + proofs) and Zig 0.15+ (engine). Commands run from
+this package directory (`protocols/proven-http3/`):
+
+[source,sh]
+----
+idris2 --build proven-http3.ipkg    # type-check + verify all proofs
+./build/exec/proven-http3           # identification + live demo
+cd ffi/zig && zig build test        # frame parsing + request sequence
+----
+
+== FFI surface (for the engine)
+
+`http3_parse_frame_header`; `http3_frame_tag_from_wire` /
+`http3_frame_wire_from_tag` / `http3_stream_tag_from_wire`;
+`http3_allowed_on_control` / `http3_allowed_on_request`;
+`http3_req_create` / `http3_req_state` / `http3_req_feed` /
+`http3_req_finish` / `http3_req_can_transition`. All enum values are u8 tags
+matching `Http3ABI.Types`.
+
+== Future work
+
+QPACK (RFC 9204); the SETTINGS exchange and server push; 0-RTT; the HTTP
+semantics layer (RFC 9110); and language bindings under `/bindings`.

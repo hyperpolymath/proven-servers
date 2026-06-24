@@ -13,3 +13,5 @@ executable = "proven-logcollector"
 
 modules = Logcollector
         , Logcollector.Types
+        , LogcollectorABI.Layout
+        , LogcollectorABI.Foreign

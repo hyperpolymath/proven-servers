@@ -12,4 +12,6 @@ main = Main
 executable = "proven-snmp"
 
 modules = SNMP
+        , SNMPABI.Types
+        , SNMPABI.Foreign
         , SNMP.Types

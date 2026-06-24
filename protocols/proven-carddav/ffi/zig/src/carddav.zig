@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("carddav_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching CardDAVABI.Types.idr tag assignments)
 // =========================================================================
@@ -68,6 +75,46 @@ pub const ServerState = enum(u8) {
     serving = 2,
     shutdown = 3,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(PropertyType.fn_name) != gen.PROP_FN) @compileError("ABI drift: PropertyType.fn_name");
+    if (@intFromEnum(PropertyType.n) != gen.PROP_N) @compileError("ABI drift: PropertyType.n");
+    if (@intFromEnum(PropertyType.email) != gen.PROP_EMAIL) @compileError("ABI drift: PropertyType.email");
+    if (@intFromEnum(PropertyType.tel) != gen.PROP_TEL) @compileError("ABI drift: PropertyType.tel");
+    if (@intFromEnum(PropertyType.adr) != gen.PROP_ADR) @compileError("ABI drift: PropertyType.adr");
+    if (@intFromEnum(PropertyType.org) != gen.PROP_ORG) @compileError("ABI drift: PropertyType.org");
+    if (@intFromEnum(PropertyType.photo) != gen.PROP_PHOTO) @compileError("ABI drift: PropertyType.photo");
+    if (@intFromEnum(PropertyType.url) != gen.PROP_URL) @compileError("ABI drift: PropertyType.url");
+    if (@intFromEnum(PropertyType.note) != gen.PROP_NOTE) @compileError("ABI drift: PropertyType.note");
+
+    if (@intFromEnum(CardMethod.get) != gen.METHOD_GET) @compileError("ABI drift: CardMethod.get");
+    if (@intFromEnum(CardMethod.put) != gen.METHOD_PUT) @compileError("ABI drift: CardMethod.put");
+    if (@intFromEnum(CardMethod.delete) != gen.METHOD_DELETE) @compileError("ABI drift: CardMethod.delete");
+    if (@intFromEnum(CardMethod.propfind) != gen.METHOD_PROPFIND) @compileError("ABI drift: CardMethod.propfind");
+    if (@intFromEnum(CardMethod.proppatch) != gen.METHOD_PROPPATCH) @compileError("ABI drift: CardMethod.proppatch");
+    if (@intFromEnum(CardMethod.report) != gen.METHOD_REPORT) @compileError("ABI drift: CardMethod.report");
+    if (@intFromEnum(CardMethod.mkcol) != gen.METHOD_MKCOL) @compileError("ABI drift: CardMethod.mkcol");
+
+    if (@intFromEnum(VCardVersion.vcard3) != gen.VER_VCARD3) @compileError("ABI drift: VCardVersion.vcard3");
+    if (@intFromEnum(VCardVersion.vcard4) != gen.VER_VCARD4) @compileError("ABI drift: VCardVersion.vcard4");
+
+    if (@intFromEnum(CardError.valid_address_data) != gen.ERR_VALID_ADDRESS_DATA) @compileError("ABI drift: CardError.valid_address_data");
+    if (@intFromEnum(CardError.no_resource_type) != gen.ERR_NO_RESOURCE_TYPE) @compileError("ABI drift: CardError.no_resource_type");
+    if (@intFromEnum(CardError.max_resource_size) != gen.ERR_MAX_RESOURCE_SIZE) @compileError("ABI drift: CardError.max_resource_size");
+    if (@intFromEnum(CardError.uid_conflict) != gen.ERR_UID_CONFLICT) @compileError("ABI drift: CardError.uid_conflict");
+    if (@intFromEnum(CardError.supported_address_data) != gen.ERR_SUPPORTED_ADDRESS_DATA) @compileError("ABI drift: CardError.supported_address_data");
+    if (@intFromEnum(CardError.precondition_failed) != gen.ERR_PRECONDITION_FAILED) @compileError("ABI drift: CardError.precondition_failed");
+
+    if (@intFromEnum(ServerState.idle) != gen.STATE_IDLE) @compileError("ABI drift: ServerState.idle");
+    if (@intFromEnum(ServerState.bound) != gen.STATE_BOUND) @compileError("ABI drift: ServerState.bound");
+    if (@intFromEnum(ServerState.serving) != gen.STATE_SERVING) @compileError("ABI drift: ServerState.serving");
+    if (@intFromEnum(ServerState.shutdown) != gen.STATE_SHUTDOWN) @compileError("ABI drift: ServerState.shutdown");
+}
 
 // =========================================================================
 // Internal data structures
@@ -201,7 +248,7 @@ fn findVCard(idx: usize, abi: usize, uid: []const u8) ?usize {
 
 /// Returns the ABI version number.
 pub export fn carddav_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 /// Create a new CardDAV server. Returns slot index (>=0) or -1 on failure.
@@ -450,4 +497,10 @@ pub export fn carddav_can_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 2 and to == 3) return 1; // Serving -> Shutdown
     if (from == 3 and to == 0) return 1; // Shutdown -> Idle
     return 0;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(servers)) > 16 * 1024 * 1024)
+        @compileError("pool 'servers' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

@@ -12,4 +12,6 @@ main = Main
 executable = "proven-appserver"
 
 modules = Appserver
+        , AppserverABI.Types
+        , AppserverABI.Foreign
         , Appserver.Types

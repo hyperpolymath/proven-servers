@@ -14,3 +14,5 @@ executable = "proven-bfd"
 modules = BFD
         , BFD.Types
         , Main
+        , BFDABI.Types
+        , BFDABI.Foreign

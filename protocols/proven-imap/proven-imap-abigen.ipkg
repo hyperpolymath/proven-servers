@@ -1,0 +1,20 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- Dev tool: emits the canonical ABI tag manifest from the proven encoders.
+-- Consumed by tools/gen-abi.sh to render imap_abi_gen.zig.
+
+package proven-imap-abigen
+version = "0.1.0"
+authors = "Jonathan D.A. Jewell"
+license = "MPL-2.0"
+brief   = "ABI tag-manifest emitter for proven-imap"
+
+sourcedir = "src"
+main = IMAPABI.Emit
+executable = "imap-abigen"
+
+modules = IMAP.Types
+        , IMAPABI.Types
+        , IMAPABI.Foreign
+        , IMAPABI.Emit

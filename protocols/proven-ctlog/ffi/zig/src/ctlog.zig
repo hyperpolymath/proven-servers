@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("ctlog_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching CTLogABI.Types.idr tag assignments)
 // =========================================================================
@@ -64,6 +71,39 @@ pub const ServerState = enum(u8) {
     signing = 3,
     shutdown = 4,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(LogEntryType.x509_entry) != gen.ENTRY_X509_ENTRY) @compileError("ABI drift: LogEntryType.x509_entry");
+    if (@intFromEnum(LogEntryType.precert_entry) != gen.ENTRY_PRECERT_ENTRY) @compileError("ABI drift: LogEntryType.precert_entry");
+
+    if (@intFromEnum(SignatureType.certificate_timestamp) != gen.SIG_CERTIFICATE_TIMESTAMP) @compileError("ABI drift: SignatureType.certificate_timestamp");
+    if (@intFromEnum(SignatureType.tree_hash) != gen.SIG_TREE_HASH) @compileError("ABI drift: SignatureType.tree_hash");
+
+    if (@intFromEnum(MerkleLeafType.timestamped_entry) != gen.LEAF_TIMESTAMPED_ENTRY) @compileError("ABI drift: MerkleLeafType.timestamped_entry");
+
+    if (@intFromEnum(SubmissionStatus.accepted) != gen.SUBMIT_ACCEPTED) @compileError("ABI drift: SubmissionStatus.accepted");
+    if (@intFromEnum(SubmissionStatus.duplicate) != gen.SUBMIT_DUPLICATE) @compileError("ABI drift: SubmissionStatus.duplicate");
+    if (@intFromEnum(SubmissionStatus.rate_limited) != gen.SUBMIT_RATE_LIMITED) @compileError("ABI drift: SubmissionStatus.rate_limited");
+    if (@intFromEnum(SubmissionStatus.rejected) != gen.SUBMIT_REJECTED) @compileError("ABI drift: SubmissionStatus.rejected");
+    if (@intFromEnum(SubmissionStatus.invalid_chain) != gen.SUBMIT_INVALID_CHAIN) @compileError("ABI drift: SubmissionStatus.invalid_chain");
+    if (@intFromEnum(SubmissionStatus.unknown_anchor) != gen.SUBMIT_UNKNOWN_ANCHOR) @compileError("ABI drift: SubmissionStatus.unknown_anchor");
+
+    if (@intFromEnum(VerificationResult.valid_proof) != gen.VERIFY_VALID_PROOF) @compileError("ABI drift: VerificationResult.valid_proof");
+    if (@intFromEnum(VerificationResult.invalid_proof) != gen.VERIFY_INVALID_PROOF) @compileError("ABI drift: VerificationResult.invalid_proof");
+    if (@intFromEnum(VerificationResult.inconsistent_tree) != gen.VERIFY_INCONSISTENT_TREE) @compileError("ABI drift: VerificationResult.inconsistent_tree");
+    if (@intFromEnum(VerificationResult.stale_sth) != gen.VERIFY_STALE_STH) @compileError("ABI drift: VerificationResult.stale_sth");
+
+    if (@intFromEnum(ServerState.idle) != gen.STATE_IDLE) @compileError("ABI drift: ServerState.idle");
+    if (@intFromEnum(ServerState.active) != gen.STATE_ACTIVE) @compileError("ABI drift: ServerState.active");
+    if (@intFromEnum(ServerState.merging) != gen.STATE_MERGING) @compileError("ABI drift: ServerState.merging");
+    if (@intFromEnum(ServerState.signing) != gen.STATE_SIGNING) @compileError("ABI drift: ServerState.signing");
+    if (@intFromEnum(ServerState.shutdown) != gen.STATE_SHUTDOWN) @compileError("ABI drift: ServerState.shutdown");
+}
 
 // =========================================================================
 // Internal data structures
@@ -386,4 +426,10 @@ pub export fn ctlog_can_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 3 and to == 4) return 1; // Signing -> Shutdown
     if (from == 4 and to == 0) return 1; // Shutdown -> Idle
     return 0;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
+        @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

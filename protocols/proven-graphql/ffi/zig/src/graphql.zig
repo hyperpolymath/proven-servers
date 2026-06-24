@@ -599,3 +599,13 @@ pub export fn graphql_check_depth(depth: u16, max_depth: u16) callconv(.c) u8 {
 pub export fn graphql_check_complexity(score: u16, max_complexity: u16) callconv(.c) u8 {
     return if (score <= max_complexity) 0 else 1;
 }
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(batches)) > 16 * 1024 * 1024)
+        @compileError("pool 'batches' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}
+comptime {
+    if (@sizeOf(@TypeOf(contexts)) > 16 * 1024 * 1024)
+        @compileError("pool 'contexts' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
+}

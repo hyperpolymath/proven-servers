@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("diode_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching DiodeABI.Types.idr tag assignments)
 // =========================================================================
@@ -69,12 +76,48 @@ pub const GatewayState = enum(u8) {
     shutdown = 4,
 };
 
+// ABI conformance: pin every enum tag to the proof-generated constant so any
+// drift from the proven DiodeABI encoders is a compile error (not a comment).
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(Direction.high_to_low) != gen.DIR_HIGH_TO_LOW) @compileError("ABI drift: Direction.high_to_low");
+    if (@intFromEnum(Direction.low_to_high) != gen.DIR_LOW_TO_HIGH) @compileError("ABI drift: Direction.low_to_high");
+
+    if (@intFromEnum(Protocol.udp) != gen.PROTO_UDP) @compileError("ABI drift: Protocol.udp");
+    if (@intFromEnum(Protocol.tcp) != gen.PROTO_TCP) @compileError("ABI drift: Protocol.tcp");
+    if (@intFromEnum(Protocol.file_transfer) != gen.PROTO_FILE_TRANSFER) @compileError("ABI drift: Protocol.file_transfer");
+    if (@intFromEnum(Protocol.syslog) != gen.PROTO_SYSLOG) @compileError("ABI drift: Protocol.syslog");
+    if (@intFromEnum(Protocol.snmp) != gen.PROTO_SNMP) @compileError("ABI drift: Protocol.snmp");
+
+    if (@intFromEnum(TransferState.queued) != gen.XFER_QUEUED) @compileError("ABI drift: TransferState.queued");
+    if (@intFromEnum(TransferState.sending) != gen.XFER_SENDING) @compileError("ABI drift: TransferState.sending");
+    if (@intFromEnum(TransferState.confirming) != gen.XFER_CONFIRMING) @compileError("ABI drift: TransferState.confirming");
+    if (@intFromEnum(TransferState.complete) != gen.XFER_COMPLETE) @compileError("ABI drift: TransferState.complete");
+    if (@intFromEnum(TransferState.failed) != gen.XFER_FAILED) @compileError("ABI drift: TransferState.failed");
+
+    if (@intFromEnum(ValidationResult.passed) != gen.VALID_PASSED) @compileError("ABI drift: ValidationResult.passed");
+    if (@intFromEnum(ValidationResult.format_error) != gen.VALID_FORMAT_ERROR) @compileError("ABI drift: ValidationResult.format_error");
+    if (@intFromEnum(ValidationResult.size_exceeded) != gen.VALID_SIZE_EXCEEDED) @compileError("ABI drift: ValidationResult.size_exceeded");
+    if (@intFromEnum(ValidationResult.policy_blocked) != gen.VALID_POLICY_BLOCKED) @compileError("ABI drift: ValidationResult.policy_blocked");
+
+    if (@intFromEnum(IntegrityCheck.crc32) != gen.INTEG_CRC32) @compileError("ABI drift: IntegrityCheck.crc32");
+    if (@intFromEnum(IntegrityCheck.sha256) != gen.INTEG_SHA256) @compileError("ABI drift: IntegrityCheck.sha256");
+    if (@intFromEnum(IntegrityCheck.hmac) != gen.INTEG_HMAC) @compileError("ABI drift: IntegrityCheck.hmac");
+
+    if (@intFromEnum(GatewayState.idle) != gen.GW_IDLE) @compileError("ABI drift: GatewayState.idle");
+    if (@intFromEnum(GatewayState.configured) != gen.GW_CONFIGURED) @compileError("ABI drift: GatewayState.configured");
+    if (@intFromEnum(GatewayState.transferring) != gen.GW_TRANSFERRING) @compileError("ABI drift: GatewayState.transferring");
+    if (@intFromEnum(GatewayState.validating) != gen.GW_VALIDATING) @compileError("ABI drift: GatewayState.validating");
+    if (@intFromEnum(GatewayState.shutdown) != gen.GW_SHUTDOWN) @compileError("ABI drift: GatewayState.shutdown");
+}
+
 // =========================================================================
 // Internal data structures
 // =========================================================================
 
 /// Maximum concurrent gateways.
-const MAX_GATEWAYS: usize = 64;
+const MAX_GATEWAYS: usize = 8;
 
 /// Maximum queued segments per gateway.
 const MAX_SEGMENTS: usize = 128;
@@ -180,7 +223,7 @@ fn findNextSending(idx: usize) ?usize {
 
 /// Returns the ABI version number. Must match Foreign.abiVersion in Idris2.
 pub export fn diode_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Lifecycle ----------------------------------------------------------------
@@ -403,4 +446,10 @@ pub export fn diode_can_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 3 and to == 4) return 1; // Validating -> Shutdown
     if (from == 4 and to == 0) return 1; // Shutdown -> Idle
     return 0;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(gateways)) > 16 * 1024 * 1024)
+        @compileError("pool 'gateways' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

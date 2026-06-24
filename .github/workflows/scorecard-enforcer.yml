@@ -17,6 +17,10 @@ concurrency:
 permissions:
   contents: read
 jobs:
+  # Publish job: runs Scorecard + uploads SARIF (needs security-events:write +
+  # id-token OIDC). Deliberately contains NO custom `run` step -- the score gate
+  # is isolated in its own least-privilege job below (workflow_audit:
+  # scorecard_publish_with_run_step / split_scorecard_publish_job).
   scorecard:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -37,6 +41,24 @@ jobs:
         uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4
         with:
           sarif_file: results.sarif
+      - name: Upload results artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: scorecard-results
+          path: results.sarif
+  # Gate job: enforces the minimum score with no elevated permissions; consumes
+  # the SARIF artifact produced by the publish job above.
+  score-gate:
+    needs: scorecard
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Download results
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: scorecard-results
       - name: Check minimum score
         run: |
           # Parse score from results

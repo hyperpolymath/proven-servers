@@ -12,4 +12,6 @@ main = Main
 executable = "proven-cache"
 
 modules = Cache
+        , CacheABI.Types
+        , CacheABI.Foreign
         , Cache.Types

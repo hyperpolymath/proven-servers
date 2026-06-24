@@ -15,6 +15,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("cache_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching CacheABI.Types.idr tag assignments)
 // =========================================================================
@@ -71,6 +78,51 @@ pub const ReplicationMode = enum(u8) {
     replica = 2,
     sentinel = 3,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(Command.get) != gen.CMD_GET) @compileError("ABI drift: Command.get");
+    if (@intFromEnum(Command.set) != gen.CMD_SET) @compileError("ABI drift: Command.set");
+    if (@intFromEnum(Command.delete) != gen.CMD_DELETE) @compileError("ABI drift: Command.delete");
+    if (@intFromEnum(Command.exists) != gen.CMD_EXISTS) @compileError("ABI drift: Command.exists");
+    if (@intFromEnum(Command.expire) != gen.CMD_EXPIRE) @compileError("ABI drift: Command.expire");
+    if (@intFromEnum(Command.ttl) != gen.CMD_TTL) @compileError("ABI drift: Command.ttl");
+    if (@intFromEnum(Command.keys) != gen.CMD_KEYS) @compileError("ABI drift: Command.keys");
+    if (@intFromEnum(Command.flush) != gen.CMD_FLUSH) @compileError("ABI drift: Command.flush");
+    if (@intFromEnum(Command.incr) != gen.CMD_INCR) @compileError("ABI drift: Command.incr");
+    if (@intFromEnum(Command.decr) != gen.CMD_DECR) @compileError("ABI drift: Command.decr");
+    if (@intFromEnum(Command.append) != gen.CMD_APPEND) @compileError("ABI drift: Command.append");
+    if (@intFromEnum(Command.prepend) != gen.CMD_PREPEND) @compileError("ABI drift: Command.prepend");
+    if (@intFromEnum(Command.cas) != gen.CMD_CAS) @compileError("ABI drift: Command.cas");
+
+    if (@intFromEnum(EvictionPolicy.lru) != gen.EVICT_LRU) @compileError("ABI drift: EvictionPolicy.lru");
+    if (@intFromEnum(EvictionPolicy.lfu) != gen.EVICT_LFU) @compileError("ABI drift: EvictionPolicy.lfu");
+    if (@intFromEnum(EvictionPolicy.random) != gen.EVICT_RANDOM) @compileError("ABI drift: EvictionPolicy.random");
+    if (@intFromEnum(EvictionPolicy.evict_ttl) != gen.EVICT_EVICT_TTL) @compileError("ABI drift: EvictionPolicy.evict_ttl");
+    if (@intFromEnum(EvictionPolicy.no_eviction) != gen.EVICT_NO_EVICTION) @compileError("ABI drift: EvictionPolicy.no_eviction");
+
+    if (@intFromEnum(DataType.string_val) != gen.DTYPE_STRING_VAL) @compileError("ABI drift: DataType.string_val");
+    if (@intFromEnum(DataType.int_val) != gen.DTYPE_INT_VAL) @compileError("ABI drift: DataType.int_val");
+    if (@intFromEnum(DataType.list_val) != gen.DTYPE_LIST_VAL) @compileError("ABI drift: DataType.list_val");
+    if (@intFromEnum(DataType.set_val) != gen.DTYPE_SET_VAL) @compileError("ABI drift: DataType.set_val");
+    if (@intFromEnum(DataType.hash_val) != gen.DTYPE_HASH_VAL) @compileError("ABI drift: DataType.hash_val");
+
+    if (@intFromEnum(ErrorCode.not_found) != gen.ERR_NOT_FOUND) @compileError("ABI drift: ErrorCode.not_found");
+    if (@intFromEnum(ErrorCode.type_mismatch) != gen.ERR_TYPE_MISMATCH) @compileError("ABI drift: ErrorCode.type_mismatch");
+    if (@intFromEnum(ErrorCode.out_of_memory) != gen.ERR_OUT_OF_MEMORY) @compileError("ABI drift: ErrorCode.out_of_memory");
+    if (@intFromEnum(ErrorCode.key_too_long) != gen.ERR_KEY_TOO_LONG) @compileError("ABI drift: ErrorCode.key_too_long");
+    if (@intFromEnum(ErrorCode.value_too_large) != gen.ERR_VALUE_TOO_LARGE) @compileError("ABI drift: ErrorCode.value_too_large");
+    if (@intFromEnum(ErrorCode.cas_conflict) != gen.ERR_CAS_CONFLICT) @compileError("ABI drift: ErrorCode.cas_conflict");
+
+    if (@intFromEnum(ReplicationMode.none) != gen.REPL_NONE) @compileError("ABI drift: ReplicationMode.none");
+    if (@intFromEnum(ReplicationMode.primary) != gen.REPL_PRIMARY) @compileError("ABI drift: ReplicationMode.primary");
+    if (@intFromEnum(ReplicationMode.replica) != gen.REPL_REPLICA) @compileError("ABI drift: ReplicationMode.replica");
+    if (@intFromEnum(ReplicationMode.sentinel) != gen.REPL_SENTINEL) @compileError("ABI drift: ReplicationMode.sentinel");
+}
 
 // =========================================================================
 // Internal data structures
@@ -133,7 +185,7 @@ fn validSlot(slot: c_int) ?usize {
 
 /// Returns the ABI version number. Must match Foreign.abiVersion in Idris2.
 pub export fn cache_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 /// Create a new cache session. Returns slot index (>=0) or -1.
@@ -300,4 +352,10 @@ pub export fn cache_set_eviction(slot: c_int, policy: u8) callconv(.c) u8 {
     const idx = validSlot(slot) orelse return 1;
     sessions[idx].eviction = @enumFromInt(policy);
     return 0;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
+        @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

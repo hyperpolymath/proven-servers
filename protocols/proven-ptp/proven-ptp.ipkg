@@ -12,4 +12,6 @@ main = Main
 executable = "proven-ptp"
 
 modules = PTP
+        , PTPABI.Types
+        , PTPABI.Foreign
         , PTP.Types

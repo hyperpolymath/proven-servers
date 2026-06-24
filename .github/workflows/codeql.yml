@@ -30,6 +30,10 @@ jobs:
         include:
           - language: javascript-typescript
             build-mode: none
+          # Scan the GitHub Actions workflows themselves (workflow_audit:
+          # codeql_missing_actions_language).
+          - language: actions
+            build-mode: none
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0

@@ -12,5 +12,7 @@ main = Main
 executable = "proven-backup"
 
 modules = Backup
+        , BackupABI.Types
+        , BackupABI.Foreign
         , Backup.Types
         , Main

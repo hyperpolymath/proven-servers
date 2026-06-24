@@ -309,3 +309,18 @@ revokedCannotBeReSigned _ impossible
 public export
 revokedCannotBeSuspended : ValidCertTransition Revoked Suspended -> Void
 revokedCannotBeSuspended _ impossible
+
+---------------------------------------------------------------------------
+-- Validator completeness (audit S1): validateCertTransition is sound + complete.
+---------------------------------------------------------------------------
+
+public export
+validateCertComplete : (w : ValidCertTransition a b) -> validateCertTransition a b = Just w
+validateCertComplete SignCert        = Refl
+validateCertComplete RevokeCert      = Refl
+validateCertComplete ExpireCert      = Refl
+validateCertComplete SuspendCert     = Refl
+validateCertComplete RenewCert       = Refl
+validateCertComplete ReinstateCert   = Refl
+validateCertComplete RevokeSuspended = Refl
+validateCertComplete RejectPending   = Refl

@@ -16,6 +16,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("coap_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching CoAPABI.Types.idr tag assignments)
 // =========================================================================
@@ -64,6 +71,43 @@ pub const SessionState = enum(u8) {
     observing = 3,
     shutdown = 4,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(Method.get) != gen.METHOD_GET) @compileError("ABI drift: Method.get");
+    if (@intFromEnum(Method.post) != gen.METHOD_POST) @compileError("ABI drift: Method.post");
+    if (@intFromEnum(Method.put) != gen.METHOD_PUT) @compileError("ABI drift: Method.put");
+    if (@intFromEnum(Method.delete) != gen.METHOD_DELETE) @compileError("ABI drift: Method.delete");
+
+    if (@intFromEnum(MessageType.confirmable) != gen.MSGTYPE_CONFIRMABLE) @compileError("ABI drift: MessageType.confirmable");
+    if (@intFromEnum(MessageType.non_confirmable) != gen.MSGTYPE_NON_CONFIRMABLE) @compileError("ABI drift: MessageType.non_confirmable");
+    if (@intFromEnum(MessageType.acknowledgement) != gen.MSGTYPE_ACKNOWLEDGEMENT) @compileError("ABI drift: MessageType.acknowledgement");
+    if (@intFromEnum(MessageType.reset) != gen.MSGTYPE_RESET) @compileError("ABI drift: MessageType.reset");
+
+    if (@intFromEnum(ContentFormat.text_plain) != gen.FORMAT_TEXT_PLAIN) @compileError("ABI drift: ContentFormat.text_plain");
+    if (@intFromEnum(ContentFormat.link_format) != gen.FORMAT_LINK_FORMAT) @compileError("ABI drift: ContentFormat.link_format");
+    if (@intFromEnum(ContentFormat.xml) != gen.FORMAT_XML) @compileError("ABI drift: ContentFormat.xml");
+    if (@intFromEnum(ContentFormat.octet_stream) != gen.FORMAT_OCTET_STREAM) @compileError("ABI drift: ContentFormat.octet_stream");
+    if (@intFromEnum(ContentFormat.exi) != gen.FORMAT_EXI) @compileError("ABI drift: ContentFormat.exi");
+    if (@intFromEnum(ContentFormat.json) != gen.FORMAT_JSON) @compileError("ABI drift: ContentFormat.json");
+    if (@intFromEnum(ContentFormat.cbor) != gen.FORMAT_CBOR) @compileError("ABI drift: ContentFormat.cbor");
+
+    if (@intFromEnum(ResponseClass.success) != gen.RESPCLASS_SUCCESS) @compileError("ABI drift: ResponseClass.success");
+    if (@intFromEnum(ResponseClass.client_error) != gen.RESPCLASS_CLIENT_ERROR) @compileError("ABI drift: ResponseClass.client_error");
+    if (@intFromEnum(ResponseClass.server_error) != gen.RESPCLASS_SERVER_ERROR) @compileError("ABI drift: ResponseClass.server_error");
+    if (@intFromEnum(ResponseClass.signaling) != gen.RESPCLASS_SIGNALING) @compileError("ABI drift: ResponseClass.signaling");
+    if (@intFromEnum(ResponseClass.empty) != gen.RESPCLASS_EMPTY) @compileError("ABI drift: ResponseClass.empty");
+
+    if (@intFromEnum(SessionState.idle) != gen.STATE_IDLE) @compileError("ABI drift: SessionState.idle");
+    if (@intFromEnum(SessionState.bound) != gen.STATE_BOUND) @compileError("ABI drift: SessionState.bound");
+    if (@intFromEnum(SessionState.serving) != gen.STATE_SERVING) @compileError("ABI drift: SessionState.serving");
+    if (@intFromEnum(SessionState.observing) != gen.STATE_OBSERVING) @compileError("ABI drift: SessionState.observing");
+    if (@intFromEnum(SessionState.shutdown) != gen.STATE_SHUTDOWN) @compileError("ABI drift: SessionState.shutdown");
+}
 
 // =========================================================================
 // Internal data structures
@@ -200,7 +244,7 @@ fn methodBit(method: u8) u8 {
 
 /// Returns the ABI version number. Must match Foreign.abiVersion in Idris2.
 pub export fn coap_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Lifecycle ----------------------------------------------------------------
@@ -541,4 +585,10 @@ pub export fn coap_can_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 3 and to == 4) return 1; // Observing -> Shutdown
     if (from == 4 and to == 0) return 1; // Shutdown -> Idle
     return 0;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(endpoints)) > 16 * 1024 * 1024)
+        @compileError("pool 'endpoints' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

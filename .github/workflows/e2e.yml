@@ -16,6 +16,7 @@ on:
       - 'core/**'
       - 'bindings/**'
       - 'tests/**'
+      - 'tools/**'
       - '.github/workflows/e2e.yml'
   pull_request:
     branches: [main, master]
@@ -28,7 +29,7 @@ jobs:
   e2e:
     name: E2E — Connector + Protocol FFI Round-Trip
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -36,6 +37,25 @@ jobs:
         uses: goto-bus-stop/setup-zig@abea47f85e598557f500fa1fd2ab7464fcb39406  # v2.2.1
         with:
           version: 0.15.1
+      # Builds the proven Idris ABI/engine so e2e.sh Section 0 can verify the
+      # proofs and that the generated header/Zig constants still match them.
+      # From-source (pinned v0.7.0) is the standard Linux install; if a runner
+      # needs a different method, e2e.sh Section 0 skips the Idris steps
+      # gracefully and the Zig comptime guard still runs.
+      - name: Install Idris2 0.7.0
+        # Best-effort: a from-source build can vary by runner. If it fails,
+        # e2e.sh Section 0 skips the Idris steps and the Zig comptime guard
+        # still runs -- so the conformance check degrades gracefully rather
+        # than blocking the whole E2E job at this step.
+        continue-on-error: true
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chezscheme libgmp-dev
+          git clone --depth 1 --branch v0.7.0 https://github.com/idris-lang/Idris2.git "$RUNNER_TEMP/Idris2"
+          make -C "$RUNNER_TEMP/Idris2" bootstrap SCHEME=scheme
+          make -C "$RUNNER_TEMP/Idris2" install
+          echo "$HOME/.idris2/bin" >> "$GITHUB_PATH"
+          "$HOME/.idris2/bin/idris2" --version
       - name: Run E2E test suite
         run: bash tests/e2e.sh
   benchmarks:

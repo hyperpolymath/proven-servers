@@ -14,3 +14,5 @@ executable = "proven-dot"
 modules = DoT
         , DoT.Types
         , Main
+        , DoTABI.Types
+        , DoTABI.Foreign

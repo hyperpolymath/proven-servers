@@ -12,4 +12,6 @@ main = Main
 executable = "proven-fileserver"
 
 modules = Fileserver
+        , FileserverABI.Types
+        , FileserverABI.Foreign
         , Fileserver.Types

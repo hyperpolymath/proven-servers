@@ -16,6 +16,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("ocsp_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching OCSPABI.Types.idr tag assignments)
 // =========================================================================
@@ -146,8 +153,37 @@ fn findCacheEntry(idx: usize, serial: []const u8) ?usize {
 // Exported C ABI functions
 // =========================================================================
 
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(CertStatus.good) != gen.CERT_GOOD) @compileError("ABI drift: CertStatus.good");
+    if (@intFromEnum(CertStatus.revoked) != gen.CERT_REVOKED) @compileError("ABI drift: CertStatus.revoked");
+    if (@intFromEnum(CertStatus.unknown) != gen.CERT_UNKNOWN) @compileError("ABI drift: CertStatus.unknown");
+
+    if (@intFromEnum(ResponseStatus.successful) != gen.RESPONSE_SUCCESSFUL) @compileError("ABI drift: ResponseStatus.successful");
+    if (@intFromEnum(ResponseStatus.malformed_request) != gen.RESPONSE_MALFORMED_REQUEST) @compileError("ABI drift: ResponseStatus.malformed_request");
+    if (@intFromEnum(ResponseStatus.internal_error) != gen.RESPONSE_INTERNAL_ERROR) @compileError("ABI drift: ResponseStatus.internal_error");
+    if (@intFromEnum(ResponseStatus.try_later) != gen.RESPONSE_TRY_LATER) @compileError("ABI drift: ResponseStatus.try_later");
+    if (@intFromEnum(ResponseStatus.sig_required) != gen.RESPONSE_SIG_REQUIRED) @compileError("ABI drift: ResponseStatus.sig_required");
+    if (@intFromEnum(ResponseStatus.unauthorized) != gen.RESPONSE_UNAUTHORIZED) @compileError("ABI drift: ResponseStatus.unauthorized");
+
+    if (@intFromEnum(HashAlgorithm.sha1) != gen.HASH_SHA1) @compileError("ABI drift: HashAlgorithm.sha1");
+    if (@intFromEnum(HashAlgorithm.sha256) != gen.HASH_SHA256) @compileError("ABI drift: HashAlgorithm.sha256");
+    if (@intFromEnum(HashAlgorithm.sha384) != gen.HASH_SHA384) @compileError("ABI drift: HashAlgorithm.sha384");
+    if (@intFromEnum(HashAlgorithm.sha512) != gen.HASH_SHA512) @compileError("ABI drift: HashAlgorithm.sha512");
+
+    if (@intFromEnum(ResponderState.idle) != gen.STATE_IDLE) @compileError("ABI drift: ResponderState.idle");
+    if (@intFromEnum(ResponderState.ready) != gen.STATE_READY) @compileError("ABI drift: ResponderState.ready");
+    if (@intFromEnum(ResponderState.processing) != gen.STATE_PROCESSING) @compileError("ABI drift: ResponderState.processing");
+    if (@intFromEnum(ResponderState.signing) != gen.STATE_SIGNING) @compileError("ABI drift: ResponderState.signing");
+    if (@intFromEnum(ResponderState.closing) != gen.STATE_CLOSING) @compileError("ABI drift: ResponderState.closing");
+}
+
 pub export fn ocsp_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 /// Create a new OCSP responder. Returns slot (>=0) or -1.
@@ -357,4 +393,10 @@ pub export fn ocsp_is_ready(slot: c_int) callconv(.c) u8 {
     defer mutex.unlock();
     const idx = validSlot(slot) orelse return 0;
     return if (sessions[idx].state == .ready) 1 else 0;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
+        @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

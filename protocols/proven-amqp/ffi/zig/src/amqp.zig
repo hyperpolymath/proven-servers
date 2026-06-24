@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("amqp_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching AMQPABI.Layout.idr tag assignments)
 // =========================================================================
@@ -87,12 +94,61 @@ pub const BrokerState = enum(u8) {
     disconnecting = 5,
 };
 
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(FrameType.method) != gen.FRAME_METHOD) @compileError("ABI drift: FrameType.method");
+    if (@intFromEnum(FrameType.header) != gen.FRAME_HEADER) @compileError("ABI drift: FrameType.header");
+    if (@intFromEnum(FrameType.body) != gen.FRAME_BODY) @compileError("ABI drift: FrameType.body");
+    if (@intFromEnum(FrameType.heartbeat) != gen.FRAME_HEARTBEAT) @compileError("ABI drift: FrameType.heartbeat");
+
+    if (@intFromEnum(MethodClass.connection) != gen.CLASS_CONNECTION) @compileError("ABI drift: MethodClass.connection");
+    if (@intFromEnum(MethodClass.channel) != gen.CLASS_CHANNEL) @compileError("ABI drift: MethodClass.channel");
+    if (@intFromEnum(MethodClass.exchange) != gen.CLASS_EXCHANGE) @compileError("ABI drift: MethodClass.exchange");
+    if (@intFromEnum(MethodClass.queue) != gen.CLASS_QUEUE) @compileError("ABI drift: MethodClass.queue");
+    if (@intFromEnum(MethodClass.basic) != gen.CLASS_BASIC) @compileError("ABI drift: MethodClass.basic");
+    if (@intFromEnum(MethodClass.tx) != gen.CLASS_TX) @compileError("ABI drift: MethodClass.tx");
+    if (@intFromEnum(MethodClass.confirm) != gen.CLASS_CONFIRM) @compileError("ABI drift: MethodClass.confirm");
+
+    if (@intFromEnum(ExchangeType.direct) != gen.EXCH_DIRECT) @compileError("ABI drift: ExchangeType.direct");
+    if (@intFromEnum(ExchangeType.fanout) != gen.EXCH_FANOUT) @compileError("ABI drift: ExchangeType.fanout");
+    if (@intFromEnum(ExchangeType.topic) != gen.EXCH_TOPIC) @compileError("ABI drift: ExchangeType.topic");
+    if (@intFromEnum(ExchangeType.headers) != gen.EXCH_HEADERS) @compileError("ABI drift: ExchangeType.headers");
+
+    if (@intFromEnum(DeliveryMode.non_persistent) != gen.DMODE_NON_PERSISTENT) @compileError("ABI drift: DeliveryMode.non_persistent");
+    if (@intFromEnum(DeliveryMode.persistent) != gen.DMODE_PERSISTENT) @compileError("ABI drift: DeliveryMode.persistent");
+
+    if (@intFromEnum(ErrorSeverity.channel_level) != gen.SEV_CHANNEL_LEVEL) @compileError("ABI drift: ErrorSeverity.channel_level");
+    if (@intFromEnum(ErrorSeverity.connection_level) != gen.SEV_CONNECTION_LEVEL) @compileError("ABI drift: ErrorSeverity.connection_level");
+
+    if (@intFromEnum(ConnectionState.idle) != gen.CONN_IDLE) @compileError("ABI drift: ConnectionState.idle");
+    if (@intFromEnum(ConnectionState.negotiating) != gen.CONN_NEGOTIATING) @compileError("ABI drift: ConnectionState.negotiating");
+    if (@intFromEnum(ConnectionState.tuning_ok) != gen.CONN_TUNING_OK) @compileError("ABI drift: ConnectionState.tuning_ok");
+    if (@intFromEnum(ConnectionState.open) != gen.CONN_OPEN) @compileError("ABI drift: ConnectionState.open");
+    if (@intFromEnum(ConnectionState.closing) != gen.CONN_CLOSING) @compileError("ABI drift: ConnectionState.closing");
+
+    if (@intFromEnum(ChannelState.closed) != gen.CHAN_CLOSED) @compileError("ABI drift: ChannelState.closed");
+    if (@intFromEnum(ChannelState.opening) != gen.CHAN_OPENING) @compileError("ABI drift: ChannelState.opening");
+    if (@intFromEnum(ChannelState.ch_open) != gen.CHAN_CH_OPEN) @compileError("ABI drift: ChannelState.ch_open");
+    if (@intFromEnum(ChannelState.ch_closing) != gen.CHAN_CH_CLOSING) @compileError("ABI drift: ChannelState.ch_closing");
+
+    if (@intFromEnum(BrokerState.idle) != gen.BROKER_IDLE) @compileError("ABI drift: BrokerState.idle");
+    if (@intFromEnum(BrokerState.connected) != gen.BROKER_CONNECTED) @compileError("ABI drift: BrokerState.connected");
+    if (@intFromEnum(BrokerState.channel_open) != gen.BROKER_CHANNEL_OPEN) @compileError("ABI drift: BrokerState.channel_open");
+    if (@intFromEnum(BrokerState.consuming) != gen.BROKER_CONSUMING) @compileError("ABI drift: BrokerState.consuming");
+    if (@intFromEnum(BrokerState.publishing) != gen.BROKER_PUBLISHING) @compileError("ABI drift: BrokerState.publishing");
+    if (@intFromEnum(BrokerState.disconnecting) != gen.BROKER_DISCONNECTING) @compileError("ABI drift: BrokerState.disconnecting");
+}
+
 // =========================================================================
 // Internal data structures
 // =========================================================================
 
 /// Maximum concurrent sessions.
-const MAX_SESSIONS: usize = 64;
+const MAX_SESSIONS: usize = 16;
 
 /// Maximum channels per session.
 const MAX_CHANNELS: usize = 16;
@@ -362,7 +418,7 @@ pub fn topicMatch(routing_key: []const u8, pattern: []const u8) bool {
 
 /// Returns the ABI version number. Must match Foreign.abiVersion in Idris2.
 pub export fn amqp_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Lifecycle ----------------------------------------------------------------
@@ -979,4 +1035,10 @@ pub export fn amqp_routing_match(
 
     // headers (3) and unknown: no routing key matching (headers use header table)
     return 0;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
+        @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

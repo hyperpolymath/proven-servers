@@ -12,5 +12,7 @@ main = Main
 executable = "proven-triplestore"
 
 modules = Triplestore
+        , TriplestoreABI.Types
+        , TriplestoreABI.Foreign
         , Triplestore.Types
         , Main

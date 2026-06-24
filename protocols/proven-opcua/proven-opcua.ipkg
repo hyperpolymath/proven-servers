@@ -12,5 +12,7 @@ main = Main
 executable = "proven-opcua"
 
 modules = OPCUA
+        , OPCUAABI.Types
+        , OPCUAABI.Foreign
         , OPCUA.Types
         , Main

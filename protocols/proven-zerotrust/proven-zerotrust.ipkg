@@ -14,3 +14,6 @@ executable = "proven-zerotrust"
 modules = ZeroTrust
         , ZeroTrust.Types
         , Main
+        , ZeroTrustABI.Layout
+        , ZeroTrustABI.Transitions
+        , ZeroTrustABI.Foreign

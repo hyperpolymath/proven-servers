@@ -11,10 +11,15 @@ authors = "Jonathan D.A. Jewell"
 brief   = "Neurosymbolic integration server — formal ABI types"
 
 sourcedir = "src"
+main = Main
+executable = "proven-nesy"
 
 modules = NeSy
+        , NeSyABI.Types
+        , NeSyABI.Foreign
         , NeSy.Types
         , NeSy.Reasoning
         , NeSy.Integration
+        , Main
 
 depends = base

@@ -12,4 +12,6 @@ main = Main
 executable = "proven-hardened"
 
 modules = Hardened
+        , HardenedABI.Types
+        , HardenedABI.Foreign
         , Hardened.Types

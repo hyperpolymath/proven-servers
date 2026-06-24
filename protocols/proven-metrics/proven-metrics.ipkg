@@ -12,4 +12,6 @@ main = Main
 executable = "proven-metrics"
 
 modules = Metrics
+        , MetricsABI.Types
+        , MetricsABI.Foreign
         , Metrics.Types

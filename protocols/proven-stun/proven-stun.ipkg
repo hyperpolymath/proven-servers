@@ -12,5 +12,7 @@ main = Main
 executable = "proven-stun"
 
 modules = STUN
+        , STUNABI.Types
+        , STUNABI.Foreign
         , STUN.Types
         , Main

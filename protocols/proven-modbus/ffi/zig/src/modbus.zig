@@ -15,6 +15,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("modbus_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching abi.Types.idr tag assignments)
 // =========================================================================
@@ -60,6 +67,43 @@ pub const GatewayState = enum(u8) {
     err = 3,
     stopping = 4,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(FunctionCode.read_coils) != gen.FUNC_READ_COILS) @compileError("ABI drift: FunctionCode.read_coils");
+    if (@intFromEnum(FunctionCode.read_discrete_inputs) != gen.FUNC_READ_DISCRETE_INPUTS) @compileError("ABI drift: FunctionCode.read_discrete_inputs");
+    if (@intFromEnum(FunctionCode.read_holding_registers) != gen.FUNC_READ_HOLDING_REGISTERS) @compileError("ABI drift: FunctionCode.read_holding_registers");
+    if (@intFromEnum(FunctionCode.read_input_registers) != gen.FUNC_READ_INPUT_REGISTERS) @compileError("ABI drift: FunctionCode.read_input_registers");
+    if (@intFromEnum(FunctionCode.write_single_coil) != gen.FUNC_WRITE_SINGLE_COIL) @compileError("ABI drift: FunctionCode.write_single_coil");
+    if (@intFromEnum(FunctionCode.write_single_register) != gen.FUNC_WRITE_SINGLE_REGISTER) @compileError("ABI drift: FunctionCode.write_single_register");
+    if (@intFromEnum(FunctionCode.write_multiple_coils) != gen.FUNC_WRITE_MULTIPLE_COILS) @compileError("ABI drift: FunctionCode.write_multiple_coils");
+    if (@intFromEnum(FunctionCode.write_multiple_registers) != gen.FUNC_WRITE_MULTIPLE_REGISTERS) @compileError("ABI drift: FunctionCode.write_multiple_registers");
+    if (@intFromEnum(FunctionCode.read_write_multiple_registers) != gen.FUNC_READ_WRITE_MULTIPLE_REGISTERS) @compileError("ABI drift: FunctionCode.read_write_multiple_registers");
+    if (@intFromEnum(FunctionCode.mask_write_register) != gen.FUNC_MASK_WRITE_REGISTER) @compileError("ABI drift: FunctionCode.mask_write_register");
+
+    if (@intFromEnum(ExceptionCode.illegal_function) != gen.EXC_ILLEGAL_FUNCTION) @compileError("ABI drift: ExceptionCode.illegal_function");
+    if (@intFromEnum(ExceptionCode.illegal_data_address) != gen.EXC_ILLEGAL_DATA_ADDRESS) @compileError("ABI drift: ExceptionCode.illegal_data_address");
+    if (@intFromEnum(ExceptionCode.illegal_data_value) != gen.EXC_ILLEGAL_DATA_VALUE) @compileError("ABI drift: ExceptionCode.illegal_data_value");
+    if (@intFromEnum(ExceptionCode.slave_device_failure) != gen.EXC_SLAVE_DEVICE_FAILURE) @compileError("ABI drift: ExceptionCode.slave_device_failure");
+    if (@intFromEnum(ExceptionCode.acknowledge) != gen.EXC_ACKNOWLEDGE) @compileError("ABI drift: ExceptionCode.acknowledge");
+    if (@intFromEnum(ExceptionCode.slave_device_busy) != gen.EXC_SLAVE_DEVICE_BUSY) @compileError("ABI drift: ExceptionCode.slave_device_busy");
+    if (@intFromEnum(ExceptionCode.memory_parity_error) != gen.EXC_MEMORY_PARITY_ERROR) @compileError("ABI drift: ExceptionCode.memory_parity_error");
+    if (@intFromEnum(ExceptionCode.gateway_path_unavailable) != gen.EXC_GATEWAY_PATH_UNAVAILABLE) @compileError("ABI drift: ExceptionCode.gateway_path_unavailable");
+    if (@intFromEnum(ExceptionCode.gateway_target_device_failed) != gen.EXC_GATEWAY_TARGET_DEVICE_FAILED) @compileError("ABI drift: ExceptionCode.gateway_target_device_failed");
+
+    if (@intFromEnum(DeviceRole.master) != gen.ROLE_MASTER) @compileError("ABI drift: DeviceRole.master");
+    if (@intFromEnum(DeviceRole.slave) != gen.ROLE_SLAVE) @compileError("ABI drift: DeviceRole.slave");
+
+    if (@intFromEnum(GatewayState.idle) != gen.GW_IDLE) @compileError("ABI drift: GatewayState.idle");
+    if (@intFromEnum(GatewayState.listening) != gen.GW_LISTENING) @compileError("ABI drift: GatewayState.listening");
+    if (@intFromEnum(GatewayState.processing) != gen.GW_PROCESSING) @compileError("ABI drift: GatewayState.processing");
+    if (@intFromEnum(GatewayState.err) != gen.GW_ERR) @compileError("ABI drift: GatewayState.err");
+    if (@intFromEnum(GatewayState.stopping) != gen.GW_STOPPING) @compileError("ABI drift: GatewayState.stopping");
+}
 
 // =========================================================================
 // Internal data structures
@@ -173,7 +217,7 @@ fn addTransaction(idx: usize, func_code: FunctionCode) u8 {
 
 /// Returns the ABI version number.
 pub export fn modbus_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 /// Create a new Modbus gateway session. Returns slot (>=0) or -1 on failure.
@@ -410,4 +454,10 @@ pub export fn modbus_can_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 3 and to == 4) return 1; // Error -> Stopping
     if (from == 4 and to == 0) return 1; // Stopping -> Idle
     return 0;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
+        @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

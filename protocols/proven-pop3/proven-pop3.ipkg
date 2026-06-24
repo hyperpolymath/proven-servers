@@ -12,4 +12,6 @@ main = Main
 executable = "proven-pop3"
 
 modules = POP3
+        , POP3ABI.Types
+        , POP3ABI.Foreign
         , POP3.Types

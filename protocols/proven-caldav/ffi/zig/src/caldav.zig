@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("caldav_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching CalDAVABI.Types.idr tag assignments)
 // =========================================================================
@@ -67,6 +74,45 @@ pub const ServerState = enum(u8) {
     scheduling = 3,
     shutdown = 4,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(ComponentType.vevent) != gen.COMP_VEVENT) @compileError("ABI drift: ComponentType.vevent");
+    if (@intFromEnum(ComponentType.vtodo) != gen.COMP_VTODO) @compileError("ABI drift: ComponentType.vtodo");
+    if (@intFromEnum(ComponentType.vjournal) != gen.COMP_VJOURNAL) @compileError("ABI drift: ComponentType.vjournal");
+    if (@intFromEnum(ComponentType.vfreebusy) != gen.COMP_VFREEBUSY) @compileError("ABI drift: ComponentType.vfreebusy");
+
+    if (@intFromEnum(CalMethod.get) != gen.METHOD_GET) @compileError("ABI drift: CalMethod.get");
+    if (@intFromEnum(CalMethod.put) != gen.METHOD_PUT) @compileError("ABI drift: CalMethod.put");
+    if (@intFromEnum(CalMethod.delete) != gen.METHOD_DELETE) @compileError("ABI drift: CalMethod.delete");
+    if (@intFromEnum(CalMethod.propfind) != gen.METHOD_PROPFIND) @compileError("ABI drift: CalMethod.propfind");
+    if (@intFromEnum(CalMethod.proppatch) != gen.METHOD_PROPPATCH) @compileError("ABI drift: CalMethod.proppatch");
+    if (@intFromEnum(CalMethod.report) != gen.METHOD_REPORT) @compileError("ABI drift: CalMethod.report");
+    if (@intFromEnum(CalMethod.mkcalendar) != gen.METHOD_MKCALENDAR) @compileError("ABI drift: CalMethod.mkcalendar");
+
+    if (@intFromEnum(ScheduleStatus.needs_action) != gen.SCHED_NEEDS_ACTION) @compileError("ABI drift: ScheduleStatus.needs_action");
+    if (@intFromEnum(ScheduleStatus.accepted) != gen.SCHED_ACCEPTED) @compileError("ABI drift: ScheduleStatus.accepted");
+    if (@intFromEnum(ScheduleStatus.declined) != gen.SCHED_DECLINED) @compileError("ABI drift: ScheduleStatus.declined");
+    if (@intFromEnum(ScheduleStatus.tentative) != gen.SCHED_TENTATIVE) @compileError("ABI drift: ScheduleStatus.tentative");
+    if (@intFromEnum(ScheduleStatus.delegated) != gen.SCHED_DELEGATED) @compileError("ABI drift: ScheduleStatus.delegated");
+
+    if (@intFromEnum(CalError.valid_calendar_data) != gen.ERR_VALID_CALENDAR_DATA) @compileError("ABI drift: CalError.valid_calendar_data");
+    if (@intFromEnum(CalError.no_resource_type_change) != gen.ERR_NO_RESOURCE_TYPE_CHANGE) @compileError("ABI drift: CalError.no_resource_type_change");
+    if (@intFromEnum(CalError.supported_component_mismatch) != gen.ERR_SUPPORTED_COMPONENT_MISMATCH) @compileError("ABI drift: CalError.supported_component_mismatch");
+    if (@intFromEnum(CalError.max_resource_size) != gen.ERR_MAX_RESOURCE_SIZE) @compileError("ABI drift: CalError.max_resource_size");
+    if (@intFromEnum(CalError.uid_conflict) != gen.ERR_UID_CONFLICT) @compileError("ABI drift: CalError.uid_conflict");
+    if (@intFromEnum(CalError.precondition_failed) != gen.ERR_PRECONDITION_FAILED) @compileError("ABI drift: CalError.precondition_failed");
+
+    if (@intFromEnum(ServerState.idle) != gen.SRV_IDLE) @compileError("ABI drift: ServerState.idle");
+    if (@intFromEnum(ServerState.bound) != gen.SRV_BOUND) @compileError("ABI drift: ServerState.bound");
+    if (@intFromEnum(ServerState.serving) != gen.SRV_SERVING) @compileError("ABI drift: ServerState.serving");
+    if (@intFromEnum(ServerState.scheduling) != gen.SRV_SCHEDULING) @compileError("ABI drift: ServerState.scheduling");
+    if (@intFromEnum(ServerState.shutdown) != gen.SRV_SHUTDOWN) @compileError("ABI drift: ServerState.shutdown");
+}
 
 // =========================================================================
 // Internal data structures
@@ -206,7 +252,7 @@ fn findResource(idx: usize, ci: usize, uid: []const u8) ?usize {
 
 /// Returns the ABI version number. Must match Foreign.abiVersion in Idris2.
 pub export fn caldav_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // -- Lifecycle ----------------------------------------------------------------
@@ -522,4 +568,10 @@ pub export fn caldav_can_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 3 and to == 4) return 1; // Scheduling -> Shutdown
     if (from == 4 and to == 0) return 1; // Shutdown -> Idle
     return 0;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(servers)) > 16 * 1024 * 1024)
+        @compileError("pool 'servers' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

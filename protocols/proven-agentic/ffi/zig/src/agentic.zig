@@ -20,6 +20,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("agentic_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // ── Enums (matching Idris2 Layout.idr tag assignments exactly) ──────────
 
 /// AgentState — matches agentStateToTag
@@ -95,6 +102,65 @@ pub const AgenticError = enum(u8) {
     safety_denied = 7,
 };
 
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(AgentState.idle) != gen.STATE_IDLE) @compileError("ABI drift: AgentState.idle");
+    if (@intFromEnum(AgentState.planning) != gen.STATE_PLANNING) @compileError("ABI drift: AgentState.planning");
+    if (@intFromEnum(AgentState.acting) != gen.STATE_ACTING) @compileError("ABI drift: AgentState.acting");
+    if (@intFromEnum(AgentState.observing) != gen.STATE_OBSERVING) @compileError("ABI drift: AgentState.observing");
+    if (@intFromEnum(AgentState.reflecting) != gen.STATE_REFLECTING) @compileError("ABI drift: AgentState.reflecting");
+    if (@intFromEnum(AgentState.blocked) != gen.STATE_BLOCKED) @compileError("ABI drift: AgentState.blocked");
+    if (@intFromEnum(AgentState.terminated) != gen.STATE_TERMINATED) @compileError("ABI drift: AgentState.terminated");
+
+    if (@intFromEnum(ToolCall.execute) != gen.TOOL_EXECUTE) @compileError("ABI drift: ToolCall.execute");
+    if (@intFromEnum(ToolCall.query) != gen.TOOL_QUERY) @compileError("ABI drift: ToolCall.query");
+    if (@intFromEnum(ToolCall.transform) != gen.TOOL_TRANSFORM) @compileError("ABI drift: ToolCall.transform");
+    if (@intFromEnum(ToolCall.communicate) != gen.TOOL_COMMUNICATE) @compileError("ABI drift: ToolCall.communicate");
+    if (@intFromEnum(ToolCall.delegate) != gen.TOOL_DELEGATE) @compileError("ABI drift: ToolCall.delegate");
+    if (@intFromEnum(ToolCall.escalate) != gen.TOOL_ESCALATE) @compileError("ABI drift: ToolCall.escalate");
+
+    if (@intFromEnum(PlanStep.action) != gen.STEP_ACTION) @compileError("ABI drift: PlanStep.action");
+    if (@intFromEnum(PlanStep.condition) != gen.STEP_CONDITION) @compileError("ABI drift: PlanStep.condition");
+    if (@intFromEnum(PlanStep.loop) != gen.STEP_LOOP) @compileError("ABI drift: PlanStep.loop");
+    if (@intFromEnum(PlanStep.branch) != gen.STEP_BRANCH) @compileError("ABI drift: PlanStep.branch");
+    if (@intFromEnum(PlanStep.parallel) != gen.STEP_PARALLEL) @compileError("ABI drift: PlanStep.parallel");
+    if (@intFromEnum(PlanStep.checkpoint) != gen.STEP_CHECKPOINT) @compileError("ABI drift: PlanStep.checkpoint");
+    if (@intFromEnum(PlanStep.rollback) != gen.STEP_ROLLBACK) @compileError("ABI drift: PlanStep.rollback");
+
+    if (@intFromEnum(Coordination.solo) != gen.COORD_SOLO) @compileError("ABI drift: Coordination.solo");
+    if (@intFromEnum(Coordination.collaborative) != gen.COORD_COLLABORATIVE) @compileError("ABI drift: Coordination.collaborative");
+    if (@intFromEnum(Coordination.competitive) != gen.COORD_COMPETITIVE) @compileError("ABI drift: Coordination.competitive");
+    if (@intFromEnum(Coordination.hierarchical) != gen.COORD_HIERARCHICAL) @compileError("ABI drift: Coordination.hierarchical");
+    if (@intFromEnum(Coordination.swarm) != gen.COORD_SWARM) @compileError("ABI drift: Coordination.swarm");
+    if (@intFromEnum(Coordination.consensus) != gen.COORD_CONSENSUS) @compileError("ABI drift: Coordination.consensus");
+
+    if (@intFromEnum(SafetyCheck.approved) != gen.SAFETY_APPROVED) @compileError("ABI drift: SafetyCheck.approved");
+    if (@intFromEnum(SafetyCheck.denied) != gen.SAFETY_DENIED) @compileError("ABI drift: SafetyCheck.denied");
+    if (@intFromEnum(SafetyCheck.escalated) != gen.SAFETY_ESCALATED) @compileError("ABI drift: SafetyCheck.escalated");
+    if (@intFromEnum(SafetyCheck.timeout) != gen.SAFETY_TIMEOUT) @compileError("ABI drift: SafetyCheck.timeout");
+    if (@intFromEnum(SafetyCheck.sandboxed) != gen.SAFETY_SANDBOXED) @compileError("ABI drift: SafetyCheck.sandboxed");
+    if (@intFromEnum(SafetyCheck.human_required) != gen.SAFETY_HUMAN_REQUIRED) @compileError("ABI drift: SafetyCheck.human_required");
+
+    if (@intFromEnum(MemoryType.working) != gen.MEM_WORKING) @compileError("ABI drift: MemoryType.working");
+    if (@intFromEnum(MemoryType.episodic) != gen.MEM_EPISODIC) @compileError("ABI drift: MemoryType.episodic");
+    if (@intFromEnum(MemoryType.semantic) != gen.MEM_SEMANTIC) @compileError("ABI drift: MemoryType.semantic");
+    if (@intFromEnum(MemoryType.procedural) != gen.MEM_PROCEDURAL) @compileError("ABI drift: MemoryType.procedural");
+    if (@intFromEnum(MemoryType.shared) != gen.MEM_SHARED) @compileError("ABI drift: MemoryType.shared");
+
+    if (@intFromEnum(AgenticError.ok) != gen.ERR_OK) @compileError("ABI drift: AgenticError.ok");
+    if (@intFromEnum(AgenticError.invalid_slot) != gen.ERR_INVALID_SLOT) @compileError("ABI drift: AgenticError.invalid_slot");
+    if (@intFromEnum(AgenticError.not_active) != gen.ERR_NOT_ACTIVE) @compileError("ABI drift: AgenticError.not_active");
+    if (@intFromEnum(AgenticError.invalid_transition) != gen.ERR_INVALID_TRANSITION) @compileError("ABI drift: AgenticError.invalid_transition");
+    if (@intFromEnum(AgenticError.blocked) != gen.ERR_BLOCKED) @compileError("ABI drift: AgenticError.blocked");
+    if (@intFromEnum(AgenticError.tool_limit_exceeded) != gen.ERR_TOOL_LIMIT_EXCEEDED) @compileError("ABI drift: AgenticError.tool_limit_exceeded");
+    if (@intFromEnum(AgenticError.plan_depth_exceeded) != gen.ERR_PLAN_DEPTH_EXCEEDED) @compileError("ABI drift: AgenticError.plan_depth_exceeded");
+    if (@intFromEnum(AgenticError.safety_denied) != gen.ERR_SAFETY_DENIED) @compileError("ABI drift: AgenticError.safety_denied");
+}
+
 // ── Agent Context instance ──────────────────────────────────────────────
 
 /// Maximum plan step stack depth (hard limit regardless of config).
@@ -166,7 +232,7 @@ fn getActive(slot: c_int) ?*AgentCtx {
 
 /// ABI version — must match AgenticABI.Foreign.abiVersion (currently 1).
 pub export fn agentic_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 // ── Lifecycle ───────────────────────────────────────────────────────────
@@ -527,4 +593,10 @@ pub export fn agentic_can_transition(from: u8, to: u8) callconv(.c) u8 {
     // Blocked (5) -> Terminated (6)
     if (from == 5 and to == 6) return 1;
     return 0;
+}
+
+// --- pool size guard (audit S5: prevent oversized-global stack overflow) ---
+comptime {
+    if (@sizeOf(@TypeOf(contexts)) > 16 * 1024 * 1024)
+        @compileError("pool 'contexts' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }

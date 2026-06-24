@@ -12,6 +12,8 @@ main = Main
 executable = "proven-wasm"
 
 modules = WASM
+        , WASMABI.Types
+        , WASMABI.Foreign
         , WASM.ValType
         , WASM.Instruction
         , WASM.Module

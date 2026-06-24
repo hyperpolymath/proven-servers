@@ -12,4 +12,6 @@ main = Main
 executable = "proven-configmgmt"
 
 modules = Configmgmt
+        , ConfigmgmtABI.Types
+        , ConfigmgmtABI.Foreign
         , Configmgmt.Types

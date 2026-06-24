@@ -1,0 +1,20 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+
+package proven-http3
+version = "0.1.0"
+authors = "Jonathan D.A. Jewell"
+license = "MPL-2.0"
+brief   = "Proven HTTP/3 structural core (RFC 9114): frame/stream identity, frame rules, request-stream state machine"
+
+sourcedir = "src"
+main = Main
+executable = "proven-http3"
+
+modules = Http3
+        , Http3.Types
+        , Http3.Frames
+        , Http3.Request
+        , Http3ABI.Types
+        , Http3ABI.Foreign
+        , Main

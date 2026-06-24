@@ -1,0 +1,22 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+--
+-- Dev tool: emits the canonical ABI tag manifest from the proven encoders.
+-- Not shipped; consumed by tools/gen-abi.sh to render the C header + Zig
+-- constants (single source of truth = the Idris ABI).
+
+package proven-radius-abigen
+version = "0.1.0"
+authors = "Jonathan D.A. Jewell"
+license = "MPL-2.0"
+brief   = "ABI tag-manifest emitter for proven-radius"
+
+sourcedir = "src"
+main = RADIUSABI.Emit
+executable = "radius-abigen"
+
+modules = RADIUS.Types
+        , RADIUSABI.Layout
+        , RADIUSABI.Transitions
+        , RADIUSABI.Foreign
+        , RADIUSABI.Emit
