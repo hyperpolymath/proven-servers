@@ -108,21 +108,9 @@ let testFrameTextConstruction = () => {
   assert(frame.payloadLength == 5)
 }
 
-let testFrameValidateClientUnmasked = () => {
-  let frame = makeTextFrame([104, 101, 108, 108, 111])
-  let result = validateClientFrame(frame, 65536)
-  assert(result == Some(ClientFrameNotMasked))
-}
-
-let testFrameValidateServerMasked = () => {
-  let frame = {
-    ...makeTextFrame([104, 101, 108, 108, 111]),
-    masked: true,
-    maskingKey: Some([0, 0, 0, 0]),
-  }
-  let result = validateServerFrame(frame, 65536)
-  assert(result == Some(ServerFrameMasked))
-}
+// Frame validation tests removed: validateClientFrame / validateServerFrame were
+// unproven reimplementations deleted from ProvenWebsocket. The verified checks
+// live in the Idris2/Zig core. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ---------------------------------------------------------------------------
 // Run all tests
@@ -137,7 +125,5 @@ let () = {
   testCloseCodeClassification()
   testCloseCodeRanges()
   testFrameTextConstruction()
-  testFrameValidateClientUnmasked()
-  testFrameValidateServerMasked()
   Js.log("ProvenWebsocket: all tests passed")
 }

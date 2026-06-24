@@ -180,11 +180,9 @@ let dhcpStateToTag = (v: dhcpState): int =>
   | NakSent => 5
   }
 
-/// Validate whether a state transition is allowed.
-let dhcpStateCanTransitionTo = (from: dhcpState, to: dhcpState): bool =>
-  switch (from, to) {
-  | _ => false
-  }
+// dhcpStateCanTransitionTo removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // LeaseState (tags 0-5)

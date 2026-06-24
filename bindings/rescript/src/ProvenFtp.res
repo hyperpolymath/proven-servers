@@ -52,11 +52,9 @@ let sessionStateToTag = (v: sessionState): int =>
   | Quit => 4
   }
 
-/// Validate whether a state transition is allowed.
-let sessionStateCanTransitionTo = (from: sessionState, to: sessionState): bool =>
-  switch (from, to) {
-  | _ => false
-  }
+// sessionStateCanTransitionTo removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // TransferType (tags 0-1)
@@ -143,11 +141,9 @@ let transferStateToTag = (v: transferState): int =>
   | Aborted => 3
   }
 
-/// Validate whether a state transition is allowed.
-let transferStateCanTransitionTo = (from: transferState, to: transferState): bool =>
-  switch (from, to) {
-  | _ => false
-  }
+// transferStateCanTransitionTo removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 /// Whether the transfer has finished (completed or aborted).
 let transferStateIsTerminal = (v: transferState): bool =>

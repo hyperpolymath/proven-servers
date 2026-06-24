@@ -240,45 +240,17 @@ type frameError =
   | ReservedOpcode({nibble: int})
   | PayloadLengthMismatch({declared: int, actual: int})
 
-/// Common validation shared between client and server frames.
-let validateFrameCommon = (f: frame, maxFrameSize: int): option<frameError> => {
-  if opcodeIsControl(f.opcode) && f.payloadLength > maxControlPayload {
-    Some(ControlFrameTooLarge({opcode: f.opcode, size: f.payloadLength}))
-  } else if opcodeIsControl(f.opcode) && !f.fin {
-    Some(ControlFrameFragmented({opcode: f.opcode}))
-  } else if f.payloadLength > maxFrameSize {
-    Some(PayloadTooLarge({size: f.payloadLength, maxSize: maxFrameSize}))
-  } else if f.payloadLength != Array.length(f.payload) {
-    Some(
-      PayloadLengthMismatch({
-        declared: f.payloadLength,
-        actual: Array.length(f.payload),
-      }),
-    )
-  } else {
-    None
-  }
-}
+// validateFrameCommon removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
-/// Validate a frame received from a client.
-/// Checks: masking required, control frame size and fragmentation.
-/// Matches validateClientFrame in WS.Frame.
-let validateClientFrame = (f: frame, maxFrameSize: int): option<frameError> =>
-  if !f.masked {
-    Some(ClientFrameNotMasked)
-  } else {
-    validateFrameCommon(f, maxFrameSize)
-  }
+// validateClientFrame removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
-/// Validate a frame received from a server.
-/// Server frames MUST NOT be masked (RFC 6455 Section 5.1).
-/// Matches validateServerFrame in WS.Frame.
-let validateServerFrame = (f: frame, maxFrameSize: int): option<frameError> =>
-  if f.masked {
-    Some(ServerFrameMasked)
-  } else {
-    validateFrameCommon(f, maxFrameSize)
-  }
+// validateServerFrame removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 /// Build a server-to-client text frame (unmasked, FIN set).
 /// Matches makeTextFrame in WS.Frame.

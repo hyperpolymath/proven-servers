@@ -314,9 +314,7 @@ let smtpSessionStateToTag = (v: smtpSessionState): int =>
   | Quit => 8
   }
 
-/// Validate whether a state transition is allowed.
-let smtpSessionStateCanTransitionTo = (from: smtpSessionState, to: smtpSessionState): bool =>
-  switch (from, to) {
-  | _ => false
-  }
+// smtpSessionStateCanTransitionTo removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 

@@ -208,11 +208,9 @@ let bastionStateToTag = (v: bastionState): int =>
   | Closed => 5
   }
 
-/// Validate whether a state transition is allowed.
-let bastionStateCanTransitionTo = (from: bastionState, to: bastionState): bool =>
-  switch (from, to) {
-  | _ => false
-  }
+// bastionStateCanTransitionTo removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // ChannelState (tags 0-3)
@@ -244,11 +242,9 @@ let channelStateToTag = (v: channelState): int =>
   | Closed => 3
   }
 
-/// Validate whether a state transition is allowed.
-let channelStateCanTransitionTo = (from: channelState, to: channelState): bool =>
-  switch (from, to) {
-  | _ => false
-  }
+// channelStateCanTransitionTo removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // DisconnectReason (tags 0-11)

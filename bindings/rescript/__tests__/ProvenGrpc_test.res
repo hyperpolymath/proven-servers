@@ -58,42 +58,10 @@ let testStreamStateDataCapabilities = () => {
   assert(!streamCanReceiveData(Closed))
 }
 
-let testClosedIsTerminal = () =>
-  for toTag in 0 to 5 {
-    let to_ = streamStateFromTag(toTag)
-    switch to_ {
-    | Some(toState) => assert(validateStreamTransition(Closed, toState) == None)
-    | None => assert(false)
-    }
-  }
-
-let testValidStreamTransitions = () => {
-  let validPairs = [
-    (StreamIdle, StreamOpen),
-    (StreamOpen, HalfClosedLocal),
-    (StreamOpen, HalfClosedRemote),
-    (StreamOpen, Closed),
-    (HalfClosedLocal, Closed),
-    (HalfClosedRemote, Closed),
-    (StreamIdle, Reserved),
-    (Reserved, HalfClosedRemote),
-    (Reserved, Closed),
-  ]
-  Belt.Array.forEach(validPairs, ((from, to_)) => {
-    assert(validateStreamTransition(from, to_) != None)
-  })
-}
-
-let testImpossibleStreamTransitions = () => {
-  let impossiblePairs = [
-    (StreamIdle, HalfClosedLocal),
-    (HalfClosedLocal, StreamOpen),
-    (Reserved, StreamOpen),
-  ]
-  Belt.Array.forEach(impossiblePairs, ((from, to_)) => {
-    assert(validateStreamTransition(from, to_) == None)
-  })
-}
+// Stream transition tests (testClosedIsTerminal, testValidStreamTransitions,
+// testImpossibleStreamTransitions) removed: validateStreamTransition was an
+// unproven reimplementation deleted from ProvenGrpc. The verified check lives in
+// the Idris2/Zig core. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ---------------------------------------------------------------------------
 // Run all tests
@@ -104,8 +72,5 @@ let () = {
   testStatusCodeInvalid()
   testStreamTypeClassification()
   testStreamStateDataCapabilities()
-  testClosedIsTerminal()
-  testValidStreamTransitions()
-  testImpossibleStreamTransitions()
   Js.log("ProvenGrpc: all tests passed")
 }

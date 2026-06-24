@@ -403,22 +403,9 @@ type handshakeTransition =
   | SkipCertRequest
   | SkipCert
 
-/// Validate a TLS handshake state transition.
-let validateHandshakeTransition = (
-  from: handshakeState,
-  to: handshakeState,
-): option<handshakeTransition> =>
-  switch (from, to) {
-  | (Start, WaitServerHello) => Some(SendClientHello)
-  | (WaitServerHello, WaitEncryptedExtensions) => Some(ReceiveServerHello)
-  | (WaitEncryptedExtensions, WaitCertRequest) => Some(ReceiveEncryptedExtensions)
-  | (WaitCertRequest, WaitCert) => Some(ReceiveCertRequest)
-  | (WaitCertRequest, WaitFinished) => Some(SkipCert)
-  | (WaitCert, WaitFinished) => Some(ReceiveCert)
-  | (WaitFinished, Connected) => Some(ReceiveFinished)
-  | (WaitEncryptedExtensions, WaitFinished) => Some(SkipCertRequest)
-  | _ => None
-  }
+// validateHandshakeTransition removed: unproven reimplementation. The verified check lives in the
+// Idris2/Zig core; calling it needs @module FFI wiring not yet present for this
+// protocol. Do not reimplement here. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
 
 // ===========================================================================
 // Constants
