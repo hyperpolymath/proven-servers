@@ -69,7 +69,11 @@ done
 echo ""
 echo "  ReScript Bindings:"
 if [ -d "bindings/rescript/__tests__" ]; then
-  rescript_tests=$(find bindings/rescript/__tests__ -name "*.res.js" -o -name "*_test.res.js" 2>/dev/null | wc -l)
+  # Detect ReScript test SOURCES (*_test.res), which are always present, rather
+  # than compiled output (*.res.js / *.res.mjs) that requires running the
+  # ReScript compiler in CI. ~100 source test files exist; the old *.res.js
+  # glob matched zero (the build emits *.res.mjs), causing a false "no tests".
+  rescript_tests=$(find bindings/rescript/__tests__ -name "*_test.res" 2>/dev/null | wc -l)
   if [ "$rescript_tests" -gt 0 ]; then
     log_pass "ReScript: $rescript_tests test files present"
   else

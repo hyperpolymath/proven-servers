@@ -197,8 +197,11 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════════
 bold "Section 5: Safety aspects"
 
-# No believe_me/assert_total in Idris2 ABI
-DANGEROUS_IDRIS=$(grep -rn 'believe_me\|assert_total\|really_believe_me' src/ connectors/*/src/ protocols/*/src/ core/*/src/ 2>/dev/null | grep -v test || true)
+# No believe_me/assert_total in Idris2 ABI -- ACTIVE CODE ONLY.
+# Exclude Idris comment lines (-- and |||) so documentation that merely *names*
+# a pattern (e.g. proven-nesy/src/NeSy/Types.idr's "equivalent of believe_me"
+# note) is not a false positive. A real escape hatch in code is still caught.
+DANGEROUS_IDRIS=$(grep -rn 'believe_me\|assert_total\|really_believe_me' src/ connectors/*/src/ protocols/*/src/ core/*/src/ 2>/dev/null | grep -v test | grep -vE ':[0-9]+:[[:space:]]*(--|\|\|\|)' || true)
 if [ -n "$DANGEROUS_IDRIS" ]; then
     fail_test "Dangerous Idris2 patterns ($(echo "$DANGEROUS_IDRIS" | wc -l) occurrences)"
     echo "$DANGEROUS_IDRIS" | head -5

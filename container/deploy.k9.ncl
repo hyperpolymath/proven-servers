@@ -3,7 +3,7 @@ K9!
 # deploy.k9.ncl — proven-servers deployment component (Hunt level)
 #
 # k9-svc deployment specification with full pedigree (L1-L5).
-# Security Level: 'Hunt (requires cryptographic handshake for execution).
+# Security Level: 'hunt (requires cryptographic handshake for execution).
 #
 # WARNING: This component can execute shell commands!
 # It requires explicit authorisation via the Leash system.
@@ -40,7 +40,7 @@ let component_pedigree = {
   # L3: The Leash — Security
   # ─────────────────────────────────────────────────────────────
   security = {
-    trust_level = 'Hunt,
+    trust_level = 'hunt,
     allow_network = true,
     allow_filesystem_write = true,
     allow_subprocess = true,
@@ -155,7 +155,7 @@ echo "K9: Rollback complete."
   scripts = scripts_def,
 
   # Security check: this component requires Hunt level
-  required_level = 'Hunt,
+  required_level = 'hunt,
 
   # Warning for users
   warning = m%"
