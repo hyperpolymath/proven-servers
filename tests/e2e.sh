@@ -50,6 +50,52 @@ fi
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════
+# Section 0: ABI conformance (Idris is the single source of truth)
+# ═══════════════════════════════════════════════════════════════════════
+bold "Section 0: ABI conformance (Idris -> generated -> Zig comptime guard)"
+
+if command -v idris2 >/dev/null 2>&1; then
+    green "  Idris2 available: $(idris2 --version | head -1)"
+
+    # 0a. Build the proven Idris ABI + engine (CI builds no Idris otherwise).
+    if (cd protocols/proven-epistemic && idris2 --build proven-epistemic.ipkg >/dev/null 2>&1); then
+        pass "build proven-epistemic (Idris engine + ABI)"
+        # 0b. Run the Idris scenarios (mirrors integration_test.zig).
+        if ./protocols/proven-epistemic/build/exec/proven-epistemic >/dev/null 2>&1; then
+            pass "Idris engine conformance scenarios"
+        else
+            fail_test "Idris engine conformance scenarios"
+        fi
+    else
+        fail_test "build proven-epistemic (Idris engine + ABI)"
+    fi
+
+    # 0c. Regenerate ABI artifacts; assert they still match the proofs.
+    if bash tools/gen-abi.sh >/dev/null 2>&1; then
+        if git diff --quiet -- \
+            protocols/proven-epistemic/generated/abi/epistemic.h \
+            protocols/proven-epistemic/ffi/zig/src/epistemic_abi_gen.zig; then
+            pass "generated ABI matches Idris proofs (no drift)"
+        else
+            fail_test "generated ABI drifted from Idris (run tools/gen-abi.sh and commit)"
+        fi
+    else
+        fail_test "tools/gen-abi.sh failed"
+    fi
+else
+    skip_test "Idris ABI build + conformance" "idris2 not installed"
+fi
+
+# 0d. Build the Zig engine WITH the comptime guard active (drift => compile error).
+# Works from the committed generated file even without Idris present.
+if (cd protocols/proven-epistemic/ffi/zig && zig build >/dev/null 2>&1); then
+    pass "Zig engine builds with ABI comptime guard"
+else
+    fail_test "Zig engine comptime guard rejected the build (ABI drift)"
+fi
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════
 # Section 1: Connector FFI Build + Test
 # ═══════════════════════════════════════════════════════════════════════
 bold "Section 1: Connector FFI build + integration tests"
