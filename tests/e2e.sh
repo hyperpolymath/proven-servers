@@ -10,6 +10,7 @@
 #   3. Per-protocol FFI tests (sample of 84)
 #   4. Cross-binding consistency
 #   5. Safety aspect: no dangerous patterns
+#   6. Binding policy: registry parity + no logic in scaffold bindings
 #
 # Usage:
 #   bash tests/e2e.sh
@@ -239,6 +240,18 @@ if [ "$MISSING_SPDX" -eq 0 ]; then
     pass "SPDX headers present (sampled 30 files)"
 else
     fail_test "$MISSING_SPDX files missing SPDX headers"
+fi
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════
+# Section 6: Binding policy (ADR 0003)
+# ═══════════════════════════════════════════════════════════════════════
+bold "Section 6: Binding policy (registry parity + no logic in scaffolds)"
+
+if bash tools/check-binding-policy.sh; then
+    pass "binding policy (thin C-ABI wrappers; no reimplemented logic)"
+else
+    fail_test "binding policy violation (see docs/decisions/0003-keep-bindings-thin-abi-wrappers.md)"
 fi
 echo ""
 
