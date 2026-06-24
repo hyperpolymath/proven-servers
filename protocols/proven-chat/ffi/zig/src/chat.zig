@@ -15,6 +15,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("chat_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching ChatABI.Types.idr tag assignments)
 // =========================================================================
@@ -71,6 +78,51 @@ pub const Event = enum(u8) {
     typing = 5,
     room_created = 6,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(MessageType.text) != gen.MSG_TEXT) @compileError("ABI drift: MessageType.text");
+    if (@intFromEnum(MessageType.image) != gen.MSG_IMAGE) @compileError("ABI drift: MessageType.image");
+    if (@intFromEnum(MessageType.file) != gen.MSG_FILE) @compileError("ABI drift: MessageType.file");
+    if (@intFromEnum(MessageType.system) != gen.MSG_SYSTEM) @compileError("ABI drift: MessageType.system");
+    if (@intFromEnum(MessageType.reaction) != gen.MSG_REACTION) @compileError("ABI drift: MessageType.reaction");
+    if (@intFromEnum(MessageType.edit) != gen.MSG_EDIT) @compileError("ABI drift: MessageType.edit");
+    if (@intFromEnum(MessageType.delete) != gen.MSG_DELETE) @compileError("ABI drift: MessageType.delete");
+    if (@intFromEnum(MessageType.reply) != gen.MSG_REPLY) @compileError("ABI drift: MessageType.reply");
+    if (@intFromEnum(MessageType.thread) != gen.MSG_THREAD) @compileError("ABI drift: MessageType.thread");
+
+    if (@intFromEnum(PresenceStatus.online) != gen.PRESENCE_ONLINE) @compileError("ABI drift: PresenceStatus.online");
+    if (@intFromEnum(PresenceStatus.away) != gen.PRESENCE_AWAY) @compileError("ABI drift: PresenceStatus.away");
+    if (@intFromEnum(PresenceStatus.dnd) != gen.PRESENCE_DND) @compileError("ABI drift: PresenceStatus.dnd");
+    if (@intFromEnum(PresenceStatus.invisible) != gen.PRESENCE_INVISIBLE) @compileError("ABI drift: PresenceStatus.invisible");
+    if (@intFromEnum(PresenceStatus.offline) != gen.PRESENCE_OFFLINE) @compileError("ABI drift: PresenceStatus.offline");
+
+    if (@intFromEnum(RoomType.direct) != gen.ROOM_DIRECT) @compileError("ABI drift: RoomType.direct");
+    if (@intFromEnum(RoomType.group) != gen.ROOM_GROUP) @compileError("ABI drift: RoomType.group");
+    if (@intFromEnum(RoomType.channel) != gen.ROOM_CHANNEL) @compileError("ABI drift: RoomType.channel");
+    if (@intFromEnum(RoomType.broadcast) != gen.ROOM_BROADCAST) @compileError("ABI drift: RoomType.broadcast");
+
+    if (@intFromEnum(Permission.read) != gen.PERM_READ) @compileError("ABI drift: Permission.read");
+    if (@intFromEnum(Permission.write) != gen.PERM_WRITE) @compileError("ABI drift: Permission.write");
+    if (@intFromEnum(Permission.admin) != gen.PERM_ADMIN) @compileError("ABI drift: Permission.admin");
+    if (@intFromEnum(Permission.invite) != gen.PERM_INVITE) @compileError("ABI drift: Permission.invite");
+    if (@intFromEnum(Permission.kick) != gen.PERM_KICK) @compileError("ABI drift: Permission.kick");
+    if (@intFromEnum(Permission.ban) != gen.PERM_BAN) @compileError("ABI drift: Permission.ban");
+    if (@intFromEnum(Permission.pin) != gen.PERM_PIN) @compileError("ABI drift: Permission.pin");
+    if (@intFromEnum(Permission.delete_others) != gen.PERM_DELETE_OTHERS) @compileError("ABI drift: Permission.delete_others");
+
+    if (@intFromEnum(Event.message_sent) != gen.EVENT_MESSAGE_SENT) @compileError("ABI drift: Event.message_sent");
+    if (@intFromEnum(Event.message_delivered) != gen.EVENT_MESSAGE_DELIVERED) @compileError("ABI drift: Event.message_delivered");
+    if (@intFromEnum(Event.message_read) != gen.EVENT_MESSAGE_READ) @compileError("ABI drift: Event.message_read");
+    if (@intFromEnum(Event.user_joined) != gen.EVENT_USER_JOINED) @compileError("ABI drift: Event.user_joined");
+    if (@intFromEnum(Event.user_left) != gen.EVENT_USER_LEFT) @compileError("ABI drift: Event.user_left");
+    if (@intFromEnum(Event.typing) != gen.EVENT_TYPING) @compileError("ABI drift: Event.typing");
+    if (@intFromEnum(Event.room_created) != gen.EVENT_ROOM_CREATED) @compileError("ABI drift: Event.room_created");
+}
 
 // =========================================================================
 // Internal data structures
@@ -133,7 +185,7 @@ fn validSlot(slot: c_int) ?usize {
 
 /// Returns the ABI version number.
 pub export fn chat_abi_version() callconv(.c) u32 {
-    return 1;
+    return ABI_VERSION;
 }
 
 /// Create a new chat room. Returns slot index (>=0) or -1.

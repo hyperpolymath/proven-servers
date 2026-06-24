@@ -17,6 +17,13 @@
 
 const std = @import("std");
 
+// Generated from the proven Idris ABI encoders by tools/gen-abi.sh; the
+// comptime guard below pins every enum tag to these, so drift is a build error.
+const gen = @import("dds_abi_gen.zig");
+
+/// ABI version (guarded against gen.ABI_VERSION below).
+const ABI_VERSION: u32 = 1;
+
 // =========================================================================
 // Enums (matching DDSABI.Types.idr tag assignments)
 // =========================================================================
@@ -65,6 +72,40 @@ pub const ParticipantState = enum(u8) {
     subscribing = 3,
     leaving = 4,
 };
+
+// ── ABI conformance guard ────────────────────────────────────────────────
+// Every enum tag MUST equal the generated (= proven Idris) value; a mismatch
+// fails `zig build` with the named symbol. Regenerate: bash tools/gen-abi.sh.
+comptime {
+    if (ABI_VERSION != gen.ABI_VERSION) @compileError("ABI drift: abi_version");
+
+    if (@intFromEnum(ReliabilityKind.best_effort) != gen.REL_BEST_EFFORT) @compileError("ABI drift: ReliabilityKind.best_effort");
+    if (@intFromEnum(ReliabilityKind.reliable) != gen.REL_RELIABLE) @compileError("ABI drift: ReliabilityKind.reliable");
+
+    if (@intFromEnum(DurabilityKind.@"volatile") != gen.DUR_VOLATILE) @compileError("ABI drift: DurabilityKind.volatile");
+    if (@intFromEnum(DurabilityKind.transient_local) != gen.DUR_TRANSIENT_LOCAL) @compileError("ABI drift: DurabilityKind.transient_local");
+    if (@intFromEnum(DurabilityKind.transient) != gen.DUR_TRANSIENT) @compileError("ABI drift: DurabilityKind.transient");
+    if (@intFromEnum(DurabilityKind.persistent) != gen.DUR_PERSISTENT) @compileError("ABI drift: DurabilityKind.persistent");
+
+    if (@intFromEnum(HistoryKind.keep_last) != gen.HIST_KEEP_LAST) @compileError("ABI drift: HistoryKind.keep_last");
+    if (@intFromEnum(HistoryKind.keep_all) != gen.HIST_KEEP_ALL) @compileError("ABI drift: HistoryKind.keep_all");
+
+    if (@intFromEnum(OwnershipKind.shared) != gen.OWN_SHARED) @compileError("ABI drift: OwnershipKind.shared");
+    if (@intFromEnum(OwnershipKind.exclusive) != gen.OWN_EXCLUSIVE) @compileError("ABI drift: OwnershipKind.exclusive");
+
+    if (@intFromEnum(EntityType.participant) != gen.ENT_PARTICIPANT) @compileError("ABI drift: EntityType.participant");
+    if (@intFromEnum(EntityType.publisher) != gen.ENT_PUBLISHER) @compileError("ABI drift: EntityType.publisher");
+    if (@intFromEnum(EntityType.subscriber) != gen.ENT_SUBSCRIBER) @compileError("ABI drift: EntityType.subscriber");
+    if (@intFromEnum(EntityType.topic) != gen.ENT_TOPIC) @compileError("ABI drift: EntityType.topic");
+    if (@intFromEnum(EntityType.data_writer) != gen.ENT_DATA_WRITER) @compileError("ABI drift: EntityType.data_writer");
+    if (@intFromEnum(EntityType.data_reader) != gen.ENT_DATA_READER) @compileError("ABI drift: EntityType.data_reader");
+
+    if (@intFromEnum(ParticipantState.idle) != gen.PSTATE_IDLE) @compileError("ABI drift: ParticipantState.idle");
+    if (@intFromEnum(ParticipantState.joined) != gen.PSTATE_JOINED) @compileError("ABI drift: ParticipantState.joined");
+    if (@intFromEnum(ParticipantState.publishing) != gen.PSTATE_PUBLISHING) @compileError("ABI drift: ParticipantState.publishing");
+    if (@intFromEnum(ParticipantState.subscribing) != gen.PSTATE_SUBSCRIBING) @compileError("ABI drift: ParticipantState.subscribing");
+    if (@intFromEnum(ParticipantState.leaving) != gen.PSTATE_LEAVING) @compileError("ABI drift: ParticipantState.leaving");
+}
 
 // =========================================================================
 // Internal data structures
