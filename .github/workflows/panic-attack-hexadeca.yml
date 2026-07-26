@@ -19,6 +19,7 @@ on:
       - 'connectors/proven-nesy-solver-api/zig/**'
   workflow_dispatch:
 permissions:
+  actions: read
   contents: read
 jobs:
   hexadeca-scan:
