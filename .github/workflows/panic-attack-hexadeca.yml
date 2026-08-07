@@ -1,5 +1,6 @@
 # This workflow is managed by gh actions-lock.
 # SPDX-License-Identifier: MPL-2.0
+# This workflow is managed by gh actions-lock.
 # panic-attack hexadeca surface scan for proven-nesy-solver-api.
 #
 # Scans the zig hexadeca connector (all 16 protocol surfaces) with
@@ -32,7 +33,7 @@ jobs:
         with:
           fetch-depth: 1
       - name: Install Rust (stable)
-        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable
+        uses: dtolnay/rust-toolchain@stable # stable
       - name: Cache panic-attacker build
         uses: Swatinem/rust-cache@v2.9.1
         with:

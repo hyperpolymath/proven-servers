@@ -21,7 +21,11 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'hyperpolymath/a2ml-ecosystem@main'
         - 'hyperpolymath/k9-ecosystem@main'
-    '.github/workflows/e2e.yml': []
+    '.github/workflows/e2e.yml':
+        - 'actions/checkout@v7.0.1'
+        - 'actions/upload-artifact@v7.0.1'
+        - 'goto-bus-stop/setup-zig@v2.2.1'
+        - 'swatinem/rust-cache@v2.9.1'
     '.github/workflows/hypatia-scan.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/github-script@v9.0.0'
@@ -34,7 +38,10 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'actions/deploy-pages@v5.0.0'
         - 'actions/upload-pages-artifact@v5.0.0'
-    '.github/workflows/panic-attack-hexadeca.yml': []
+    '.github/workflows/panic-attack-hexadeca.yml':
+        - 'actions/checkout@v7.0.1'
+        - 'actions/upload-artifact@v7.0.1'
+        - 'swatinem/rust-cache@v2.9.1'
     '.github/workflows/push-email-notify.yml':
         - 'dawidd6/action-send-mail@v3.12.0'
     '.github/workflows/release.yml':
@@ -104,6 +111,11 @@ dependencies:
         commit: 'sha1-f205ea1c3313d32999d8d6a48b4f6530d4437b38'
         owner_id: 9919
         repo_id: 259445878
+    'goto-bus-stop/setup-zig@v2.2.1':
+        ref: 'v2.2.1'
+        commit: 'sha1-abea47f85e598557f500fa1fd2ab7464fcb39406'
+        owner_id: 1006268
+        repo_id: 212984112
     'haskell-actions/setup@v2.11.0':
         ref: 'v2.11.0'
         commit: 'sha1-cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553'
@@ -129,3 +141,8 @@ dependencies:
         commit: 'sha1-3d0d9888cb7fd7b750713d6e236d1fcb99157228'
         owner_id: 2242
         repo_id: 204253808
+    'swatinem/rust-cache@v2.9.1':
+        ref: 'v2.9.1'
+        commit: 'sha1-c19371144df3bb44fab255c43d04cbc2ab54d1c4'
+        owner_id: 580492
+        repo_id: 298565987
