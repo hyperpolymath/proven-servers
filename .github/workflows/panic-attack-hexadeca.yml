@@ -36,7 +36,7 @@ jobs:
       - name: Install Rust (stable)
         uses: dtolnay/rust-toolchain@stable # stable
       - name: Cache panic-attacker build
-        uses: Swatinem/rust-cache@v2.9.1
+        uses: Swatinem/rust-cache@v2.9.2
         with:
           workspaces: /tmp/panic-attacker -> target
           cache-on-failure: true
