@@ -14,6 +14,8 @@
 module TypedFrameRouterABI.Proofs
 
 import TypedFrameRouter.Types
+import Data.List
+import Data.Nat
 
 %default total
 
@@ -56,7 +58,7 @@ orderPreservation xs n inb = Refl
 ||| This provides a provable upper bound on memory usage per connection.
 public export
 bufferBounded : (config : RouterConfig)
-             -> (bufSizeOk : config.bufferSize `LTE` maxBufferSize)
+             -> (bufSizeOk : config.bufferSize `LTE` Types.maxBufferSize)
              -> config.bufferSize `LTE` 4096
 bufferBounded config prf = prf
 
@@ -89,7 +91,10 @@ public export
 noReverseTranslation : (a : FrameFamily) -> (b : FrameFamily)
                     -> Not (a = b)
                     -> Not (Translate b a = Translate a b)
-noReverseTranslation a b neq Refl = neq Refl
+noReverseTranslation a b neq eq = neq (cong dstOf eq)
+  where
+    dstOf : FrameTranslation -> FrameFamily
+    dstOf (Translate _ d) = d
 
 ---------------------------------------------------------------------------
 -- Connection Lifecycle Safety
