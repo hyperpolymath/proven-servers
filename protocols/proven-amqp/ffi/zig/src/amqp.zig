@@ -439,7 +439,7 @@ pub export fn amqp_create(
 
     for (&sessions, 0..) |*s, i| {
         if (!s.active) {
-            s.* = empty_session;
+            @memcpy(std.mem.asBytes(s), std.mem.asBytes(&empty_session));
             @memcpy(s.vhost[0..vhost_len], vhost_ptr[0..vhost_len]);
             s.vhost_len = vhost_len;
             s.frame_max = if (frame_max == 0) 131072 else frame_max;
@@ -458,7 +458,7 @@ pub export fn amqp_destroy(slot: c_int) callconv(.c) void {
     mutex.lock();
     defer mutex.unlock();
     if (slot < 0 or slot >= MAX_SESSIONS) return;
-    sessions[@intCast(slot)] = empty_session;
+    @memcpy(std.mem.asBytes(&sessions[@intCast(slot)]), std.mem.asBytes(&empty_session));
 }
 
 // -- State queries ------------------------------------------------------------
@@ -951,12 +951,12 @@ pub export fn amqp_cleanup(slot: c_int) callconv(.c) u8 {
 
     // Clear all session state
     sessions[idx].state = .idle;
-    sessions[idx].channels = [_]Channel{empty_channel} ** MAX_CHANNELS;
+    @memcpy(std.mem.asBytes(&sessions[idx].channels), std.mem.asBytes(&empty_session.channels));
     sessions[idx].channel_count = 0;
-    sessions[idx].exchanges = [_]ExchangeEntry{empty_exchange} ** MAX_EXCHANGES;
-    sessions[idx].queues = [_]QueueEntry{empty_queue} ** MAX_QUEUES;
-    sessions[idx].bindings = [_]BindingEntry{empty_binding} ** MAX_BINDINGS;
-    sessions[idx].consumers = [_]ConsumerEntry{empty_consumer} ** MAX_CONSUMERS;
+    @memcpy(std.mem.asBytes(&sessions[idx].exchanges), std.mem.asBytes(&empty_session.exchanges));
+    @memcpy(std.mem.asBytes(&sessions[idx].queues), std.mem.asBytes(&empty_session.queues));
+    @memcpy(std.mem.asBytes(&sessions[idx].bindings), std.mem.asBytes(&empty_session.bindings));
+    @memcpy(std.mem.asBytes(&sessions[idx].consumers), std.mem.asBytes(&empty_session.consumers));
     sessions[idx].consumer_count = 0;
 
     return 0;
