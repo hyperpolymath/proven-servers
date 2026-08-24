@@ -1,7 +1,92 @@
 // SPDX-License-Identifier: MPL-2.0
-// SPDX-FileCopyrightText: 2026 Jonathan D.A. Jewell
-// Ported via Harvard Engine bulk-processor
+// Ported via Harvard Engine (Semantic pass)
 
 module ProvenDns_test;
 
-// TODO: Complete semantic implementation
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+//
+// Tests for ProvenDns module: record structs, response codes,
+// domain name validation, and constants.
+
+open ProvenDns
+
+// ---------------------------------------------------------------------------
+// Record struct tests
+// ---------------------------------------------------------------------------
+
+fn testRecordTypeRoundtrip = () =>
+  Belt.Array.forEach(allRecordTypes, rt => {
+    fn code = recordTypeToTypeCode(rt)
+    fn decoded = recordTypeFromTypeCode(code)
+    assert(decoded == Some(rt))
+  })
+
+fn testRecordTypeUnknownRejected = () => {
+  assert(recordTypeFromTypeCode(0) == None)
+  assert(recordTypeFromTypeCode(255) == None)
+}
+
+fn testRecordTypeClassification = () => {
+  assert(recordTypeIsAddress(A))
+  assert(recordTypeIsAddress(Aaaa))
+  assert(!recordTypeIsAddress(Cname))
+  assert(recordTypeIsInfrastructure(Ns))
+  assert(recordTypeIsInfrastructure(Soa))
+  assert(!recordTypeIsInfrastructure(Mx))
+}
+
+// ---------------------------------------------------------------------------
+// Response code tests
+// ---------------------------------------------------------------------------
+
+fn testResponseCodeRoundtrip = () =>
+  for code in 0 to 5 {
+    fn rc = responseCodeFromRcode(code)
+    switch rc {
+    | Some(r) => assert(responseCodeToRcode(r) == code)
+    | None => assert(false)
+    }
+  }
+
+fn testResponseCodeInvalid = () => assert(responseCodeFromRcode(6) == None)
+
+fn testResponseCodeClassification = () => {
+  assert(responseCodeIsSuccess(NoError))
+  assert(!responseCodeIsSuccess(NameError))
+  assert(responseCodeIsNxdomain(NameError))
+  assert(!responseCodeIsNxdomain(NoError))
+}
+
+// Domain name validation tests removed: validateDomainName was an unproven
+// reimplementation deleted from ProvenDns. The verified check lives in the
+// Idris2/Zig core. See docs/decisions/0003-keep-bindings-thin-abi-wrappers.md
+
+// ---------------------------------------------------------------------------
+// Constants tests
+// ---------------------------------------------------------------------------
+
+fn testConstantsMatchIdris = () => {
+  assert(dnsPort == 53)
+  assert(maxUdpSize == 512)
+  assert(maxTcpSize == 65535)
+  assert(maxLabelLength == 63)
+  assert(maxNameLength == 253)
+  assert(ednsUdpSize == 4096)
+}
+
+// ---------------------------------------------------------------------------
+// Run all tests
+// ---------------------------------------------------------------------------
+
+fn () = {
+  testRecordTypeRoundtrip()
+  testRecordTypeUnknownRejected()
+  testRecordTypeClassification()
+  testResponseCodeRoundtrip()
+  testResponseCodeInvalid()
+  testResponseCodeClassification()
+  testConstantsMatchIdris()
+  Js.log("ProvenDns: all tests passed")
+}
+
