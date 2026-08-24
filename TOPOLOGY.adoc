@@ -1,15 +1,8 @@
-<!--
-SPDX-License-Identifier: CC-BY-SA-4.0
-Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
--->
-<!-- TOPOLOGY.md — proven-servers architecture map and completion dashboard -->
-<!-- Last updated: 2026-03-01 -->
+== proven-servers — Project Topology
 
-# proven-servers — Project Topology
+=== System Architecture
 
-## System Architecture
-
-```
+....
                 ┌─────────────────────────────────────────────────────────┐
                 │                   PROVEN-SERVERS                        │
                 │     108 Formally Verified Server Components             │
@@ -56,11 +49,11 @@ Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
                 │              CONSUMERS                                  │
                 │  PanLL VAB · stapeln containers · user applications     │
                 └─────────────────────────────────────────────────────────┘
-```
+....
 
-## Completion Dashboard
+=== Completion Dashboard
 
-```
+....
 COMPONENT                              STATUS              NOTES
 ─────────────────────────────────────  ──────────────────  ──────────────────────────────
 
@@ -99,11 +92,11 @@ INFRASTRUCTURE
 ─────────────────────────────────────────────────────────────────────────────────────────
 OVERALL:                                 ███░░░░░░░  35%    Connector ABI-FFI complete;
                                                             core and protocols pending
-```
+....
 
-## Key Dependencies
+=== Key Dependencies
 
-```
+....
 Idris2 compiler ───► ABI definitions ───► C header generation ───► Zig FFI
        │                    │                     │                    │
        ▼                    ▼                     ▼                    ▼
@@ -118,16 +111,17 @@ Idris2 compiler ───► ABI definitions ───► C header generation �
                                                                       ▼
                                                               PanLL VAB panel
                                                             (visual composition)
-```
+....
 
-## Update Protocol
+=== Update Protocol
 
 This file is maintained by both humans and AI agents. When updating:
 
-1. **After completing a component**: Change its bar and percentage
-2. **After adding a component**: Add a new row in the appropriate section
-3. **After architectural changes**: Update the ASCII diagram
-4. **Date**: Update the `Last updated` comment at the top of this file
+[arabic]
+. *After completing a component*: Change its bar and percentage
+. *After adding a component*: Add a new row in the appropriate section
+. *After architectural changes*: Update the ASCII diagram
+. *Date*: Update the `+Last updated+` comment at the top of this file
 
-Progress bars use: `█` (filled) and `░` (empty), 10 characters wide.
-Percentages: 0%, 10%, 20%, ... 100% (in 10% increments).
+Progress bars use: `+█+` (filled) and `+░+` (empty), 10 characters wide.
+Percentages: 0%, 10%, 20%, … 100% (in 10% increments).
