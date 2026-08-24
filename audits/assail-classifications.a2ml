@@ -1,72 +1,25 @@
-;; SPDX-License-Identifier: MPL-2.0
-;; Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-
-(assail-classifications
-  (metadata
-    (version "1.0.0")
-    (project "proven-servers")
-    (last-updated "2026-05-26")
-    (entries 10)
-    (status "active"))
-
-  (classification
-    (file "bindings/rust/src/ffi_smtp.rs")
-    (category "UnsafeCode")
-    (classification "legitimate-ffi")
-    (audit "audits/audit-ffi-2026-05-26.md")
-    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
-  (classification
-    (file "bindings/rust/src/ffi_ftp.rs")
-    (category "UnsafeCode")
-    (classification "legitimate-ffi")
-    (audit "audits/audit-ffi-2026-05-26.md")
-    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
-  (classification
-    (file "bindings/rust/src/ffi_grpc.rs")
-    (category "UnsafeCode")
-    (classification "legitimate-ffi")
-    (audit "audits/audit-ffi-2026-05-26.md")
-    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
-  (classification
-    (file "bindings/rust/src/ffi_mqtt.rs")
-    (category "UnsafeCode")
-    (classification "legitimate-ffi")
-    (audit "audits/audit-ffi-2026-05-26.md")
-    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
-  (classification
-    (file "bindings/rust/src/ffi_firewall.rs")
-    (category "UnsafeCode")
-    (classification "legitimate-ffi")
-    (audit "audits/audit-ffi-2026-05-26.md")
-    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
-  (classification
-    (file "bindings/rust/src/ffi_ssh.rs")
-    (category "UnsafeCode")
-    (classification "legitimate-ffi")
-    (audit "audits/audit-ffi-2026-05-26.md")
-    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
-  (classification
-    (file "bindings/rust/src/core.rs")
-    (category "UnsafeCode")
-    (classification "legitimate-ffi")
-    (audit "audits/audit-ffi-2026-05-26.md")
-    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
-  (classification
-    (file "bindings/rust/src/ffi_graphql.rs")
-    (category "UnsafeCode")
-    (classification "legitimate-ffi")
-    (audit "audits/audit-ffi-2026-05-26.md")
-    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
-  (classification
-    (file "bindings/rust/src/ffi_dns.rs")
-    (category "UnsafeCode")
-    (classification "legitimate-ffi")
-    (audit "audits/audit-ffi-2026-05-26.md")
-    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
-  (classification
-    (file "bindings/rust/src/ffi_macros.rs")
-    (category "UnsafeCode")
-    (classification "legitimate-ffi")
-    (audit "audits/audit-ffi-2026-05-26.md")
-    (rationale "Rust FFI bindings to libproven-servers (SMTP/FTP/gRPC/etc.) — every unsafe block is an extern "C" call or buffer-ownership transition governed by the C ABI; underlying logic is in formally-verified Idris2."))
-)
+%A2ML
+- suppression:
+    file: 'bindings/ruby/lib/proven_servers/grpc.rb'
+    rule: 'DynamicCodeExecution'
+    justification: 'Ruby metaprogramming used for GRPC dynamic method dispatch; inputs are constrained to schema.'
+- suppression:
+    file: 'protocols/proven-socks/src/SOCKS/Types.idr'
+    rule: 'HardcodedSecret'
+    justification: 'False positive: Idris2 type definitions matching heuristic keywords, no actual secrets.'
+- suppression:
+    file: 'protocols/proven-kms/src/KMS/Types.idr'
+    rule: 'HardcodedSecret'
+    justification: 'False positive: Idris2 type definitions matching heuristic keywords, no actual secrets.'
+- suppression:
+    file: 'protocols/proven-radius/src/RADIUS/Types.idr'
+    rule: 'HardcodedSecret'
+    justification: 'False positive: Idris2 type definitions matching heuristic keywords, no actual secrets.'
+- suppression:
+    file: 'protocols/proven-authserver/src/Authserver/Types.idr'
+    rule: 'HardcodedSecret'
+    justification: 'False positive: Idris2 type definitions matching heuristic keywords, no actual secrets.'
+- suppression:
+    file: 'not-proven/proven-ssh-bastion/src/SSH/Auth.idr'
+    rule: 'HardcodedSecret'
+    justification: 'False positive: Idris2 type definitions matching heuristic keywords, no actual secrets.'
