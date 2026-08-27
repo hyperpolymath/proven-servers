@@ -3,6 +3,10 @@
 # Docs: https://gh.io/actions-lockfile
 version: 'v0.0.2'
 workflows:
+    '.github/workflows/governance.yml': []
+    '.github/workflows/mirror.yml': []
+    '.github/workflows/scorecard.yml': []
+    '.github/workflows/secret-scanner.yml': []
     '.github/workflows/boj-trigger.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/casket-pages.yml':
@@ -11,10 +15,10 @@ workflows:
         - 'actions/configure-pages@v6.0.0'
         - 'actions/deploy-pages@v5.0.0'
         - 'actions/upload-pages-artifact@v5.0.0'
-        - 'haskell-actions/setup@v2.11.0'
+        - 'haskell-actions/setup@v2.12.0'
     '.github/workflows/codeql.yml':
         - 'actions/checkout@v7.0.1'
-        - 'github/codeql-action@v4.37.4'
+        - 'github/codeql-action@v4.37.6'
     '.github/workflows/dependabot-automerge.yml':
         - 'dependabot/fetch-metadata@v3.1.0'
     '.github/workflows/dogfood-checks.yml':
@@ -26,15 +30,18 @@ workflows:
         - 'actions/upload-artifact@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
         - 'goto-bus-stop/setup-zig@v2.2.1'
-        - 'swatinem/rust-cache@v2.9.1'
+        - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/hypatia-scan.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/github-script@v9.0.0'
         - 'actions/upload-artifact@v7.0.1'
         - 'erlef/setup-beam@v1.24.1'
-        - 'github/codeql-action@v4.37.4'
+        - 'github/codeql-action@v4.37.6'
     '.github/workflows/instant-sync-dispatch.yml':
         - 'peter-evans/repository-dispatch@v4.0.1'
+    '.github/workflows/main-estate-audit.yml':
+        - 'actions/checkout@v4.4.0'
+        - 'hyperpolymath/cicd-suite@main'
     '.github/workflows/pages.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/deploy-pages@v5.0.0'
@@ -43,7 +50,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'actions/upload-artifact@v7.0.1'
         - 'dtolnay/rust-toolchain@stable'
-        - 'swatinem/rust-cache@v2.9.1'
+        - 'swatinem/rust-cache@v2.9.2'
     '.github/workflows/push-email-notify.yml':
         - 'dawidd6/action-send-mail@v3.12.0'
     '.github/workflows/release.yml':
@@ -56,6 +63,11 @@ dependencies:
         commit: 'sha1-55cc8345863c7cc4c66a329aec7e433d2d1c52a9'
         owner_id: 44036562
         repo_id: 215566462
+    'actions/checkout@v4.4.0':
+        ref: 'v4.4.0'
+        commit: 'sha1-11d5960a326750d5838078e36cf38b85af677262'
+        owner_id: 44036562
+        repo_id: 197814629
     'actions/checkout@v7.0.1':
         ref: 'v7.0.1'
         commit: 'sha1-3d3c42e5aac5ba805825da76410c181273ba90b1'
@@ -113,9 +125,9 @@ dependencies:
         commit: 'sha1-54075bcc5e249e4758d363f27d099f55d843f124'
         owner_id: 47606891
         repo_id: 331103973
-    'github/codeql-action@v4.37.4':
-        ref: 'v4.37.4'
-        commit: 'sha1-f205ea1c3313d32999d8d6a48b4f6530d4437b38'
+    'github/codeql-action@v4.37.6':
+        ref: 'v4.37.6'
+        commit: 'sha1-5595ccaf912efad79be6eef63a5619ff05969be3'
         owner_id: 9919
         repo_id: 259445878
     'goto-bus-stop/setup-zig@v2.2.1':
@@ -123,9 +135,9 @@ dependencies:
         commit: 'sha1-abea47f85e598557f500fa1fd2ab7464fcb39406'
         owner_id: 1006268
         repo_id: 212984112
-    'haskell-actions/setup@v2.11.0':
-        ref: 'v2.11.0'
-        commit: 'sha1-cd0d9bdd65b20557f41bea4dbe43d0b5fbbfe553'
+    'haskell-actions/setup@v2.12.0':
+        ref: 'v2.12.0'
+        commit: 'sha1-6037f33647c3f17758a2356c80fc4a53d7e0685d'
         owner_id: 75048950
         repo_id: 623796603
     'hyperpolymath/a2ml-ecosystem@main':
@@ -133,6 +145,11 @@ dependencies:
         commit: 'sha1-aa4b836bd969df2bc58128cb8e3d20bbc88d5e79'
         owner_id: 6759885
         repo_id: 1275649586
+    'hyperpolymath/cicd-suite@main':
+        ref: 'main'
+        commit: 'sha1-a3cd79fba541444c619902330d0b618eb1612634'
+        owner_id: 6759885
+        repo_id: 1326697643
     'hyperpolymath/k9-ecosystem@main':
         ref: 'main'
         commit: 'sha1-89f3c2702f4f650a92aa7411502f38da06abd562'
@@ -148,8 +165,8 @@ dependencies:
         commit: 'sha1-3d0d9888cb7fd7b750713d6e236d1fcb99157228'
         owner_id: 2242
         repo_id: 204253808
-    'swatinem/rust-cache@v2.9.1':
-        ref: 'v2.9.1'
-        commit: 'sha1-c19371144df3bb44fab255c43d04cbc2ab54d1c4'
+    'swatinem/rust-cache@v2.9.2':
+        ref: 'v2.9.2'
+        commit: 'sha1-6323deb102c322ba6fcbdcafc7e3dddab59af2b6'
         owner_id: 580492
         repo_id: 298565987
