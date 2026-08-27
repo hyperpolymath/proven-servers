@@ -1,5 +1,5 @@
-# This workflow is managed by gh actions-lock.
 # SPDX-License-Identifier: MPL-2.0
+# This workflow is managed by gh actions-lock.
 # This workflow is managed by gh actions-lock.
 # This workflow is managed by gh actions-lock.
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
@@ -24,7 +24,7 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
-permissions: read-all
+permissions:
   actions: read
 concurrency:
   group: e2e-${{ github.ref }}
