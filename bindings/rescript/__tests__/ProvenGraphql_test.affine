@@ -1,0 +1,112 @@
+// SPDX-License-Identifier: MPL-2.0
+// Ported via Harvard Engine (Semantic pass)
+
+module ProvenGraphql_test;
+
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+//
+// Tests for ProvenGraphql module: operation structs, struct kinds,
+// directive locations, and error categories.
+
+open ProvenGraphql
+
+// ---------------------------------------------------------------------------
+// Operation struct tests
+// ---------------------------------------------------------------------------
+
+fn testOperationTypeRoundtrip = () =>
+  for tag in 0 to 2 {
+    fn op = operationTypeFromTag(tag)
+    switch op {
+    | Some(o) => assert(operationTypeToTag(o) == tag)
+    | None => assert(false)
+    }
+  }
+
+fn testOperationTypeInvalid = () => assert(operationTypeFromTag(3) == None)
+
+// ---------------------------------------------------------------------------
+// Type kind tests
+// ---------------------------------------------------------------------------
+
+fn testTypeKindRoundtrip = () =>
+  for tag in 0 to 7 {
+    fn tk = structKindFromTag(tag)
+    switch tk {
+    | Some(t) => assert(structKindToTag(t) == tag)
+    | None => assert(false)
+    }
+  }
+
+fn testTypeKindInvalid = () => assert(structKindFromTag(8) == None)
+
+fn testTypeKindClassification = () => {
+  assert(structKindIsWrapper(List))
+  assert(structKindIsWrapper(NonNull))
+  assert(!structKindIsWrapper(Scalar))
+
+  assert(structKindIsComposite(Object))
+  assert(structKindIsComposite(Interface))
+  assert(structKindIsComposite(Union))
+  assert(!structKindIsComposite(Scalar))
+  assert(!structKindIsComposite(Enum))
+}
+
+// ---------------------------------------------------------------------------
+// Directive location tests
+// ---------------------------------------------------------------------------
+
+fn testDirectiveLocationRoundtrip = () =>
+  for tag in 0 to 17 {
+    fn loc = directiveLocationFromTag(tag)
+    switch loc {
+    | Some(l) => assert(directiveLocationToTag(l) == tag)
+    | None => assert(false)
+    }
+  }
+
+fn testDirectiveLocationInvalid = () => assert(directiveLocationFromTag(18) == None)
+
+fn testDirectiveLocationClassification = () => {
+  assert(directiveLocationIsExecutable(DirQuery))
+  assert(directiveLocationIsExecutable(DirField))
+  assert(directiveLocationIsExecutable(DirInlineFragment))
+  assert(!directiveLocationIsExecutable(DirSchema))
+  assert(directiveLocationIsTypeSystem(DirSchema))
+  assert(directiveLocationIsTypeSystem(DirFieldDefinition))
+}
+
+// ---------------------------------------------------------------------------
+// Error category tests
+// ---------------------------------------------------------------------------
+
+fn testErrorCategoryRoundtrip = () =>
+  for tag in 0 to 4 {
+    fn ec = errorCategoryFromTag(tag)
+    switch ec {
+    | Some(e) => assert(errorCategoryToTag(e) == tag)
+    | None => assert(false)
+    }
+  }
+
+fn testErrorCategoryInvalid = () => assert(errorCategoryFromTag(5) == None)
+
+// ---------------------------------------------------------------------------
+// Run all tests
+// ---------------------------------------------------------------------------
+
+fn () = {
+  testOperationTypeRoundtrip()
+  testOperationTypeInvalid()
+  testTypeKindRoundtrip()
+  testTypeKindInvalid()
+  testTypeKindClassification()
+  testDirectiveLocationRoundtrip()
+  testDirectiveLocationInvalid()
+  testDirectiveLocationClassification()
+  testErrorCategoryRoundtrip()
+  testErrorCategoryInvalid()
+  Js.log("ProvenGraphql: all tests passed")
+}
+

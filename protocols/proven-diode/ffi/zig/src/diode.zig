@@ -239,7 +239,7 @@ pub export fn diode_create(direction: u8, protocol: u8) callconv(.c) c_int {
 
     for (&gateways, 0..) |*gw, i| {
         if (!gw.active) {
-            gw.* = empty_gateway;
+            @memcpy(std.mem.asBytes(gw), std.mem.asBytes(&empty_gateway));
             gw.direction = @enumFromInt(direction);
             gw.protocol = @enumFromInt(protocol);
             gw.state = .configured;
@@ -255,7 +255,7 @@ pub export fn diode_destroy(slot: c_int) callconv(.c) void {
     mutex.lock();
     defer mutex.unlock();
     if (slot < 0 or slot >= MAX_GATEWAYS) return;
-    gateways[@intCast(slot)] = empty_gateway;
+    @memcpy(std.mem.asBytes(&gateways[@intCast(slot)]), std.mem.asBytes(&empty_gateway));
 }
 
 // -- State queries ------------------------------------------------------------
