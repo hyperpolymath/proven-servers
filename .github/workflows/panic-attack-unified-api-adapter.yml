@@ -3,15 +3,15 @@
 # This workflow is managed by gh actions-lock.
 # This workflow is managed by gh actions-lock.
 # This workflow is managed by gh actions-lock.
-# panic-attack hexadeca surface scan for proven-nesy-solver-api.
+# panic-attack unified-api-adapter surface scan for proven-nesy-solver-api.
 #
-# Scans the zig hexadeca connector (all 16 protocol surfaces) with
+# Scans the zig unified-api-adapter connector (all 16 protocol surfaces) with
 # panic-attack assail, then maps findings to individual surfaces and
 # reports a per-surface pass/fail in the job summary.
 #
 # Triggered only when V connector source or its config changes.
 
-name: panic-attack / hexadeca (nesy-solver-api)
+name: panic-attack / unified-api-adapter (nesy-solver-api)
 on:
   push:
     branches: [main]
@@ -26,8 +26,8 @@ permissions:
   actions: read
   contents: read
 jobs:
-  hexadeca-scan:
-    name: panic-attack hexadeca scan
+  unified-api-adapter-scan:
+    name: panic-attack unified-api-adapter scan
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -51,7 +51,7 @@ jobs:
           cargo build --release
           sudo install -m 0755 target/release/panic-attack /usr/local/bin/panic-attack
           panic-attack --version
-      - name: Run panic-attack assail (hexadeca connector)
+      - name: Run panic-attack assail (unified-api-adapter connector)
         id: assail
         working-directory: connectors/proven-nesy-solver-api/v
         run: |
@@ -69,7 +69,7 @@ jobs:
           echo "total=$TOTAL"    >> $GITHUB_OUTPUT
           echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
           echo "high=$HIGH"      >> $GITHUB_OUTPUT
-      - name: Build hexadeca surface report
+      - name: Build unified-api-adapter surface report
         id: surface-report
         working-directory: connectors/proven-nesy-solver-api/v
         run: |
@@ -77,7 +77,7 @@ jobs:
           SURFACES=(rest graphql websocket sse grpc jsonrpc msgpack_rpc cbor
                     flatbuffers capnproto bebop trpc mqtt amqp soap verisimdb)
 
-          echo "## panic-attack hexadeca surface report"       >> $GITHUB_STEP_SUMMARY
+          echo "## panic-attack unified-api-adapter surface report"       >> $GITHUB_STEP_SUMMARY
           echo ""                                               >> $GITHUB_STEP_SUMMARY
           echo "| # | Surface | Findings | Status |"           >> $GITHUB_STEP_SUMMARY
           echo "|---|---------|----------|--------|"           >> $GITHUB_STEP_SUMMARY
@@ -111,7 +111,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: panic-findings-hexadeca
+          name: panic-findings-unified-api-adapter
           path: |
             /tmp/panic-findings.json
             /tmp/panic-raw.txt
@@ -119,6 +119,6 @@ jobs:
       - name: Fail on critical findings
         if: steps.assail.outputs.critical > 0
         run: |-
-          echo "Critical findings in hexadeca connector — see artifact."
+          echo "Critical findings in unified-api-adapter connector — see artifact."
           jq '[.[] | select(.severity == "critical")]' /tmp/panic-findings.json
           exit 1

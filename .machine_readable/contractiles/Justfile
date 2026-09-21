@@ -895,12 +895,12 @@ edit:
 assail:
     @command -v panic-attack >/dev/null 2>&1 && panic-attack assail . || echo "panic-attack not found — install from https://github.com/hyperpolymath/panic-attacker"
 
-# Run panic-attack hexadeca surface scan on the nesy-solver-api V connector.
+# Run panic-attack unified-api-adapter surface scan on the nesy-solver-api V connector.
 # Uses connectors/proven-nesy-solver-api/v/panic-attack.toml for surface-specific
 # thresholds (REST + VerisimDB held to 85 robustness; others to 75).
-assail-hexadeca:
+assail-unified-api-adapter:
     @command -v panic-attack >/dev/null 2>&1 || { echo "panic-attack not found — install from https://github.com/hyperpolymath/panic-attacker"; exit 1; }
-    @echo "Scanning hexadeca connector (16 surfaces)..."
+    @echo "Scanning unified-api-adapter connector (16 surfaces)..."
     @cd connectors/proven-nesy-solver-api/v && panic-attack assail . --config panic-attack.toml
 
 # Self-diagnostic — checks dependencies, permissions, paths
