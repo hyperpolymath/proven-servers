@@ -163,7 +163,7 @@ Show SessionState where
   show FailedS     = "FailedS"
 
 ---------------------------------------------------------------------------
--- SurfaceKind — which of the 16 hexadeca surfaces a request arrived on.
+-- SurfaceKind — which of the 16 unified-api-adapter surfaces a request arrived on.
 ---------------------------------------------------------------------------
 
 ||| Which zig protocol surface a request came in on.  The 16 surfaces

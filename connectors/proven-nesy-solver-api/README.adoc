@@ -61,7 +61,7 @@ zig/                            Zig HTTP service + deployment
 | `ObligationClass`  | 0–10  | mirrors verisimdb `proof_attempts` Enum8
 | `ProveOutcome`     | 0–3   | mirrors verisimdb `outcome` field
 | `SessionState`     | 0–3   | `src/NesySolverAPIABI/Transitions.idr`
-| `SurfaceKind`      | 0–15  | 16 zig hexadeca protocol surfaces
+| `SurfaceKind`      | 0–15  | 16 zig unified-api-adapter protocol surfaces
 |===
 
 Any change to these tag values MUST update Layout.idr, nesy_solver_api.h,

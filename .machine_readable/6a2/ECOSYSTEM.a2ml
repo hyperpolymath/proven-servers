@@ -41,5 +41,5 @@ points = [
   { system = "RGTV (rgtv-nesy)", direction = "inbound", protocol = "HTTP grant→redeem over Fly.io private 6PN (.flycast)" },
   { system = "echidna (echidna-nesy)", direction = "outbound", protocol = "HTTP POST /api/verify over Fly.io private 6PN (.flycast)" },
   { system = "verisim-api", direction = "outbound", protocol = "HTTP POST /attempts over Fly.io private 6PN (.flycast)" },
-  { system = "panic-attack", direction = "inbound", protocol = "hexadeca 16-surface CI scan via panic-attack-hexadeca.yml" },
+  { system = "panic-attack", direction = "inbound", protocol = "unified-api-adapter 16-surface CI scan via panic-attack-unified-api-adapter.yml" },
 ]

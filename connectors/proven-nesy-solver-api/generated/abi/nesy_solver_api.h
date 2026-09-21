@@ -18,7 +18,7 @@
  *   ObligationClass:  tags 0-10 (11 classes, mirrors verisimdb Enum8)
  *   ProveOutcome:     tags 0-3  (success/failure/timeout/unknown)
  *   SessionState:     tags 0-3  (Idle/Dispatching/Recording/FailedS)
- *   SurfaceKind:      tags 0-15 (16 hexadeca protocol surfaces)
+ *   SurfaceKind:      tags 0-15 (16 unified-api-adapter protocol surfaces)
  */
 
 #ifndef PROVEN_NESY_SOLVER_API_H

@@ -55,7 +55,7 @@ actions = [
 [completed-work]
 entries = [
   { date = "2026-04-11", description = "RGTV credential brokering: wired rgtv_client.v into nesy-solver-api, deploy-fly.sh rgtv phase added, RGTV_URL + RGTV_AGENT_TOKEN in fly.toml, vault-broker axum HTTP server built." },
-  { date = "2026-04-11", description = "panic-attack hexadeca CI: 16-surface protocol architecture in panic-attack.toml, GitHub Actions workflow panic-attack-hexadeca.yml with per-surface attribution table, Justfile assail-hexadeca recipe." },
+  { date = "2026-04-11", description = "panic-attack unified-api-adapter CI: 16-surface protocol architecture in panic-attack.toml, GitHub Actions workflow panic-attack-unified-api-adapter.yml with per-surface attribution table, Justfile assail-unified-api-adapter recipe." },
   { date = "2026-04-11", description = "Fly.io cold-start hardening: echidna read_timeout 90s in server.v, deploy-fly.sh echidna grace_period 90s, echidna fly.toml HTTP health check + 90s grace, echidna Containerfile curl HEALTHCHECK with 90s start-period." },
   { date = "2026-04-11", description = "ROADMAP.adoc: v1.1.0 (HAR, conative-gating, invariant path), v1.2.0 (Hypatia CI), v1.3.0 (Lithoglyph aqueduct), v1.4.0 (cadre-tea-router + ReScript TEA) milestones added." },
   { date = "2026-04-11", description = "deploy-fly.sh: RGTV phase 0 added, dependency order updated (rgtv → clickhouse → schema → verisim → echidna → nesy-api), rgtv-agent-token state file management." },
