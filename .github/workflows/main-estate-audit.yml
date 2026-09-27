@@ -10,6 +10,14 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# Least privilege. Every step below is a shell gate over the checked-out
+# working tree: none of the cicd-suite composite actions take a token or call
+# the GitHub API, so `contents: read` is the complete grant. Declaring it here
+# stops this workflow inheriting the repository-default GITHUB_TOKEN scopes,
+# which is what the other 15 workflows in this directory already do.
+permissions:
+  contents: read
+
 jobs:
   estate-audit:
     runs-on: ubuntu-latest
