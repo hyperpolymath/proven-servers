@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= Contractiles Template Set
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Repository Contractiles
 :toc:
-:sectnums:
 
-This directory contains the generalized contractiles templates. Copy the `.machine_readable/contractiles/` directory into a new repo to establish a consistent operational, validation, trust, recovery, and intent framework.
+The contractiles in this directory are customized for `proven-servers`; they
+are not unmodified templates copied from `rsr-template-repo`.
 
-== Fill-In Instructions
+== Files
 
-1. Update the Mustfile to reflect your real invariants (paths, schema versions, ports).
-2. Replace Trustfile.hs placeholders with your actual key paths and verification commands.
-3. Adjust Dustfile handlers to match your rollback and recovery tooling.
-4. Update Intentfile to mirror the roadmap you want the system to evolve toward.
+* `Mustfile.a2ml` — path and policy invariants
+* `Trustfile.a2ml` — evidence boundaries and trust limitations
+* `Intentfile.a2ml` — declared next work and status
+* `Adjustfile.a2ml` — advisory drift checks
+* `Justfile` — synchronized snapshot of the root Justfile
 
-== Contents
-
-* `must/Mustfile` - required invariants and validations.
-* `trust/Trustfile.hs` - cryptographic verification steps.
-* `dust/Dustfile` - rollback and recovery semantics.
-* `lust/Intentfile` - future intent and roadmap direction.
+The imported `contractile.just` adds non-destructive wrappers such as
+`just must-check`, `just trust-smoke`, `just dust-status`, and
+`just intend-list`. No bulk rollback command is provided. Running these checks
+does not establish formal proof, native ABI conformance, release readiness, or
+security certification.

@@ -3,16 +3,10 @@
 --
 -- AuthserverABI.Foreign: Foreign function declarations for the C bridge.
 --
--- Declares the opaque handle type and documents the complete FFI contract
--- that the Zig implementation (ffi/zig/src/authserver.zig) must provide.
---
--- The Zig FFI manages:
---   - 64-slot mutex-protected session pool
---   - Authentication attempts with configurable methods
---   - MFA challenge/response workflow
---   - Token issuance and revocation
---   - Session lifecycle (Active -> Expired/Revoked/Locked)
---   - Failed attempt tracking with lockout
+-- Declares the opaque handle type and documents the session lifecycle model.
+-- The ABI carries no credentials or MFA challenge material, so authentication
+-- and MFA always reject; token issuance fails closed without authenticated state.
+-- The Active tag denotes a live context, not an authenticated identity.
 --
 -- All functions use C calling convention and communicate state via
 -- Bits8 tags matching AuthserverABI.Types exactly.
@@ -52,7 +46,7 @@ abiVersion = 1
 -- |                              | Returns ABI version.                     |
 -- +------------------------------+------------------------------------------+
 -- | authserver_create            | (method: u8) -> c_int (slot)             |
--- |                              | Creates session in Active state.         |
+-- |                              | Creates a live context, not an authenticated identity. |
 -- |                              | Returns -1 on failure.                   |
 -- +------------------------------+------------------------------------------+
 -- | authserver_destroy           | (slot: c_int) -> void                    |
@@ -63,19 +57,21 @@ abiVersion = 1
 -- +------------------------------+------------------------------------------+
 -- | authserver_authenticate      | (slot: c_int, method: u8)                |
 -- |                              | -> u8 (AuthResult tag)                   |
--- |                              | Attempt authentication with method.      |
+-- |                              | Never succeeds: InvalidCredentials until  |
+-- |                              | lockout, then AccountLocked; no credentials. |
 -- +------------------------------+------------------------------------------+
 -- | authserver_require_mfa       | (slot: c_int, mfa_method: u8)           |
 -- |                              | -> u8 (0=ok, 1=rejected)                 |
--- |                              | Set MFA requirement on session.          |
+-- |                              | Set a modeled MFA policy only.            |
 -- +------------------------------+------------------------------------------+
 -- | authserver_verify_mfa        | (slot: c_int, mfa_method: u8)           |
 -- |                              | -> u8 (0=ok, 1=rejected)                 |
--- |                              | Verify MFA challenge response.           |
+-- |                              | Always rejects: no challenge material.   |
 -- +------------------------------+------------------------------------------+
 -- | authserver_issue_token       | (slot: c_int, token_type: u8)           |
 -- |                              | -> u8 (0=ok, 1=rejected)                 |
--- |                              | Issue a token of the given type.         |
+-- |                              | Always rejects without authenticated     |
+-- |                              | state; this model has no authenticator.   |
 -- +------------------------------+------------------------------------------+
 -- | authserver_token_count       | (slot: c_int) -> u32                     |
 -- |                              | Returns number of active tokens.         |

@@ -96,23 +96,24 @@ test "destroy is safe with invalid slot" {
 // Entry submission
 // =========================================================================
 
-test "submit accepts valid X.509 entry" {
+test "submit fails closed without persistent log and Merkle-tree implementation" {
     const name = "submit-log";
     const slot = ctlog.ctlog_create(name.ptr, name.len, 1024);
     defer ctlog.ctlog_destroy(slot);
 
-    const cert = "fake-cert-data";
-    try std.testing.expectEqual(@as(u8, 0), ctlog.ctlog_submit(slot, 0, cert.ptr, cert.len)); // accepted
-    try std.testing.expectEqual(@as(u32, 1), ctlog.ctlog_entry_count(slot));
+    const cert = "certificate-bytes";
+    try std.testing.expectEqual(@as(u8, 3), ctlog.ctlog_submit(slot, 0, cert.ptr, cert.len)); // rejected
+    try std.testing.expectEqual(@as(u32, 0), ctlog.ctlog_entry_count(slot));
+    try std.testing.expectEqual(@as(u32, 0), ctlog.ctlog_tree_size(slot));
 }
 
-test "submit accepts precert entry" {
+test "precertificate submission also fails closed" {
     const name = "precert-log";
     const slot = ctlog.ctlog_create(name.ptr, name.len, 1024);
     defer ctlog.ctlog_destroy(slot);
 
-    const cert = "fake-precert";
-    try std.testing.expectEqual(@as(u8, 0), ctlog.ctlog_submit(slot, 1, cert.ptr, cert.len)); // accepted
+    const cert = "precertificate-bytes";
+    try std.testing.expectEqual(@as(u8, 3), ctlog.ctlog_submit(slot, 1, cert.ptr, cert.len));
 }
 
 test "submit rejects invalid entry type" {
@@ -147,32 +148,30 @@ test "begin_merge transitions Active -> Merging" {
     try std.testing.expectEqual(@as(u8, 2), ctlog.ctlog_state(slot)); // Merging
 }
 
-test "finish_merge integrates entries and transitions to Signing" {
+test "finish_merge only exercises the lifecycle model, not a Merkle tree" {
     const name = "finishmerge-log";
     const slot = ctlog.ctlog_create(name.ptr, name.len, 1024);
     defer ctlog.ctlog_destroy(slot);
 
-    // Submit two entries
-    const cert = "cert-data";
-    _ = ctlog.ctlog_submit(slot, 0, cert.ptr, cert.len);
-    _ = ctlog.ctlog_submit(slot, 1, cert.ptr, cert.len);
-    try std.testing.expectEqual(@as(u32, 0), ctlog.ctlog_tree_size(slot)); // Not merged yet
+    const cert = "certificate-bytes";
+    _ = ctlog.ctlog_submit(slot, 0, cert.ptr, cert.len); // fails closed
+    try std.testing.expectEqual(@as(u32, 0), ctlog.ctlog_entry_count(slot));
 
     _ = ctlog.ctlog_begin_merge(slot);
     try std.testing.expectEqual(@as(u8, 0), ctlog.ctlog_finish_merge(slot));
-    try std.testing.expectEqual(@as(u32, 2), ctlog.ctlog_tree_size(slot)); // Merged
-    try std.testing.expectEqual(@as(u8, 3), ctlog.ctlog_state(slot)); // Signing
+    try std.testing.expectEqual(@as(u32, 0), ctlog.ctlog_tree_size(slot));
+    try std.testing.expectEqual(@as(u8, 3), ctlog.ctlog_state(slot)); // Signing model state
 }
 
-test "sign_sth transitions Signing -> Active" {
+test "sign_sth fails closed without a signing backend" {
     const name = "sign-log";
     const slot = ctlog.ctlog_create(name.ptr, name.len, 1024);
     defer ctlog.ctlog_destroy(slot);
 
     _ = ctlog.ctlog_begin_merge(slot);
     _ = ctlog.ctlog_finish_merge(slot);
-    try std.testing.expectEqual(@as(u8, 0), ctlog.ctlog_sign_sth(slot));
-    try std.testing.expectEqual(@as(u8, 1), ctlog.ctlog_state(slot)); // Active
+    try std.testing.expectEqual(@as(u8, 1), ctlog.ctlog_sign_sth(slot));
+    try std.testing.expectEqual(@as(u8, 3), ctlog.ctlog_state(slot)); // remains Signing
 }
 
 test "begin_merge rejects from non-Active state" {
@@ -196,7 +195,7 @@ test "sign_sth rejects from non-Signing state" {
 // Verification
 // =========================================================================
 
-test "verify_inclusion succeeds for merged entry" {
+test "verify_inclusion never accepts without Merkle proof material" {
     const name = "inclusion-log";
     const slot = ctlog.ctlog_create(name.ptr, name.len, 1024);
     defer ctlog.ctlog_destroy(slot);
@@ -205,9 +204,8 @@ test "verify_inclusion succeeds for merged entry" {
     _ = ctlog.ctlog_submit(slot, 0, cert.ptr, cert.len);
     _ = ctlog.ctlog_begin_merge(slot);
     _ = ctlog.ctlog_finish_merge(slot);
-    _ = ctlog.ctlog_sign_sth(slot);
 
-    try std.testing.expectEqual(@as(u8, 0), ctlog.ctlog_verify_inclusion(slot, 0)); // valid_proof
+    try std.testing.expectEqual(@as(u8, 1), ctlog.ctlog_verify_inclusion(slot, 0)); // invalid/unavailable
 }
 
 test "verify_inclusion fails for out-of-range index" {
@@ -218,7 +216,7 @@ test "verify_inclusion fails for out-of-range index" {
     try std.testing.expectEqual(@as(u8, 1), ctlog.ctlog_verify_inclusion(slot, 999)); // invalid_proof
 }
 
-test "verify_consistency succeeds for valid range" {
+test "verify_consistency never accepts without Merkle proof material" {
     const name = "consistency-log";
     const slot = ctlog.ctlog_create(name.ptr, name.len, 1024);
     defer ctlog.ctlog_destroy(slot);
@@ -228,31 +226,24 @@ test "verify_consistency succeeds for valid range" {
     _ = ctlog.ctlog_submit(slot, 0, cert.ptr, cert.len);
     _ = ctlog.ctlog_begin_merge(slot);
     _ = ctlog.ctlog_finish_merge(slot);
-    _ = ctlog.ctlog_sign_sth(slot);
 
-    try std.testing.expectEqual(@as(u8, 0), ctlog.ctlog_verify_consistency(slot, 0, 2)); // valid
+    try std.testing.expectEqual(@as(u8, 1), ctlog.ctlog_verify_consistency(slot, 0, 2)); // invalid/unavailable
 }
 
-test "verify_consistency detects inconsistent tree (old > new)" {
+test "verify_consistency does not claim a result without proof material" {
     const name = "inconsistent-log";
     const slot = ctlog.ctlog_create(name.ptr, name.len, 1024);
     defer ctlog.ctlog_destroy(slot);
 
-    const cert = "cert";
-    _ = ctlog.ctlog_submit(slot, 0, cert.ptr, cert.len);
-    _ = ctlog.ctlog_begin_merge(slot);
-    _ = ctlog.ctlog_finish_merge(slot);
-    _ = ctlog.ctlog_sign_sth(slot);
-
-    try std.testing.expectEqual(@as(u8, 2), ctlog.ctlog_verify_consistency(slot, 5, 1)); // inconsistent
+    try std.testing.expectEqual(@as(u8, 1), ctlog.ctlog_verify_consistency(slot, 5, 1));
 }
 
-test "verify_consistency detects stale STH" {
+test "verify_consistency rejects an unsupported stale-tree check" {
     const name = "stale-log";
     const slot = ctlog.ctlog_create(name.ptr, name.len, 1024);
     defer ctlog.ctlog_destroy(slot);
 
-    try std.testing.expectEqual(@as(u8, 3), ctlog.ctlog_verify_consistency(slot, 0, 100)); // stale
+    try std.testing.expectEqual(@as(u8, 1), ctlog.ctlog_verify_consistency(slot, 0, 100));
 }
 
 // =========================================================================

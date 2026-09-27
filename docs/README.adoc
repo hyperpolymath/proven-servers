@@ -2,15 +2,23 @@
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 = Documentation Layout
 
-Primary tracks:
+This directory contains project-specific guidance, design records, and
+historical maintenance material. Empty topic folders are organizational slots,
+not evidence that formal theory or whitepapers have been authored.
 
-* `theory/` for formal and conceptual material
-* `practice/` for operational and implementation material
-* `maintenance/` for baseline checklists and release hard-pass runbooks
-* `whitepapers/academic/` for research-facing whitepapers
-* `whitepapers/industry/` for industry/outreach whitepapers
+== Current paths
 
-Core docs:
+* `QUICKSTART.adoc` — repository-scoped quick start.
+* `THREAT-MODEL.adoc` — scoped threat inventory; not a security audit.
+* `TOPOLOGY-GUIDE.adoc` — how to update the source-tree map.
+* `decisions/` — selected architecture decision records (`.adoc`).
+* `maintenance/MAINTENANCE-CHECKLIST.adoc` — project-specific maintenance
+  checklist.
+* `practice/SOFTWARE-DEVELOPMENT-APPROACH.adoc` — development process.
+* `design/` — dated technical design notes; verify status before relying on
+  them.
+* `theory/` and `whitepapers/` — currently empty topic directories.
 
-* `maintenance/MAINTENANCE-CHECKLIST.md`
-* `practice/SOFTWARE-DEVELOPMENT-APPROACH.adoc`
+The canonical top-level README, readiness, security, proof-needs, and
+maintainer docs remain at the repository root. No docs-site publication or
+repository-wide documentation build is currently configured.

@@ -85,14 +85,22 @@ let server_state_of_tag = function
   | 4 -> Some Shutdown
   | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_doq_abi_version : unit -> int = "doq_abi_version"
-external c_doq_create_context : unit -> int = "doq_create_context"
-external c_doq_destroy_context : int -> unit = "doq_destroy_context"
-external c_doq_state : int -> int = "doq_state"
-external c_doq_server_state : int -> int = "doq_server_state"
-external c_doq_can_transition : int -> int -> int = "doq_can_transition"
+let c_doq_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_doq_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_doq_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_doq_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_doq_server_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_doq_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

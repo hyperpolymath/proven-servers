@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# Ruby bindings for the proven-dns Zig FFI.
-#
-# Wraps the C-ABI functions for DNS query/response lifecycle,
-# DNSSEC signing and validation, and record management.
+# Ruby bindings for the bounded proven-dns message-builder FFI.
+# Accepts only exact 17-byte standard queries with one root-name question;
+# responses are capped at 512 bytes. This is not a general resolver. DNSSEC
+# key loading, signing, and validation fail closed.
 
 # frozen_string_literal: true
 
 require "ffi"
 
 module ProvenServers
-  # DNS server protocol bindings matching the Idris2 ABI.
+  # Bounded DNS message-builder bindings matching the Idris2 ABI.
   #
   # @example
   #   ProvenServers::Dns.with_context do |ctx|
@@ -58,17 +58,17 @@ module ProvenServers
     attach_function :dns_state,           [:int], :uint8
     attach_function :dns_dnssec_state,    [:int], :uint8
     attach_function :dns_rcode,           [:int], :uint8
-    attach_function :dns_answer_count,    [:int], :uint32
-    attach_function :dns_authority_count, [:int], :uint32
-    attach_function :dns_additional_count, [:int], :uint32
-    attach_function :dns_query_rtype,     [:int], :uint16
-    attach_function :dns_query_class,     [:int], :uint16
-    attach_function :dns_parse_query,     [:int, :pointer, :uint32], :uint8
+    attach_function :dns_answer_count,    [:int], :uint16
+    attach_function :dns_authority_count, [:int], :uint16
+    attach_function :dns_additional_count,[:int], :uint16
+    attach_function :dns_query_rtype,     [:int], :uint8
+    attach_function :dns_query_class,     [:int], :uint8
+    attach_function :dns_parse_query,     [:int, :pointer, :uint16], :uint8
     attach_function :dns_begin_lookup,    [:int], :uint8
     attach_function :dns_begin_response,  [:int], :uint8
-    attach_function :dns_add_answer,      [:int, :uint16, :uint16, :uint32, :pointer, :uint32], :uint8
-    attach_function :dns_add_authority,   [:int, :uint16, :uint16, :uint32, :pointer, :uint32], :uint8
-    attach_function :dns_add_additional,  [:int, :uint16, :uint16, :uint32, :pointer, :uint32], :uint8
+    attach_function :dns_add_answer,      [:int, :uint8, :uint8, :uint32, :pointer, :uint16], :uint8
+    attach_function :dns_add_authority,   [:int, :uint8, :uint8, :uint32, :pointer, :uint16], :uint8
+    attach_function :dns_add_additional,  [:int, :uint8, :uint8, :uint32, :pointer, :uint16], :uint8
     attach_function :dns_set_rcode,       [:int, :uint8], :uint8
     attach_function :dns_build_response,  [:int, :pointer, :pointer], :uint8
     attach_function :dns_enable_dnssec,   [:int], :uint8
@@ -132,12 +132,14 @@ module ProvenServers
       # @return [Integer]
       def query_class     = Dns.dns_query_class(@slot)
 
-      # Parse a raw DNS query.
+      # Parse only the exact 17-byte standard root-question query subset.
       #
       # @param data [String] raw DNS query bytes
       # @return [void]
       # @raise [ProvenError] on failure
       def parse_query(data)
+        raise ArgumentError, "DNS query must be exactly 17 bytes" unless data.bytesize == 17
+
         buf = FFI::MemoryPointer.from_string(data)
         ProvenServers.check_status(Dns.dns_parse_query(@slot, buf, data.bytesize))
       end
@@ -158,6 +160,8 @@ module ProvenServers
       # @return [void]
       # @raise [ProvenError] on failure
       def add_answer(rtype, rclass, ttl, rdata)
+        raise ArgumentError, "DNS RDATA must not exceed 256 bytes" if rdata.bytesize > 256
+
         buf = FFI::MemoryPointer.from_string(rdata)
         ProvenServers.check_status(
           Dns.dns_add_answer(@slot, rtype, rclass, ttl, buf, rdata.bytesize)
@@ -172,6 +176,8 @@ module ProvenServers
       # @param rdata [String] record data bytes
       # @return [void]
       def add_authority(rtype, rclass, ttl, rdata)
+        raise ArgumentError, "DNS RDATA must not exceed 256 bytes" if rdata.bytesize > 256
+
         buf = FFI::MemoryPointer.from_string(rdata)
         ProvenServers.check_status(
           Dns.dns_add_authority(@slot, rtype, rclass, ttl, buf, rdata.bytesize)
@@ -186,6 +192,8 @@ module ProvenServers
       # @param rdata [String] record data bytes
       # @return [void]
       def add_additional(rtype, rclass, ttl, rdata)
+        raise ArgumentError, "DNS RDATA must not exceed 256 bytes" if rdata.bytesize > 256
+
         buf = FFI::MemoryPointer.from_string(rdata)
         ProvenServers.check_status(
           Dns.dns_add_additional(@slot, rtype, rclass, ttl, buf, rdata.bytesize)
@@ -205,16 +213,19 @@ module ProvenServers
       # @param max_len [Integer] maximum response length
       # @return [String] serialized DNS response bytes
       def build_response(max_len: 512)
+        raise ArgumentError, "DNS response buffer must be at least 512 bytes" if max_len < 512
+
         buf = FFI::MemoryPointer.new(:uint8, max_len)
         out_len = FFI::MemoryPointer.new(:uint16)
         ProvenServers.check_status(Dns.dns_build_response(@slot, buf, out_len))
         buf.read_string(out_len.read_uint16)
       end
 
+      # Enable mode only; response construction then rejects without a signer.
       # @return [void]
       def enable_dnssec = ProvenServers.check_status(Dns.dns_enable_dnssec(@slot))
 
-      # Load a DNSSEC signing key.
+      # Always fails closed: the ABI accepts no private-key material.
       #
       # @param algo [Integer] DnssecAlgorithm tag
       # @return [void]
@@ -222,9 +233,11 @@ module ProvenServers
         ProvenServers.check_status(Dns.dns_load_dnssec_key(@slot, algo))
       end
 
+      # Always fails closed because no DNSSEC signing backend exists.
       # @return [void]
       def sign_response = ProvenServers.check_status(Dns.dns_sign_response(@slot))
 
+      # Always returns false because no DNSSEC validator exists.
       # @return [Boolean]
       def validate_dnssec? = Dns.dns_validate_dnssec(@slot) == 0
     end

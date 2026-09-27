@@ -1,7 +1,10 @@
 -- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
--- proven-dns: A DNS resolver implementation that cannot crash.
+-- proven-dns: Typed DNS data and validation models.
+--
+-- The current FFI is a minimal root-question message-builder model, not a
+-- general resolver; DNSSEC cryptographic operations fail closed.
 --
 -- Architecture:
 --   - Name: Length-validated domain names (max 63 per label, 253 total)

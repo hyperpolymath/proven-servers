@@ -143,7 +143,7 @@ test "authen_start rejects invalid action" {
     ));
 }
 
-test "authen_continue returns status" {
+test "authen_continue never accepts unverified credentials" {
     const secret = "secret";
     const slot = tacacs.tacacs_create(secret.ptr, secret.len);
     defer tacacs.tacacs_destroy(slot);
@@ -152,9 +152,9 @@ test "authen_continue returns status" {
     const port = "tty0";
     _ = tacacs.tacacs_authen_start(slot, 0, 0, user.ptr, user.len, port.ptr, port.len);
 
-    const data = "password123";
+    const data = "credential-bytes";
     const status = tacacs.tacacs_authen_continue(slot, data.ptr, data.len);
-    try std.testing.expectEqual(@as(u8, 0), status); // pass
+    try std.testing.expectEqual(@as(u8, 1), status); // fail/unverified
 }
 
 test "authen_status returns last status" {
@@ -165,14 +165,14 @@ test "authen_status returns last status" {
     const user = "admin";
     const port = "";
     _ = tacacs.tacacs_authen_start(slot, 0, 0, user.ptr, user.len, port.ptr, port.len);
-    try std.testing.expectEqual(@as(u8, 0), tacacs.tacacs_authen_status(slot)); // pass
+    try std.testing.expectEqual(@as(u8, 1), tacacs.tacacs_authen_status(slot)); // fail/unverified
 }
 
 // =========================================================================
 // Authorization
 // =========================================================================
 
-test "author_request transitions Authenticating -> Authorizing" {
+test "author_request fails closed without successful authentication" {
     const secret = "secret";
     const slot = tacacs.tacacs_create(secret.ptr, secret.len);
     defer tacacs.tacacs_destroy(slot);
@@ -183,8 +183,8 @@ test "author_request transitions Authenticating -> Authorizing" {
 
     const service = "shell";
     const status = tacacs.tacacs_author_request(slot, user.ptr, user.len, service.ptr, service.len);
-    try std.testing.expectEqual(@as(u8, 0), status); // pass_add
-    try std.testing.expectEqual(@as(u8, 2), tacacs.tacacs_state(slot)); // Authorizing
+    try std.testing.expectEqual(@as(u8, 2), status); // author_fail
+    try std.testing.expectEqual(@as(u8, 1), tacacs.tacacs_state(slot)); // remains Authenticating
 }
 
 test "author_request rejects from Idle" {
@@ -202,7 +202,7 @@ test "author_request rejects from Idle" {
 // Accounting
 // =========================================================================
 
-test "acct_record transitions Authorizing -> Active" {
+test "accounting fails closed without an authorized session" {
     const secret = "secret";
     const slot = tacacs.tacacs_create(secret.ptr, secret.len);
     defer tacacs.tacacs_destroy(slot);
@@ -214,8 +214,8 @@ test "acct_record transitions Authorizing -> Active" {
     _ = tacacs.tacacs_author_request(slot, user.ptr, user.len, service.ptr, service.len);
 
     const status = tacacs.tacacs_acct_record(slot, 0, user.ptr, user.len); // start
-    try std.testing.expectEqual(@as(u8, 0), status); // acct_success
-    try std.testing.expectEqual(@as(u8, 3), tacacs.tacacs_state(slot)); // Active
+    try std.testing.expectEqual(@as(u8, 1), status); // acct_error
+    try std.testing.expectEqual(@as(u8, 1), tacacs.tacacs_state(slot)); // remains Authenticating
 }
 
 test "acct_record rejects invalid flag" {
@@ -237,7 +237,7 @@ test "acct_record rejects invalid flag" {
 // Disconnect / Cleanup
 // =========================================================================
 
-test "disconnect transitions Active -> Closing" {
+test "disconnect transitions an unauthenticated session -> Closing" {
     const secret = "secret";
     const slot = tacacs.tacacs_create(secret.ptr, secret.len);
     defer tacacs.tacacs_destroy(slot);

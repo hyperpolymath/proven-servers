@@ -60,12 +60,18 @@ let transport_to_tag = function
 let transport_of_tag = function
   | 0 -> Some Udp514 | 1 -> Some Tcp514 | 2 -> Some Tls6514 | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_syslog_abi_version : unit -> int = "syslog_abi_version"
-external c_syslog_create_context : unit -> int = "syslog_create_context"
-external c_syslog_destroy_context : int -> unit = "syslog_destroy_context"
-external c_syslog_can_transition : int -> int -> int = "syslog_can_transition"
+let c_syslog_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_syslog_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_syslog_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_syslog_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

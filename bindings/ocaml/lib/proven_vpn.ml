@@ -120,12 +120,18 @@ let vpn_error_of_tag = function
   | 2 -> Some Lifetime_expired | 3 -> Some Invalid_spi
   | 4 -> Some Replay_detected | 5 -> Some Negotiation_timeout | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_vpn_abi_version : unit -> int = "vpn_abi_version"
-external c_vpn_create_context : unit -> int = "vpn_create_context"
-external c_vpn_destroy_context : int -> unit = "vpn_destroy_context"
-external c_vpn_can_transition : int -> int -> int = "vpn_can_transition"
+let c_vpn_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_vpn_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_vpn_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_vpn_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
-// C# P/Invoke bindings for the proven-dns protocol.
-// Wraps the C-ABI functions from protocols/proven-dns/ffi/zig/src/dns.zig.
+// C# P/Invoke bindings for the bounded proven-dns message-builder FFI.
+// Only exact 17-byte standard queries with one root-name question are accepted;
+// responses are capped at 512 bytes. DNSSEC cryptographic operations fail closed.
 
 using System;
 using System.Runtime.InteropServices;
@@ -29,8 +30,8 @@ namespace ProvenServers
     }
 
     /// <summary>
-    /// C# bindings for the proven DNS server protocol.
-    /// Lifecycle: Idle -> QueryReceived -> Lookup -> ResponseBuilding -> Sent.
+    /// C# bindings for the bounded DNS message-builder model.
+    /// It is not a general resolver; DNSSEC key loading, signing, and validation fail closed.
     /// </summary>
     public static class ProvenDns
     {
@@ -88,9 +89,20 @@ namespace ProvenServers
         public static byte QueryRtype(int slot) => dns_query_rtype(slot);
         public static byte QueryClass(int slot) => dns_query_class(slot);
 
-        /// <summary>Parse a DNS query. Transitions Idle -> QueryReceived.</summary>
-        public static void ParseQuery(int slot, byte[] data) =>
-            ProvenError.CheckStatus(dns_parse_query(slot, data, (ushort)data.Length));
+        private static ushort CheckedRdataLength(byte[] rdata)
+        {
+            if (rdata is null || rdata.Length > 256)
+                throw new ArgumentException("DNS RDATA must be at most 256 bytes", nameof(rdata));
+            return (ushort)rdata.Length;
+        }
+
+        /// <summary>Parse only the exact 17-byte standard root-question query subset.</summary>
+        public static void ParseQuery(int slot, byte[] data)
+        {
+            if (data is null || data.Length != 17)
+                throw new ArgumentException("DNS query must be exactly 17 bytes", nameof(data));
+            ProvenError.CheckStatus(dns_parse_query(slot, data, 17));
+        }
 
         /// <summary>Begin lookup. Transitions QueryReceived -> Lookup.</summary>
         public static void BeginLookup(int slot) =>
@@ -100,17 +112,17 @@ namespace ProvenServers
         public static void BeginResponse(int slot) =>
             ProvenError.CheckStatus(dns_begin_response(slot));
 
-        /// <summary>Add a resource record to the answer section.</summary>
+        /// <summary>Add an answer record; RDATA is limited to 256 bytes.</summary>
         public static void AddAnswer(int slot, byte rtype, byte rclass, uint ttl, byte[] rdata) =>
-            ProvenError.CheckStatus(dns_add_answer(slot, rtype, rclass, ttl, rdata, (ushort)rdata.Length));
+            ProvenError.CheckStatus(dns_add_answer(slot, rtype, rclass, ttl, rdata, CheckedRdataLength(rdata)));
 
-        /// <summary>Add a resource record to the authority section.</summary>
+        /// <summary>Add an authority record; RDATA is limited to 256 bytes.</summary>
         public static void AddAuthority(int slot, byte rtype, byte rclass, uint ttl, byte[] rdata) =>
-            ProvenError.CheckStatus(dns_add_authority(slot, rtype, rclass, ttl, rdata, (ushort)rdata.Length));
+            ProvenError.CheckStatus(dns_add_authority(slot, rtype, rclass, ttl, rdata, CheckedRdataLength(rdata)));
 
-        /// <summary>Add a resource record to the additional section.</summary>
+        /// <summary>Add an additional record; RDATA is limited to 256 bytes.</summary>
         public static void AddAdditional(int slot, byte rtype, byte rclass, uint ttl, byte[] rdata) =>
-            ProvenError.CheckStatus(dns_add_additional(slot, rtype, rclass, ttl, rdata, (ushort)rdata.Length));
+            ProvenError.CheckStatus(dns_add_additional(slot, rtype, rclass, ttl, rdata, CheckedRdataLength(rdata)));
 
         /// <summary>Set the response code.</summary>
         public static void SetRcode(int slot, byte rcodeTag) =>
@@ -119,24 +131,26 @@ namespace ProvenServers
         /// <summary>Build the DNS response. Returns bytes written to outBuf.</summary>
         public static ushort BuildResponse(int slot, byte[] outBuf)
         {
+            if (outBuf is null || outBuf.Length < 512)
+                throw new System.ArgumentException("DNS response buffer must be at least 512 bytes", nameof(outBuf));
             ushort outLen = 0;
             ProvenError.CheckStatus(dns_build_response(slot, outBuf, ref outLen));
             return outLen;
         }
 
-        /// <summary>Enable DNSSEC. Transitions Disabled -> Enabled.</summary>
+        /// <summary>Enable mode only; response construction then rejects without a signer.</summary>
         public static void EnableDnssec(int slot) =>
             ProvenError.CheckStatus(dns_enable_dnssec(slot));
 
-        /// <summary>Load DNSSEC signing key. Transitions Enabled -> KeyLoaded.</summary>
+        /// <summary>Always fails closed: the ABI accepts no private-key material.</summary>
         public static void LoadDnssecKey(int slot, DnssecAlgorithm algo) =>
             ProvenError.CheckStatus(dns_load_dnssec_key(slot, (byte)algo));
 
-        /// <summary>Sign the response. Transitions KeyLoaded -> Validated.</summary>
+        /// <summary>Always fails closed because no DNSSEC signing backend exists.</summary>
         public static void SignResponse(int slot) =>
             ProvenError.CheckStatus(dns_sign_response(slot));
 
-        /// <summary>Check DNSSEC validation result.</summary>
+        /// <summary>Always returns false because no DNSSEC validator exists.</summary>
         public static bool ValidateDnssec(int slot) => dns_validate_dnssec(slot) == 0;
 
         public static bool CanTransition(DnsState from, DnsState to) =>

@@ -60,12 +60,18 @@ let error_code_of_tag = function
   | 3 -> Some Forbidden | 4 -> Some Mobility_forbidden | 5 -> Some Stale_nonce
   | 6 -> Some Server_error | 7 -> Some Insufficient_capacity | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_stun_abi_version : unit -> int = "stun_abi_version"
-external c_stun_create_context : unit -> int = "stun_create_context"
-external c_stun_destroy_context : int -> unit = "stun_destroy_context"
-external c_stun_can_transition : int -> int -> int = "stun_can_transition"
+let c_stun_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_stun_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_stun_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_stun_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

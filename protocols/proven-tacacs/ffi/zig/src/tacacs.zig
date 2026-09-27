@@ -251,7 +251,8 @@ pub export fn tacacs_authen_start(
     sessions[idx].port_len = port_len;
     sessions[idx].authen_action = @enumFromInt(action);
     sessions[idx].authen_type = @enumFromInt(authen_type);
-    sessions[idx].last_authen_status = .pass; // Default to pass for simple auth
+    // No credential verifier is connected: session start is not authentication.
+    sessions[idx].last_authen_status = .fail;
     sessions[idx].authen_rounds = 1;
     sessions[idx].state = .authenticating;
     return 0;
@@ -273,8 +274,8 @@ pub export fn tacacs_authen_continue(
     if (data_len > MAX_DATA_LEN) return @intFromEnum(AuthenStatus.authen_error);
 
     sessions[idx].authen_rounds += 1;
-    // Simulate: after continue, authentication passes
-    sessions[idx].last_authen_status = .pass;
+    // Continuation bytes are not verified by this model; remain failed closed.
+    sessions[idx].last_authen_status = .fail;
     return @intFromEnum(sessions[idx].last_authen_status);
 }
 
@@ -305,6 +306,10 @@ pub export fn tacacs_author_request(
     if (sessions[idx].state != .authenticating) return @intFromEnum(AuthorStatus.author_error);
     if (user_len == 0 or user_len > MAX_USER_LEN) return @intFromEnum(AuthorStatus.author_error);
     if (service_len == 0 or service_len > MAX_NAME_LEN) return @intFromEnum(AuthorStatus.author_error);
+    if (sessions[idx].last_authen_status != .pass) {
+        sessions[idx].last_author_status = .author_fail;
+        return @intFromEnum(AuthorStatus.author_fail);
+    }
 
     sessions[idx].last_author_status = .pass_add;
     sessions[idx].state = .authorizing;

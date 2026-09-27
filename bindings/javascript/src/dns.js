@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 //
-// JavaScript bindings for the proven-dns Zig FFI.
+// Bounded DNS message-builder bindings for the proven-dns Zig FFI.
+// Accepts only exact 17-byte standard queries with one root-name question;
+// responses are capped at 512 bytes. It is not a general resolver, and DNSSEC
+// key loading, signing, and validation fail closed.
 
 import { checkSlot, checkStatus } from "./error.js";
 import { loadLibrary } from "./ffi.js";
@@ -77,8 +80,11 @@ export class DnsContext {
     /** @returns {number} */ queryRtype() { return lib().dns_query_rtype(this._slot); }
     /** @returns {number} */ queryClass() { return lib().dns_query_class(this._slot); }
 
-    /** @param {Uint8Array} data */
+    /** Parse only the exact 17-byte standard root-question query subset. @param {Uint8Array} data */
     parseQuery(data) {
+        if (!(data instanceof Uint8Array) || data.length !== 17) {
+            throw new RangeError("DNS query must be a 17-byte Uint8Array");
+        }
         checkStatus(lib().dns_parse_query(this._slot, data, data.length));
     }
 
@@ -92,16 +98,25 @@ export class DnsContext {
      * @param {Uint8Array} rdata
      */
     addAnswer(rtype, rclass, ttl, rdata) {
+        if (!(rdata instanceof Uint8Array) || rdata.length > 256) {
+            throw new RangeError("DNS RDATA must be a Uint8Array of at most 256 bytes");
+        }
         checkStatus(lib().dns_add_answer(this._slot, rtype, rclass, ttl, rdata, rdata.length));
     }
 
     /** @param {number} rtype @param {number} rclass @param {number} ttl @param {Uint8Array} rdata */
     addAuthority(rtype, rclass, ttl, rdata) {
+        if (!(rdata instanceof Uint8Array) || rdata.length > 256) {
+            throw new RangeError("DNS RDATA must be a Uint8Array of at most 256 bytes");
+        }
         checkStatus(lib().dns_add_authority(this._slot, rtype, rclass, ttl, rdata, rdata.length));
     }
 
     /** @param {number} rtype @param {number} rclass @param {number} ttl @param {Uint8Array} rdata */
     addAdditional(rtype, rclass, ttl, rdata) {
+        if (!(rdata instanceof Uint8Array) || rdata.length > 256) {
+            throw new RangeError("DNS RDATA must be a Uint8Array of at most 256 bytes");
+        }
         checkStatus(lib().dns_add_additional(this._slot, rtype, rclass, ttl, rdata, rdata.length));
     }
 
@@ -114,20 +129,25 @@ export class DnsContext {
      * @returns {Uint8Array} Serialized DNS response.
      */
     buildResponse(maxLen = 512) {
+        if (!Number.isInteger(maxLen) || maxLen < 512) {
+            throw new RangeError("DNS response buffer must be at least 512 bytes");
+        }
         const buf = new Uint8Array(maxLen);
         const outLen = new Uint16Array(1);
         checkStatus(lib().dns_build_response(this._slot, buf, outLen));
         return buf.subarray(0, outLen[0]);
     }
 
+    /** Enable mode only; response building then rejects without a signer. */
     enableDnssec() { checkStatus(lib().dns_enable_dnssec(this._slot)); }
 
-    /** @param {number} algo - DnssecAlgorithm tag. */
+    /** Always fails closed: the ABI accepts no private-key material. @param {number} algo */
     loadDnssecKey(algo) { checkStatus(lib().dns_load_dnssec_key(this._slot, algo)); }
 
+    /** Always fails closed because no DNSSEC signing backend exists. */
     signResponse() { checkStatus(lib().dns_sign_response(this._slot)); }
 
-    /** @returns {boolean} */
+    /** Always returns false because no DNSSEC validator exists. @returns {boolean} */
     validateDnssec() { return lib().dns_validate_dnssec(this._slot) === 0; }
 }
 

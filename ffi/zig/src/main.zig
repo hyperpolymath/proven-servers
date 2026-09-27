@@ -1,23 +1,25 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// PROVEN_SERVERS FFI Implementation
+// Generic root-level C-ABI example scaffold.
 //
-// This module implements the C-compatible FFI declared in src/abi/Foreign.idr
-// All types and layouts must match the Idris2 ABI definitions.
+// It does not implement a protocol or establish conformance to the separate
+// Idris2 model. It exists only as a small buildable FFI prototype.
 //
 
 const std = @import("std");
 
 // Version information (keep in sync with project)
 const VERSION = "0.1.0";
-const BUILD_INFO = "PROVEN_SERVERS built with Zig " ++ @import("builtin").zig_version_string;
+const BUILD_INFO = "proven-servers FFI prototype built with Zig " ++ @import("builtin").zig_version_string;
+const EXAMPLE_RESULT: [:0]const u8 = "Example result";
+const MAX_PROCESS_ARRAY_LEN: u32 = 1_048_576;
 
-/// Thread-local error storage
-threadlocal var last_error: ?[]const u8 = null;
+/// Thread-local pointer to a static, sentinel-terminated error message.
+threadlocal var last_error: ?[*:0]const u8 = null;
 
-/// Set the last error message
-fn setError(msg: []const u8) void {
-    last_error = msg;
+/// Set the last error message without allocating or transferring ownership.
+fn setError(msg: [:0]const u8) void {
+    last_error = msg.ptr;
 }
 
 /// Clear the last error
@@ -29,7 +31,7 @@ fn clearError() void {
 // Core Types (must match src/abi/Types.idr)
 //==============================================================================
 
-/// Result codes (must match Idris2 Result type)
+/// Result codes for this prototype; no Idris2 ABI conformance is asserted.
 pub const Result = enum(c_int) {
     ok = 0,
     @"error" = 1,
@@ -38,13 +40,18 @@ pub const Result = enum(c_int) {
     null_pointer = 4,
 };
 
-/// Library handle (opaque to prevent direct access)
-pub const Handle = opaque {
-    // Internal state hidden from C
+/// Opaque handle type exposed across the C ABI.
+pub const Handle = opaque {};
+
+/// Private state behind the opaque ABI handle.
+const HandleState = struct {
     allocator: std.mem.Allocator,
     initialized: bool,
-    // Add your fields here
 };
+
+fn stateOf(handle: *Handle) *HandleState {
+    return @ptrCast(@alignCast(handle));
+}
 
 //==============================================================================
 // Library Lifecycle
@@ -53,32 +60,26 @@ pub const Handle = opaque {
 /// Initialize the library
 /// Returns a handle, or null on failure
 export fn proven_servers_init() ?*Handle {
-    const allocator = std.heap.c_allocator;
+    const allocator = std.heap.page_allocator;
 
-    const handle = allocator.create(Handle) catch {
+    const state = allocator.create(HandleState) catch {
         setError("Failed to allocate handle");
         return null;
     };
-
-    // Initialize handle
-    handle.* = .{
-        .allocator = allocator,
-        .initialized = true,
-    };
+    state.* = .{ .allocator = allocator, .initialized = true };
 
     clearError();
-    return handle;
+    return @ptrCast(state);
 }
 
-/// Free the library handle
+/// Free a handle exactly once. Passing null is a no-op; reusing a freed handle
+/// is invalid and cannot be made safe by this raw-pointer ABI.
 export fn proven_servers_free(handle: ?*Handle) void {
     const h = handle orelse return;
-    const allocator = h.allocator;
-
-    // Clean up resources
-    h.initialized = false;
-
-    allocator.destroy(h);
+    const state = stateOf(h);
+    const allocator = state.allocator;
+    state.initialized = false;
+    allocator.destroy(state);
     clearError();
 }
 
@@ -92,13 +93,14 @@ export fn proven_servers_process(handle: ?*Handle, input: u32) Result {
         setError("Null handle");
         return .null_pointer;
     };
+    const state = stateOf(h);
 
-    if (!h.initialized) {
+    if (!state.initialized) {
         setError("Handle not initialized");
         return .@"error";
     }
 
-    // Example processing logic
+    // This prototype intentionally does not implement protocol processing.
     _ = input;
 
     clearError();
@@ -109,36 +111,24 @@ export fn proven_servers_process(handle: ?*Handle, input: u32) Result {
 // String Operations
 //==============================================================================
 
-/// Get a string result (example)
-/// Caller must free the returned string
+/// Return a static example string. This prototype does not return protocol data.
 export fn proven_servers_get_string(handle: ?*Handle) ?[*:0]const u8 {
     const h = handle orelse {
         setError("Null handle");
         return null;
     };
-
-    if (!h.initialized) {
+    if (!stateOf(h).initialized) {
         setError("Handle not initialized");
         return null;
     }
 
-    // Example: allocate and return a string
-    const result = h.allocator.dupeZ(u8, "Example result") catch {
-        setError("Failed to allocate string");
-        return null;
-    };
-
     clearError();
-    return result.ptr;
+    return EXAMPLE_RESULT.ptr;
 }
 
-/// Free a string allocated by the library
+/// Compatibility no-op for the static string returned above.
 export fn proven_servers_free_string(str: ?[*:0]const u8) void {
-    const s = str orelse return;
-    const allocator = std.heap.c_allocator;
-
-    const slice = std.mem.span(s);
-    allocator.free(slice);
+    _ = str;
 }
 
 //==============================================================================
@@ -155,23 +145,21 @@ export fn proven_servers_process_array(
         setError("Null handle");
         return .null_pointer;
     };
-
-    const buf = buffer orelse {
-        setError("Null buffer");
-        return .null_pointer;
-    };
-
-    if (!h.initialized) {
+    if (!stateOf(h).initialized) {
         setError("Handle not initialized");
         return .@"error";
     }
+    if (len > MAX_PROCESS_ARRAY_LEN) {
+        setError("Input length exceeds prototype limit");
+        return .invalid_param;
+    }
+    if (len > 0 and buffer == null) {
+        setError("Null buffer");
+        return .null_pointer;
+    }
 
-    // Access the buffer
-    const data = buf[0..len];
-    _ = data;
-
-    // Process data here
-
+    // This example validates the declared length but intentionally does not
+    // read caller-owned memory or implement protocol processing.
     clearError();
     return .ok;
 }
@@ -183,12 +171,7 @@ export fn proven_servers_process_array(
 /// Get the last error message
 /// Returns null if no error
 export fn proven_servers_last_error() ?[*:0]const u8 {
-    const err = last_error orelse return null;
-
-    // Return C string (static storage, no need to free)
-    const allocator = std.heap.c_allocator;
-    const c_str = allocator.dupeZ(u8, err) catch return null;
-    return c_str.ptr;
+    return last_error;
 }
 
 //==============================================================================
@@ -210,7 +193,7 @@ export fn proven_servers_build_info() [*:0]const u8 {
 //==============================================================================
 
 /// Callback function type (C ABI)
-pub const Callback = *const fn (u64, u32) callconv(.C) u32;
+pub const Callback = *const fn (u64, u32) callconv(.c) u32;
 
 /// Register a callback
 export fn proven_servers_register_callback(
@@ -227,12 +210,12 @@ export fn proven_servers_register_callback(
         return .null_pointer;
     };
 
-    if (!h.initialized) {
+    if (!stateOf(h).initialized) {
         setError("Handle not initialized");
         return .@"error";
     }
 
-    // Store callback for later use
+    // This prototype validates the callback argument but does not retain it.
     _ = cb;
 
     clearError();
@@ -246,7 +229,7 @@ export fn proven_servers_register_callback(
 /// Check if handle is initialized
 export fn proven_servers_is_initialized(handle: ?*Handle) u32 {
     const h = handle orelse return 0;
-    return if (h.initialized) 1 else 0;
+    return if (stateOf(h).initialized) 1 else 0;
 }
 
 //==============================================================================

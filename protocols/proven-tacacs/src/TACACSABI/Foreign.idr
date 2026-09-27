@@ -3,15 +3,10 @@
 --
 -- TACACSABI.Foreign: Foreign function declarations for the C bridge.
 --
--- Declares the opaque handle type and documents the complete FFI contract
--- that the Zig implementation (ffi/zig/src/tacacs.zig) must provide.
---
--- The Zig FFI manages:
---   - 64-slot mutex-protected session pool
---   - Authentication start/continue/reply per session
---   - Authorization request/reply per session
---   - Accounting start/stop/watchdog per session
---   - Session state machine (Idle -> Authenticating -> Authorizing -> Active -> Closing)
+-- Declares the opaque handle type and documents the in-memory session model.
+-- The Zig FFI has no credential verifier or accounting backend: authentication
+-- continuation returns failure, authorization cannot succeed, and accounting
+-- is unavailable. Session tags model lifecycle only.
 --
 -- All functions use C calling convention and communicate state via
 -- Bits8 tags matching TACACSABI.Types exactly.
@@ -53,8 +48,8 @@ abiVersion = 1
 -- +-----------------------------+-------------------------------------------+
 -- | tacacs_create               | (secret_ptr: ptr, secret_len: u32)        |
 -- |                             |  -> c_int (slot)                          |
--- |                             | Creates session with shared secret.       |
--- |                             | Returns -1 on failure.                    |
+-- |                             | Stores session metadata/secret bytes only; |
+-- |                             | no credential verifier is connected.      |
 -- +-----------------------------+-------------------------------------------+
 -- | tacacs_destroy              | (slot: c_int) -> void                     |
 -- |                             | Releases a session slot.                  |
@@ -66,12 +61,13 @@ abiVersion = 1
 -- |                             |  user_ptr: ptr, user_len: u32,            |
 -- |                             |  port_ptr: ptr, port_len: u32)            |
 -- |                             |  -> u8 (0=ok, 1=rejected)                 |
--- |                             | Starts authentication.                    |
--- |                             | Transitions Idle -> Authenticating.       |
+-- |                             | Starts a modeled conversation only; this  |
+-- |                             | does not authenticate the user.           |
 -- +-----------------------------+-------------------------------------------+
 -- | tacacs_authen_continue      | (slot: c_int, data_ptr: ptr,              |
 -- |                             |  data_len: u32) -> u8 (AuthenStatus tag)  |
--- |                             | Continues multi-step authentication.      |
+-- |                             | Always returns Fail; continuation bytes   |
+-- |                             | are not checked by a credential verifier.  |
 -- +-----------------------------+-------------------------------------------+
 -- | tacacs_authen_status        | (slot: c_int) -> u8 (AuthenStatus tag)    |
 -- |                             | Returns last authentication status.       |
@@ -79,16 +75,16 @@ abiVersion = 1
 -- | tacacs_author_request       | (slot: c_int, user_ptr: ptr,              |
 -- |                             |  user_len: u32, service_ptr: ptr,         |
 -- |                             |  service_len: u32) -> u8 (AuthorStatus)   |
--- |                             | Requests authorization.                   |
--- |                             | Transitions Authenticating -> Authorizing.|
+-- |                             | Always returns AuthorFail without a       |
+-- |                             | successful authentication.                 |
 -- +-----------------------------+-------------------------------------------+
 -- | tacacs_author_status        | (slot: c_int) -> u8 (AuthorStatus tag)    |
 -- |                             | Returns last authorization status.        |
 -- +-----------------------------+-------------------------------------------+
 -- | tacacs_acct_record          | (slot: c_int, flag: u8, user_ptr: ptr,    |
 -- |                             |  user_len: u32) -> u8 (AcctStatus tag)    |
--- |                             | Sends an accounting record.               |
--- |                             | Transitions Authorizing -> Active.        |
+-- |                             | Unavailable: no authorization or         |
+-- |                             | accounting backend is connected.          |
 -- +-----------------------------+-------------------------------------------+
 -- | tacacs_acct_status          | (slot: c_int) -> u8 (AcctStatus tag)      |
 -- |                             | Returns last accounting status.           |

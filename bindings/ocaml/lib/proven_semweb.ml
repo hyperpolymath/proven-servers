@@ -74,12 +74,18 @@ let semweb_error_code_of_tag = function
   | 0 -> Some Not_found | 1 -> Some Invalid_uri | 2 -> Some Malformed_rdf
   | 3 -> Some Unsupported_format | 4 -> Some Conflicting_triples | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_semweb_abi_version : unit -> int = "semweb_abi_version"
-external c_semweb_create_context : unit -> int = "semweb_create_context"
-external c_semweb_destroy_context : int -> unit = "semweb_destroy_context"
-external c_semweb_can_transition : int -> int -> int = "semweb_can_transition"
+let c_semweb_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_semweb_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_semweb_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_semweb_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

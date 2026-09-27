@@ -1,109 +1,80 @@
-== proven-servers Component Readiness Assessment
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= proven-servers Readiness and Evidence Status
 
-*Standard:*
-https://github.com/hyperpolymath/standards/tree/main/component-readiness-grades[Component
-Readiness Grades (CRG) v1.0] *Assessed:* 2026-03-02 *Assessor:* Jonathan
-D.A. Jewell
+:revdate: 2026-09-27
+:toc:
 
-*Current Grade:* C
+*Assessment date:* 2026-09-27
+*Assessor:* repository source and test-harness inspection
+*Current grade:* X — not assessed for the current checkout
 
-=== Grade Reference
+== Scope of this assessment
 
-[width="100%",cols="8%,22%,19%,51%",options="header",]
-|===
-|Grade |Name |Release Stage |Meaning
-|X |Untested |— |No testing performed. Status unknown.
+This is a conservative status report, not a release certification. It records
+what could be established by source inspection in the current workspace. The
+Idris2, Zig, OCaml, Dune, and Just toolchains were unavailable here, so no
+compiler, native test suite, or package-manager check was run. The current
+branch's modified Idris2 and Zig sources have therefore not been build-verified.
 
-|F |Harmful / Wasteful |— |Reject, deprecate, or delegate.
+Top-level package-directory counts are inventory only: 88 protocol directories,
+5 core directories, 6 connector directories, and 20 binding directories. They
+do not mean those packages build, pass tests, provide production services, or
+have proven implementations.
 
-|E |Minimal / Salvageable |Pre-alpha |Barely functional. Needs redesign
-or major work.
+== Evidence available now
 
-|D |Partial / Inconsistent |Alpha |Works on some things but not
-systematically.
+* Source inspection confirmed several FFI operations are deliberately
+  fail-closed: Authserver authentication does not succeed; PQC cryptographic
+  entry points reject; DNSSEC key loading/signing/validation are unavailable;
+  and OCaml native calls raise an explicit unavailable error pending compatible
+  C stubs.
+* The direct OCaml `external` declarations were removed because Zig's raw C
+  exports are not OCaml runtime primitives. `bindings/ocaml/README.adoc`
+  documents the disabled boundary.
+* The DNS model/FFI is a bounded message-builder subset, not a general resolver.
+  Its parser and response limits, unsupported DNSSEC operations, and binding
+  guards are documented in the relevant package and binding source.
+* The static source-check scripts passed after their false positives and
+  misleading labels were corrected. They are not runtime tests or security
+  certification.
+* The binding registry check passed for the 20 on-disk directories and now
+  records OCaml as unavailable. This does not establish native linking for the
+  other language wrappers.
+* The only previously recorded `git diff --check` covered the PQC subset. A
+  whole-branch whitespace check is still required before merge.
 
-|C |Self-Validated |Beta |Dogfooded and reliable in home context.
+== Historical evidence (not current verification)
 
-|B |Broadly Validated |Release Candidate |Tested on 6+ diverse external
-targets.
+`audits/proof-panic-attack-2026-06-23.adoc` and
+`audits/audit-ffi-2026-05-26.adoc` are dated reports. They record earlier
+compiler/test runs and source-audit claims for earlier revisions. They are
+useful historical records, but the current checkout contains later changes and
+has not been rebuilt here; do not reuse their counts or results as current
+release evidence.
 
-|A |Field-Proven |Stable |Real-world feedback confirms value. No harm in
-wild.
-|===
+Likewise, prior versions of this file and other project documentation assigned
+component grades and claimed blanket build/test success. Those statements are
+withdrawn as current status until reproduced against a named commit, toolchain,
+and test command.
 
-=== Component Assessment
+== Release-readiness requirements
 
-Assessed by component group. Evidence is tool-backed (see
-`+audits/proof-panic-attack-2026-06-23.md+`): `+idris2 --build+`
-type-checks the proofs; `+zig build test+` exercises the engines.
+No component should receive a readiness grade or be called production-ready
+until its evidence record identifies the exact package and revision and shows:
 
-[width="100%",cols="26%,8%,8%,18%,22%,18%",options="header",]
-|===
-|Component group |Count |Grade |Release Stage |Evidence Summary |Last
-Assessed
-|Connector ABI-FFI (`+connectors/proven-*conn+`) |6 |B |Release
-Candidate |Full RSR stack: Idris2 ABI proofs + generated C headers + Zig
-FFI; exercised via Rust/Gleam/Elixir bindings. |2026-06-23
+. Idris2 type-checking for the relevant `.ipkg` files, if Idris code is in scope.
+. Zig build and runtime tests for the corresponding implementation, if Zig FFI
+  is in scope.
+. Generated-header/ABI consistency checks and boundary tests for the exact
+  interface used.
+. Executed language-binding build/link tests for each binding claimed as
+  supported; source declarations alone are insufficient.
+. Protocol-specific test vectors, negative cases, and external interoperability
+  tests where applicable.
+. Security review for cryptography, authentication, authorization, input
+  validation, concurrency, and memory handling.
+. Clear separation of model-level proofs from implementation-level evidence.
 
-|Protocol cores (`+protocols/proven-*+`) |88 |C |Beta |Idris2 types +
-proofs compile under `+%default total+` (96/96 packages); Zig engines
-pass FFI tests (98/98). In-memory skeletons, dogfooded; not externally
-validated. |2026-06-23
-
-|Reference servers (`+proven-timestamp+`, `+proven-quic+`,
-`+proven-http3+`) |3 |C |Beta |As above, plus deeper proofs (validator
-decidability, exhaustive conformance, universal safety theorems) and
-reproducible RFC/test vectors. |2026-06-23
-
-|Core primitives (`+core/proven-*+`) |8 |C |Beta |Idris2 cores compile;
-Zig engines pass where present. |2026-06-23
-
-|Language bindings (`+bindings/+`) |20 langs |D |Alpha |20 bindings over
-the generated C ABI. Ada (`+pragma Import+`) and Java (JNI) are fully
-FFI-wired (reference); most others (Rust/Go/Python/OCaml/Julia/…) call
-`+libproven_*+` via FFI; Elixir/Gleam/ReScript are constants-only
-scaffolds after unproven reimplementations were removed (ADR 0003).
-Binding constants not yet cross-tested against the C ABI. |2026-06-24
-|===
-
-=== Detailed Assessment
-
-==== Protocol cores — Grade C (Beta)
-
-* *Evidence:* All 96 Idris2 packages type-check (proofs verified); all
-98 Zig FFI engines pass `+zig build test+`; no proof-escape hatches and
-no `+@panic+`/`+unreachable+` in engine code.
-* *Known limitations:* the proofs constrain an Idris _model_; the Zig
-engine that runs is linked to it by hand + tests, not by a
-machine-checked proof (the model–implementation gap). Engines are
-in-memory state machines — no real networking, TLS/crypto, or
-persistence. 16 protocols still carry an unverified (orphaned) ABI
-pending migration.
-* *Promotion path (→ B):* close the model–implementation gap (exhaustive
-conformance / single-sourced tags), make every transition relation
-`+Dec+`, and validate on 6+ external targets via the bindings.
-* *Demotion risk:* Low — the build + test gates are green and
-reproducible.
-
-==== Connector ABI-FFI — Grade B (Release Candidate)
-
-* *Evidence:* the 6 connectors are the only components with the
-complete, documented ABI-FFI layer and multi-language binding coverage.
-* *Promotion path (→ A):* real-world deployment feedback.
-* *Demotion risk:* Low.
-
-=== Notes
-
-* Grades are per-component, not per-project.
-* Grade A does not mean perfection — it means demonstrated value in the
-field.
-* Grade F includes opportunity cost — maintaining something when a
-better tool exists.
-* Grades can be skipped if evidence supports it (e.g., X → C if
-dogfooded immediately).
-* Review all grades before each release and at least once per release
-cycle.
-* See the
-https://github.com/hyperpolymath/standards/tree/main/component-readiness-grades[full
-CRG standard] for complete definitions, evidence requirements, and
-transition criteria.
+A green source grep, a passing inventory script, or a clean Idris model build is
+not enough to promote a native server implementation to a release grade.

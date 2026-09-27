@@ -123,67 +123,58 @@ test "destroy is safe with invalid slot" {
 // Full evaluation pipeline: happy path to AccessGranted
 // =========================================================================
 
-test "full pipeline: RequestReceived -> IdentityVerified -> DeviceChecked -> PolicyEvaluated -> AccessGranted" {
+test "caller-supplied identity and device scores cannot grant access" {
     const slot = zt.zt_create(2); // LeastPrivilege
     defer zt.zt_destroy(slot);
 
-    // Add signals for good trust score before evaluation
-    _ = zt.zt_add_signal(slot, 0, 800); // Location: 800
-    _ = zt.zt_add_signal(slot, 1, 900); // Time: 900
-    _ = zt.zt_add_signal(slot, 2, 700); // Device: 700
+    _ = zt.zt_add_signal(slot, 0, 800);
+    _ = zt.zt_add_signal(slot, 1, 900);
+    _ = zt.zt_add_signal(slot, 2, 700);
 
-    // Verify identity with MFA
-    try std.testing.expectEqual(@as(u8, 0), zt.zt_verify_identity(slot, 2));
-    try std.testing.expectEqual(@as(u8, 1), zt.zt_phase(slot)); // IdentityVerified
-    try std.testing.expectEqual(@as(u8, 2), zt.zt_identity_confidence(slot)); // MFAVerified
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 2)); // no verifier
+    try std.testing.expectEqual(@as(u8, 5), zt.zt_phase(slot)); // AccessDenied
+    try std.testing.expectEqual(@as(u8, 0), zt.zt_identity_confidence(slot)); // unverified
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_access_decision(slot)); // Deny
 
-    // Check device as Managed
-    try std.testing.expectEqual(@as(u8, 0), zt.zt_check_device(slot, 3));
-    try std.testing.expectEqual(@as(u8, 2), zt.zt_phase(slot)); // DeviceChecked
-    try std.testing.expectEqual(@as(u8, 3), zt.zt_device_trust(slot)); // DeviceManaged
-
-    // Evaluate policy
-    try std.testing.expectEqual(@as(u8, 0), zt.zt_evaluate_policy(slot));
-    try std.testing.expectEqual(@as(u8, 3), zt.zt_phase(slot)); // PolicyEvaluated
-    try std.testing.expectEqual(@as(u8, 0), zt.zt_access_decision(slot)); // Allow
-
-    // Grant access
-    try std.testing.expectEqual(@as(u8, 0), zt.zt_grant_access(slot));
-    try std.testing.expectEqual(@as(u8, 4), zt.zt_phase(slot)); // AccessGranted
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_check_device(slot, 3)); // no attestation
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_evaluate_policy(slot));
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_grant_access(slot));
+    try std.testing.expectEqual(@as(u8, 5), zt.zt_phase(slot)); // remains denied
 }
 
 // =========================================================================
 // Early denial paths
 // =========================================================================
 
-test "early denial: identity verification fails (Unverified)" {
+test "identity verification fails closed without an authentication backend" {
     const slot = zt.zt_create(0);
     defer zt.zt_destroy(slot);
 
-    try std.testing.expectEqual(@as(u8, 0), zt.zt_verify_identity(slot, 0)); // Unverified
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 0));
     try std.testing.expectEqual(@as(u8, 5), zt.zt_phase(slot)); // AccessDenied
+    try std.testing.expectEqual(@as(u8, 0), zt.zt_identity_confidence(slot));
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_access_decision(slot)); // Deny
 }
 
-test "early denial: device check fails (DeviceUnknown)" {
+test "caller-supplied device score cannot bypass missing identity verification" {
     const slot = zt.zt_create(0);
     defer zt.zt_destroy(slot);
 
-    _ = zt.zt_verify_identity(slot, 2); // MFA
-    try std.testing.expectEqual(@as(u8, 0), zt.zt_check_device(slot, 0)); // DeviceUnknown
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 2));
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_check_device(slot, 0)); // no attestation
     try std.testing.expectEqual(@as(u8, 5), zt.zt_phase(slot)); // AccessDenied
 }
 
-test "policy evaluation denies with low trust score" {
-    const slot = zt.zt_create(1); // NeverTrust (requires Full)
+test "policy evaluation cannot run without verified identity evidence" {
+    const slot = zt.zt_create(1); // NeverTrust
     defer zt.zt_destroy(slot);
 
-    // No signals added -- trust score will be 0
-    _ = zt.zt_verify_identity(slot, 2);
-    _ = zt.zt_check_device(slot, 2);
-    _ = zt.zt_evaluate_policy(slot);
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 2));
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_check_device(slot, 2));
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_evaluate_policy(slot));
 
     try std.testing.expectEqual(@as(u8, 1), zt.zt_access_decision(slot)); // Deny
-    _ = zt.zt_grant_access(slot);
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_grant_access(slot));
     try std.testing.expectEqual(@as(u8, 5), zt.zt_phase(slot)); // AccessDenied
 }
 
@@ -297,21 +288,21 @@ test "cannot skip to AccessGranted (RequestReceived -> AccessGranted)" {
     try std.testing.expectEqual(@as(u8, 1), zt.zt_grant_access(slot)); // RequestReceived
 }
 
-test "cannot grant from IdentityVerified (must check device first)" {
+test "cannot grant after identity verification is unavailable" {
     const slot = zt.zt_create(0);
     defer zt.zt_destroy(slot);
 
-    _ = zt.zt_verify_identity(slot, 2);
-    try std.testing.expectEqual(@as(u8, 1), zt.zt_grant_access(slot)); // IdentityVerified
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 2));
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_grant_access(slot)); // AccessDenied
 }
 
-test "cannot grant from DeviceChecked (must evaluate policy first)" {
+test "cannot grant without identity verification or device attestation" {
     const slot = zt.zt_create(0);
     defer zt.zt_destroy(slot);
 
-    _ = zt.zt_verify_identity(slot, 2);
-    _ = zt.zt_check_device(slot, 2);
-    try std.testing.expectEqual(@as(u8, 1), zt.zt_grant_access(slot)); // DeviceChecked
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 2));
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_check_device(slot, 2));
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_grant_access(slot)); // never reaches evaluation
 }
 
 test "verify_identity rejects invalid confidence tag" {
@@ -320,30 +311,26 @@ test "verify_identity rejects invalid confidence tag" {
     try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 99));
 }
 
-test "check_device rejects invalid trust tag" {
+test "device score is rejected after identity evidence is unavailable" {
     const slot = zt.zt_create(0);
     defer zt.zt_destroy(slot);
-    _ = zt.zt_verify_identity(slot, 2);
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 2));
     try std.testing.expectEqual(@as(u8, 1), zt.zt_check_device(slot, 99));
+    try std.testing.expectEqual(@as(u8, 5), zt.zt_phase(slot));
 }
 
 // =========================================================================
 // Terminal state enforcement
 // =========================================================================
 
-test "AccessGranted is terminal: no further transitions" {
+test "AccessGranted is unreachable without an evidence backend" {
     const slot = zt.zt_create(2);
     defer zt.zt_destroy(slot);
 
     _ = zt.zt_add_signal(slot, 0, 800);
-    _ = zt.zt_verify_identity(slot, 3);
-    _ = zt.zt_check_device(slot, 3);
-    _ = zt.zt_evaluate_policy(slot);
-    _ = zt.zt_grant_access(slot);
-
-    // All transitions should be rejected
-    try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 2));
-    try std.testing.expectEqual(@as(u8, 1), zt.zt_check_device(slot, 2));
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 3));
+    try std.testing.expectEqual(@as(u8, 5), zt.zt_phase(slot)); // denied, never granted
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_check_device(slot, 3));
     try std.testing.expectEqual(@as(u8, 1), zt.zt_evaluate_policy(slot));
     try std.testing.expectEqual(@as(u8, 1), zt.zt_grant_access(slot));
 }
@@ -352,7 +339,7 @@ test "AccessDenied is terminal: no further transitions" {
     const slot = zt.zt_create(0);
     defer zt.zt_destroy(slot);
 
-    _ = zt.zt_verify_identity(slot, 0); // -> AccessDenied
+    try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 0)); // -> AccessDenied
 
     try std.testing.expectEqual(@as(u8, 1), zt.zt_verify_identity(slot, 2));
     try std.testing.expectEqual(@as(u8, 1), zt.zt_check_device(slot, 2));

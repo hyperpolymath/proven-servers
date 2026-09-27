@@ -1,176 +1,57 @@
-== Project Governance
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Project Governance — proven-servers
+:toc:
+:sectnums:
+:revdate: 2026-09-27
 
-This document describes the governance model for *proven-servers*.
+== Current model
 
-'''''
+This repository currently has one owner and lead maintainer, Jonathan D.A.
+Jewell (`@hyperpolymath`), as listed in `MAINTAINERS`. All changes, including dependency and CI workflow updates,
+are reviewed and merged by the repository owner. Contributors submit changes
+through pull requests; direct pushes to the default branch are limited to the
+owner under the current repository policy.
 
-=== Project Governance Model
+This is a single-maintainer arrangement, not a multi-person consensus process
+or a formal BDFL constitution. Repository settings and access controls are
+administered by the hosting platform and are not independently verified by
+this document.
 
-proven-servers follows a *Benevolent Dictator For Life (BDFL)*
-governance model. This model is well-suited for solo maintainers and
-small project teams where rapid, consistent decision-making is more
-valuable than formal consensus processes.
+== Decision making
 
-The BDFL has final authority on all project decisions, including
-technical direction, release schedules, contributor access, and
-community standards.
+* Routine changes are proposed in pull requests with scope, evidence, and
+  limitations stated.
+* Significant architectural or security changes should be discussed in an
+  issue or design note before implementation when practical.
+* The lead maintainer makes the merge decision and may request changes or
+  reject a proposal. `docs/decisions/` contains selected architecture records;
+  it is not a complete log of every decision.
+* Future maintainers may be invited by the repository owner. Adding maintainers
+  requires an explicit access change and an update to the maintainer records.
+* If the maintainer team grows, governance should be revisited and documented
+  before changing the current review/merge authority.
 
-____
-*Transition clause:* When the core team exceeds three active
-maintainers, this project should transition to a *consensus-based
-governance model* with documented voting procedures. That transition
-should itself be recorded as an Architecture Decision Record (ADR) in
-`+docs/decisions/+`.
-____
+== Contributions and conduct
 
-'''''
+Contributors should read `.github/CONTRIBUTING.md` and follow
+`CODE_OF_CONDUCT.adoc`. Security-sensitive reports should use the private
+reporting instructions in `SECURITY.adoc`, not a public issue.
 
-=== Decision Making
+Automated tools may assist with checks or review but do not replace human
+maintainer review and do not receive authority to merge by virtue of being
+configured in `.machine_readable/bot_directives/`.
 
-==== Day-to-day decisions
+== Records and scope
 
-* The BDFL makes final decisions on all matters.
-* Routine decisions (bug fixes, dependency updates, minor improvements)
-may be made by any maintainer with commit access.
-* Maintainers are expected to use good judgement and seek input on
-non-trivial changes.
+* Current owner and contact route: `MAINTAINERS`.
+* Owner/maintainer contact and review rule: `MAINTAINERS`.
+* Architecture decisions: `docs/decisions/`.
+* Project status and evidence boundary: `.machine_readable/6a2/STATE.a2ml`,
+  `READINESS.adoc`, and `PROOF-NEEDS.adoc`.
+* Repository policy and task definitions: `Justfile` and
+  `.machine_readable/contractiles/`.
 
-==== Proposing changes
-
-* Contributors can propose changes by opening issues or pull requests.
-* Significant changes (new features, breaking changes, architectural
-shifts) should be discussed in an issue before implementation begins.
-* The BDFL will provide a clear accept/reject decision with reasoning.
-
-==== Architecture Decision Records (ADRs)
-
-* Significant technical decisions are documented as ADRs in
-`+docs/decisions/+`.
-* ADR statuses: `+proposed+`, `+accepted+`, `+deprecated+`,
-`+superseded+`, `+rejected+`.
-* ADRs provide a historical record of why decisions were made and what
-alternatives were considered.
-* See `+.machine_readable/META.a2ml+` for the machine-readable ADR
-index.
-
-'''''
-
-=== Roles
-
-==== BDFL (Benevolent Dictator For Life)
-
-* The project creator and ultimate decision-maker.
-* Sets the project’s technical direction and long-term vision.
-* Has final say on all matters, including maintainer appointments and
-removals.
-* Responsible for ensuring the project adheres to RSR standards.
-
-==== Maintainer
-
-* Has commit access to the repository.
-* Reviews and merges pull requests.
-* Triages issues and manages releases.
-* Upholds code quality, security standards, and the Code of Conduct.
-* Listed in MAINTAINERS.md.
-
-==== Contributor
-
-* Anyone who submits pull requests, opens issues, or participates in
-discussions.
-* Does not have direct commit access.
-* Contributions are reviewed by maintainers before merging.
-* All contributors must follow the link:CODE_OF_CONDUCT.md[Code of
-Conduct].
-
-==== Bot
-
-* Automated agents managed via your bot orchestration system.
-* Perform automated code review, security scanning, dependency updates,
-and standards enforcement.
-* Bot actions are subject to the same quality and review standards as
-human contributions.
-* Configure your bots in `+.machine_readable/bot_directives/+`.
-
-'''''
-
-=== Becoming a Maintainer
-
-A contributor may be nominated to become a maintainer when they
-demonstrate:
-
-[arabic]
-. *Sustained quality contributions* – a track record of well-crafted
-pull requests that follow project conventions and require minimal
-revision.
-. *Understanding of RSR standards* – familiarity with the Repository
-Structure Requirements, security policies, and CI/CD workflows used
-across the project.
-. *Constructive participation* – helpful issue triage, thoughtful code
-review comments, and mentoring of other contributors.
-. *Reliability* – consistent engagement over a meaningful period
-(typically 3+ months of active contribution).
-
-==== Process
-
-[arabic]
-. An existing maintainer nominates the candidate by opening a private
-discussion with the BDFL.
-. The BDFL reviews the candidate’s contribution history and community
-interactions.
-. The BDFL approves or declines the nomination, with reasoning provided
-to the nominator.
-. If approved, the new maintainer is added to MAINTAINERS.md and granted
-appropriate repository access.
-
-'''''
-
-=== Removing a Maintainer
-
-A maintainer may be removed under the following circumstances:
-
-* *Inactivity*: No meaningful contributions or reviews for 12 or more
-consecutive months. The maintainer will be contacted before removal and
-offered the option to move to emeritus status voluntarily.
-* *Code of Conduct violation*: Behaviour that violates the
-link:CODE_OF_CONDUCT.md[Code of Conduct], as determined through the
-enforcement process described therein.
-* *BDFL discretion*: The BDFL may remove a maintainer for other reasons
-(e.g., repeated disregard for project standards, loss of trust).
-Reasoning will be documented privately.
-
-Removed maintainers are moved to the Emeritus section of MAINTAINERS.md
-unless removal was due to a serious Code of Conduct violation.
-
-'''''
-
-=== Code of Conduct
-
-All participants in this project are expected to follow the
-link:CODE_OF_CONDUCT.md[Code of Conduct]. The Code of Conduct applies to
-all project spaces, including issues, pull requests, discussions, and
-any forum where the project is represented.
-
-Enforcement of the Code of Conduct is described in that document. The
-BDFL serves as the final arbiter in conduct disputes.
-
-'''''
-
-=== Amendments
-
-This governance document may be amended by the BDFL at any time. All
-amendments will be:
-
-[arabic]
-. Documented as an ADR in `+docs/decisions/+` explaining the rationale
-for the change.
-. Committed to the repository with a clear commit message.
-. Communicated to existing maintainers and contributors via the
-project’s usual channels.
-
-Substantive changes (e.g., changing the governance model itself) should
-be discussed with the community before adoption, even though the BDFL
-retains final authority.
-
-'''''
-
-Copyright (c) 2026 hyperpolymath. Licensed under MPL-2.0.
+This document describes the intended repository process. It does not claim
+that branch protection, required reviews, release automation, or other forge
+settings have been audited or enforced.

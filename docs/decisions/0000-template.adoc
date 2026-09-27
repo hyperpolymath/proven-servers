@@ -5,7 +5,7 @@ Date: YYYY-MM-DD
 === Status
 
 {empty}[Proposed | Accepted | Deprecated | Superseded by
-link:NNNN-title.md[ADR-NNNN] | Rejected]
+link:NNNN-title.adoc[ADR-NNNN] | Rejected]
 
 === Context
 

@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
-// Kotlin/JNI bindings for the proven-dns protocol.
-// Wraps the C-ABI functions from protocols/proven-dns/ffi/zig/src/dns.zig.
+// Kotlin/JNI bindings for the bounded proven-dns message-builder FFI.
+// Only exact 17-byte standard queries with one root-name question are accepted;
+// responses are capped at 512 bytes. DNSSEC cryptographic operations fail closed.
 // Enum classes match Idris2 ABI tags exactly (DnsABI.Layout).
 
 package com.hyperpolymath.proven
 
 /**
- * Kotlin bindings for the proven DNS server protocol.
+ * Kotlin bindings for the bounded proven DNS message-builder FFI.
  *
- * Lifecycle: Idle -> QueryReceived -> Lookup -> ResponseBuilding -> Sent.
+ * Bounded message builder, not a general resolver. DNSSEC key loading, signing,
+ * and validation are unavailable; exposed DNSSEC transitions are model tags only.
  *
  * @author Jonathan D.A. Jewell
  */
@@ -82,9 +84,10 @@ public class ProvenDns private constructor(private val slot: Int) : AutoCloseabl
     public val queryRtype: Int get() = dns_query_rtype(slot)
     public val queryClass: Int get() = dns_query_class(slot)
 
-    /** Parse a DNS query from raw bytes. Transitions Idle -> QueryReceived. */
+    /** Parse only the exact 17-byte standard root-question query subset. */
     public fun parseQuery(data: ByteArray): Result<Unit> = ProvenError.runCatching {
-        ProvenError.checkStatus(dns_parse_query(slot, data, data.size))
+        require(data.size == 17) { "DNS query must be exactly 17 bytes" }
+        ProvenError.checkStatus(dns_parse_query(slot, data, 17))
     }
 
     /** Begin DNS lookup. Transitions QueryReceived -> Lookup. */
@@ -99,16 +102,19 @@ public class ProvenDns private constructor(private val slot: Int) : AutoCloseabl
 
     /** Add a resource record to the answer section. */
     public fun addAnswer(rtype: Int, rclass: Int, ttl: Int, rdata: ByteArray): Result<Unit> = ProvenError.runCatching {
+        require(rdata.size <= 256) { "DNS RDATA must be at most 256 bytes" }
         ProvenError.checkStatus(dns_add_answer(slot, rtype, rclass, ttl, rdata, rdata.size))
     }
 
     /** Add a resource record to the authority section. */
     public fun addAuthority(rtype: Int, rclass: Int, ttl: Int, rdata: ByteArray): Result<Unit> = ProvenError.runCatching {
+        require(rdata.size <= 256) { "DNS RDATA must be at most 256 bytes" }
         ProvenError.checkStatus(dns_add_authority(slot, rtype, rclass, ttl, rdata, rdata.size))
     }
 
     /** Add a resource record to the additional section. */
     public fun addAdditional(rtype: Int, rclass: Int, ttl: Int, rdata: ByteArray): Result<Unit> = ProvenError.runCatching {
+        require(rdata.size <= 256) { "DNS RDATA must be at most 256 bytes" }
         ProvenError.checkStatus(dns_add_additional(slot, rtype, rclass, ttl, rdata, rdata.size))
     }
 
@@ -117,7 +123,7 @@ public class ProvenDns private constructor(private val slot: Int) : AutoCloseabl
         ProvenError.checkStatus(dns_set_rcode(slot, rcodeTag))
     }
 
-    /** Build the DNS response message. Transitions ResponseBuilding -> Sent. */
+    /** Build a root-question response; output is capped at 512 bytes. */
     public fun buildResponse(): Result<ByteArray> = ProvenError.runCatching {
         val buf = ByteArray(65536)
         val outLen = IntArray(1)
@@ -125,22 +131,22 @@ public class ProvenDns private constructor(private val slot: Int) : AutoCloseabl
         buf.copyOf(outLen[0])
     }
 
-    /** Enable DNSSEC. Transitions Disabled -> Enabled. */
+    /** Enable mode only; response construction then rejects because no signer exists. */
     public fun enableDnssec(): Result<Unit> = ProvenError.runCatching {
         ProvenError.checkStatus(dns_enable_dnssec(slot))
     }
 
-    /** Load a DNSSEC signing key. Transitions Enabled -> KeyLoaded. */
+    /** Always fails closed: the ABI accepts no private-key material. */
     public fun loadDnssecKey(algorithm: DnssecAlgorithm): Result<Unit> = ProvenError.runCatching {
         ProvenError.checkStatus(dns_load_dnssec_key(slot, algorithm.tag))
     }
 
-    /** Sign the response (DNSSEC). Transitions KeyLoaded -> Validated. */
+    /** Always fails closed because no DNSSEC signing backend exists. */
     public fun signResponse(): Result<Unit> = ProvenError.runCatching {
         ProvenError.checkStatus(dns_sign_response(slot))
     }
 
-    /** Check DNSSEC validation result. */
+    /** Always false because no DNSSEC validator exists. */
     public val isDnssecValid: Boolean get() = dns_validate_dnssec(slot) == 0
 
     public companion object {

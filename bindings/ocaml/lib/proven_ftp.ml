@@ -33,29 +33,52 @@ let transfer_state_of_tag = function
   | 0 -> Some Transfer_idle | 1 -> Some Transfer_in_progress
   | 2 -> Some Transfer_completed | 3 -> Some Transfer_aborted | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_ftp_abi_version : unit -> int = "ftp_abi_version"
-external c_ftp_create : unit -> int = "ftp_create"
-external c_ftp_destroy : int -> unit = "ftp_destroy"
-external c_ftp_state : int -> int = "ftp_state"
-external c_ftp_transfer_type : int -> int = "ftp_transfer_type"
-external c_ftp_data_mode : int -> int = "ftp_data_mode"
-external c_ftp_transfer_state : int -> int = "ftp_transfer_state"
-external c_ftp_file_count : int -> int = "ftp_file_count"
-external c_ftp_last_reply_code : int -> int = "ftp_last_reply_code"
-external c_ftp_quit : int -> int = "ftp_quit"
-external c_ftp_cdup : int -> int = "ftp_cdup"
-external c_ftp_set_type : int -> int -> int = "ftp_set_type"
-external c_ftp_set_passive : int -> int = "ftp_set_passive"
-external c_ftp_set_active : int -> int -> int = "ftp_set_active"
-external c_ftp_begin_transfer : int -> int = "ftp_begin_transfer"
-external c_ftp_complete_transfer : int -> int = "ftp_complete_transfer"
-external c_ftp_abort_transfer : int -> int = "ftp_abort_transfer"
-external c_ftp_begin_rename : int -> int = "ftp_begin_rename"
-external c_ftp_complete_rename : int -> int = "ftp_complete_rename"
-external c_ftp_can_transfer : int -> int = "ftp_can_transfer"
-external c_ftp_can_transition : int -> int -> int = "ftp_can_transition"
+let c_ftp_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_create : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_destroy : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_transfer_type : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_data_mode : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_transfer_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_file_count : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_last_reply_code : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_quit : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_cdup : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_set_type : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_set_passive : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_set_active : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_begin_transfer : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_complete_transfer : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_abort_transfer : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_begin_rename : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_complete_rename : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_can_transfer : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ftp_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

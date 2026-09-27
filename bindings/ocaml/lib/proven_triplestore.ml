@@ -82,12 +82,18 @@ let store_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some Ready | 2 -> Some In_transaction
   | 3 -> Some Importing | 4 -> Some Closing | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_triplestore_abi_version : unit -> int = "triplestore_abi_version"
-external c_triplestore_create_context : unit -> int = "triplestore_create_context"
-external c_triplestore_destroy_context : int -> unit = "triplestore_destroy_context"
-external c_triplestore_can_transition : int -> int -> int = "triplestore_can_transition"
+let c_triplestore_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_triplestore_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_triplestore_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_triplestore_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

@@ -91,13 +91,20 @@ let session_state_of_tag = function
   | 4 -> Some Shutdown
   | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_doh_abi_version : unit -> int = "doh_abi_version"
-external c_doh_create_context : unit -> int = "doh_create_context"
-external c_doh_destroy_context : int -> unit = "doh_destroy_context"
-external c_doh_state : int -> int = "doh_state"
-external c_doh_can_transition : int -> int -> int = "doh_can_transition"
+let c_doh_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_doh_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_doh_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_doh_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_doh_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

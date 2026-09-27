@@ -65,20 +65,34 @@ let phase_of_tag = function
 let version_of_tag = function
   | 0 -> Some Http10 | 1 -> Some Http11 | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_http_abi_version : unit -> int = "http_abi_version"
-external c_http_create_context : unit -> int = "http_create_context"
-external c_http_destroy_context : int -> unit = "http_destroy_context"
-external c_http_parse_request : int -> int = "http_parse_request"
-external c_http_get_method : int -> int = "http_get_method"
-external c_http_set_status : int -> int -> int = "http_set_status"
-external c_http_send_response : int -> int = "http_send_response"
-external c_http_keep_alive_check : int -> int = "http_keep_alive_check"
-external c_http_get_phase : int -> int = "http_get_phase"
-external c_http_get_version : int -> int = "http_get_version"
-external c_http_reset_context : int -> int = "http_reset_context"
-external c_http_can_transition : int -> int -> int = "http_can_transition"
+let c_http_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_parse_request : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_get_method : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_set_status : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_send_response : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_keep_alive_check : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_get_phase : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_get_version : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_reset_context : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

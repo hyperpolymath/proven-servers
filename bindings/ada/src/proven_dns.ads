@@ -2,7 +2,9 @@
 -- (MPL-2.0 preferred; MPL-2.0 required for GNAT ecosystem)
 -- Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 --
--- Ada bindings for the proven-dns protocol (DNS server).
+-- Ada bindings for the bounded proven-dns message-builder FFI.
+-- It accepts only exact 17-byte standard queries with one root-name question;
+-- responses are capped at 512 bytes. DNSSEC cryptographic operations fail closed.
 --
 -- Wraps the C-ABI functions from protocols/proven-dns/ffi/zig/src/dns.zig:
 --   dns_abi_version, dns_create_context, dns_destroy_context,
@@ -38,19 +40,17 @@ package Proven_Dns is
       State_Sent              => 4);
    pragma Convention (C, Dns_State);
 
-   -- DNSSEC processing states.
+   -- DNSSEC ABI/model tags; operational key loading, signing, and validation fail closed.
    type Dnssec_State is
      (Dnssec_Disabled,
       Dnssec_Enabled,
       Dnssec_Key_Loaded,
-      Dnssec_Signed,
       Dnssec_Validated);
    for Dnssec_State use
      (Dnssec_Disabled   => 0,
       Dnssec_Enabled    => 1,
       Dnssec_Key_Loaded => 2,
-      Dnssec_Signed     => 3,
-      Dnssec_Validated  => 4);
+      Dnssec_Validated  => 3);
    pragma Convention (C, Dnssec_State);
 
    -- DNS record types (subset).
@@ -135,6 +135,7 @@ package Proven_Dns is
    function Query_Class (Slot : int) return unsigned_char;
    pragma Import (C, Query_Class, "dns_query_class");
 
+   -- Caller must provide a valid buffer of exactly 17 bytes; only the root-question subset is accepted.
    function Parse_Query
      (Slot : int;
       Buf  : access unsigned_char;
@@ -147,6 +148,7 @@ package Proven_Dns is
    function Begin_Response (Slot : int) return unsigned_char;
    pragma Import (C, Begin_Response, "dns_begin_response");
 
+   -- RDATA length must be <=256; Rdata must be valid/non-null if Rdlen > 0.
    function Add_Answer
      (Slot   : int;
       Rtype  : unsigned_char;
@@ -156,6 +158,7 @@ package Proven_Dns is
       Rdlen  : unsigned_short) return unsigned_char;
    pragma Import (C, Add_Answer, "dns_add_answer");
 
+   -- RDATA length must be <=256; Rdata must be valid/non-null if Rdlen > 0.
    function Add_Authority
      (Slot   : int;
       Rtype  : unsigned_char;
@@ -165,6 +168,7 @@ package Proven_Dns is
       Rdlen  : unsigned_short) return unsigned_char;
    pragma Import (C, Add_Authority, "dns_add_authority");
 
+   -- RDATA length must be <=256; Rdata must be valid/non-null if Rdlen > 0.
    function Add_Additional
      (Slot   : int;
       Rtype  : unsigned_char;
@@ -179,23 +183,29 @@ package Proven_Dns is
       Rcode_Tag : unsigned_char) return unsigned_char;
    pragma Import (C, Set_Rcode, "dns_set_rcode");
 
+   -- Raw pointer contract: Out_Buf must reference at least 512 writable bytes.
+   -- The ABI has no capacity argument; messages over 512 bytes are rejected before writing.
    function Build_Response
      (Slot    : int;
       Out_Buf : access unsigned_char;
       Out_Len : access unsigned_short) return unsigned_char;
    pragma Import (C, Build_Response, "dns_build_response");
 
+   -- Enable mode only; response construction then rejects because no signer exists.
    function Enable_Dnssec (Slot : int) return unsigned_char;
    pragma Import (C, Enable_Dnssec, "dns_enable_dnssec");
 
+   -- Always rejects: this ABI accepts an algorithm tag but no private-key material.
    function Load_Dnssec_Key
      (Slot : int;
       Algo : unsigned_char) return unsigned_char;
    pragma Import (C, Load_Dnssec_Key, "dns_load_dnssec_key");
 
+   -- Always rejects: no DNSSEC signing backend is present.
    function Sign_Response (Slot : int) return unsigned_char;
    pragma Import (C, Sign_Response, "dns_sign_response");
 
+   -- Always rejects: no DNSSEC validator is present.
    function Validate_Dnssec (Slot : int) return unsigned_char;
    pragma Import (C, Validate_Dnssec, "dns_validate_dnssec");
 

@@ -256,7 +256,7 @@ test "finish_keygen rejects zero-length keys" {
 // Crypto operations: category enforcement
 // =========================================================================
 
-test "encapsulate succeeds with KEM algorithm in Active state" {
+test "encapsulation fails closed for an Active KEM context and clears lengths" {
     const slot = pqc.pqc_create_context(0, 0); // Kyber (KEM)
     defer pqc.pqc_destroy_context(slot);
 
@@ -266,26 +266,14 @@ test "encapsulate succeeds with KEM algorithm in Active state" {
     _ = pqc.pqc_finish_keygen(slot, pk.ptr, pk.len, sk.ptr, sk.len);
     _ = pqc.pqc_activate_key(slot);
 
-    var ct_len: u32 = 0;
-    var ss_len: u32 = 0;
-    try std.testing.expectEqual(@as(u8, 0), pqc.pqc_encapsulate(slot, null, &ct_len, null, &ss_len));
+    var ct_len: u32 = 99;
+    var ss_len: u32 = 99;
+    try std.testing.expectEqual(@as(u8, 1), pqc.pqc_encapsulate(slot, null, &ct_len, null, &ss_len));
+    try std.testing.expectEqual(@as(u32, 0), ct_len);
+    try std.testing.expectEqual(@as(u32, 0), ss_len);
 }
 
-test "sign rejects with KEM algorithm" {
-    const slot = pqc.pqc_create_context(0, 0); // Kyber (KEM)
-    defer pqc.pqc_destroy_context(slot);
-
-    _ = pqc.pqc_begin_keygen(slot);
-    const pk = "pk";
-    const sk = "sk";
-    _ = pqc.pqc_finish_keygen(slot, pk.ptr, pk.len, sk.ptr, sk.len);
-    _ = pqc.pqc_activate_key(slot);
-
-    var sig_len: u32 = 0;
-    try std.testing.expectEqual(@as(u8, 1), pqc.pqc_sign(slot, null, 0, null, &sig_len));
-}
-
-test "sign succeeds with Signature algorithm in Active state" {
+test "signature operations fail closed for an Active signature context" {
     const slot = pqc.pqc_create_context(1, 1); // Dilithium (Signature)
     defer pqc.pqc_destroy_context(slot);
 
@@ -295,8 +283,16 @@ test "sign succeeds with Signature algorithm in Active state" {
     _ = pqc.pqc_finish_keygen(slot, pk.ptr, pk.len, sk.ptr, sk.len);
     _ = pqc.pqc_activate_key(slot);
 
-    var sig_len: u32 = 0;
-    try std.testing.expectEqual(@as(u8, 0), pqc.pqc_sign(slot, null, 0, null, &sig_len));
+    var sig_len: u32 = 99;
+    try std.testing.expectEqual(@as(u8, 1), pqc.pqc_sign(slot, null, 0, null, &sig_len));
+    try std.testing.expectEqual(@as(u32, 0), sig_len);
+    try std.testing.expectEqual(@as(u8, 1), pqc.pqc_verify(slot, null, 0, null, 0));
+}
+
+test "decapsulation fails closed and clears output length" {
+    var ss_len: u32 = 99;
+    try std.testing.expectEqual(@as(u8, 1), pqc.pqc_decapsulate(-1, null, 0, null, &ss_len));
+    try std.testing.expectEqual(@as(u32, 0), ss_len);
 }
 
 test "encapsulate rejects with Signature algorithm" {

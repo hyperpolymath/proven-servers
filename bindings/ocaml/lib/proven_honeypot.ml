@@ -75,12 +75,18 @@ let server_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some Deployed | 2 -> Some Engaged
   | 3 -> Some Shutdown | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_honeypot_abi_version : unit -> int = "honeypot_abi_version"
-external c_honeypot_create_context : unit -> int = "honeypot_create_context"
-external c_honeypot_destroy_context : int -> unit = "honeypot_destroy_context"
-external c_honeypot_can_transition : int -> int -> int = "honeypot_can_transition"
+let c_honeypot_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_honeypot_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_honeypot_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_honeypot_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

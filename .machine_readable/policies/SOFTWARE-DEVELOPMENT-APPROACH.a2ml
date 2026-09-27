@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: MPL-2.0
-# General software development approach (machine-readable)
+# General software development approach for proven-servers.
 
 [metadata]
-version = "1.0.0"
-last-updated = "2026-02-24"
-scope = "cross-repo"
+version = "1.1.0"
+last-updated = "2026-09-27"
+scope = "repo"
 source-human = "docs/practice/SOFTWARE-DEVELOPMENT-APPROACH.adoc"
 
 [execution]
@@ -14,40 +14,47 @@ order = ["axis-1", "axis-2", "axis-3"]
 name = "scope"
 priority = "must > intend > like"
 inputs = [
-  "README",
-  "roadmap",
-  "status-docs",
-  "ci-and-security-docs",
+  "README.adoc",
+  "ROADMAP.adoc",
+  "READINESS.adoc",
+  "PROOF-NEEDS.adoc",
+  "package manifests and READMEs",
+  "CI/security documentation",
+  "current source and tests",
 ]
 marker-scan = ["TODO", "FIXME", "XXX", "HACK", "STUB", "PARTIAL"]
 idris-unsound-scan = ["believe_me", "assert_total"]
-output = "scoped-work-assembly"
+output = "scoped work assembly with evidence gaps and explicit skips"
 
 [axis-2]
 name = "maintenance"
 priority = "corrective > adaptive > perfective"
-corrective = "defect/regression/safety/security fixes"
-adaptive = "scope reconciliation, stale-reference removal, obsolete-work culling"
-perfective = "quality improvements derived from axis-1 honest state"
+corrective = "Fix concrete defects, regressions, broken checks, unsafe security paths, and unsupported claims."
+adaptive = "Reconcile changed scope, stale paths, obsolete tasks, and human/machine metadata."
+perfective = "Improve quality only after the current honest state is established."
 
 [axis-3]
 name = "audit"
 priority = "systems > compliance > effects"
-systems = "required systems present and operating"
-compliance = "exceptions explicit, bounded, and drift-resistant"
-effects = "benchmark/operational impact evidence captured and reviewed"
-compliance-tooling = "panic-attack"
-effects-tooling = "ecological checking with sustainabot guidance"
+systems = "Check that configured mechanisms exist and operate."
+compliance = "Record applicable requirements, scoped exceptions, and anti-drift evidence."
+effects = "Capture benchmark/operational impact evidence only when effects are claimed."
+compliance-tooling = "panic-attack where applicable; report missing tool explicitly"
+effects-tooling = "sustainabot-guided ecological checking where applicable and actually run"
 
 [cleanup-finish-off]
 root-cleanup = true
 stale-work-cull = true
 docs-sync-human-machine = true
 compliance-audit = true
-effects-audit = true
-release-summary = ["must", "should", "could"]
+effects-audit-when-claimed = true
+release-summary = ["must", "intend", "like"]
 next-actions = ["corrective", "adaptive", "perfective"]
 
 [collaboration]
 maintainer-dialogue-required = true
-dialogue-topics = ["what changed", "why", "remaining risks"]
+dialogue-topics = ["what changed", "why", "remaining risks", "next actions"]
+
+[evidence-boundary]
+source-smoke-tests = "Heuristics only; not formal proofs, exhaustive tests, or ABI conformance."
+historical-reports = "Revision-specific; not current verification."

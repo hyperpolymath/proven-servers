@@ -3,7 +3,7 @@
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
 # Binding-policy tripwire — enforces ADR 0003
-# (docs/decisions/0003-keep-bindings-thin-abi-wrappers.md):
+# (docs/decisions/0003-keep-bindings-thin-abi-wrappers.adoc):
 #
 #   1. Registry parity: every bindings/<lang> on disk is registered in
 #      .machine_readable/BINDINGS.a2ml, and every registered language exists
@@ -46,7 +46,17 @@ if [ -n "$missing" ]; then
 fi
 [ -z "${rogue}${missing}" ] && grn "OK: bindings/ ($(printf '%s\n' $ondisk | wc -w | tr -d ' ')) match registry exactly"
 
-# --- 2. scaffold-tier bindings must stay logic-free -----------------------
+# --- 2. OCaml must remain fail-closed until compatible C stubs exist ------
+if grep -Eq '^[[:space:]]*ocaml[[:space:]]*=[[:space:]]*\{[^}]*status[[:space:]]*=[[:space:]]*"unavailable"' "$REG"; then
+  if grep -R -nE '^[[:space:]]*external[[:space:]]' bindings/ocaml/lib --include='*.ml'; then
+    red "FAIL: raw OCaml external declarations bypass the fail-closed FFI stubs"
+    FAIL=1
+  else
+    grn "OK: OCaml native operations remain disabled until compatible C stubs exist"
+  fi
+fi
+
+# --- 3. scaffold-tier bindings must stay logic-free -----------------------
 scaffolds="$(grep -E '^[[:space:]]*[a-z]+[[:space:]]*=[[:space:]]*\{[^}]*status[[:space:]]*=[[:space:]]*"scaffold"' "$REG" \
   | sed -E 's/^[[:space:]]*([a-z]+)[[:space:]]*=.*/\1/' | sort -u)"
 
@@ -74,7 +84,7 @@ for b in $scaffolds; do
 done
 
 if [ "$FAIL" -ne 0 ]; then
-  red "Binding policy VIOLATED — see docs/decisions/0003-keep-bindings-thin-abi-wrappers.md"
+  red "Binding policy VIOLATED — see docs/decisions/0003-keep-bindings-thin-abi-wrappers.adoc"
   exit 1
 fi
 grn "Binding policy OK."

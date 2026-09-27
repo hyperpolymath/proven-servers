@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 //
-//! Safe Rust wrappers around the `proven-dns` Zig FFI exports.
+//! Safe Rust wrappers around the bounded `proven-dns` message-builder FFI.
+//!
+//! The parser accepts only an exact 17-byte standard query with one root-name
+//! question and RD as the only supported flag. Responses are capped at 512 bytes.
+//! This is not a general resolver; DNSSEC key loading, signing, and validation
+//! fail closed (validation therefore always returns false).
 //!
 //! Wraps the C-ABI functions from `protocols/proven-dns/ffi/zig/src/dns.zig`:
 //! - Context lifecycle: `dns_create_context`, `dns_destroy_context`
@@ -9,8 +14,8 @@
 //! - Lifecycle transitions: `dns_begin_lookup`, `dns_begin_response`
 //! - Record management: `dns_add_answer`, `dns_add_authority`, `dns_add_additional`
 //! - Response building: `dns_set_rcode`, `dns_build_response`
-//! - DNSSEC: `dns_enable_dnssec`, `dns_load_dnssec_key`, `dns_sign_response`,
-//!   `dns_validate_dnssec`
+//! - DNSSEC configuration/model calls: `dns_enable_dnssec` succeeds, while
+//!   key loading, signing, and validation are unavailable and fail closed
 //! - State queries: `dns_state`, `dns_dnssec_state`, `dns_rcode`,
 //!   `dns_answer_count`, `dns_authority_count`, `dns_additional_count`,
 //!   `dns_query_rtype`, `dns_query_class`
@@ -73,9 +78,9 @@ pub enum DnssecState {
     Disabled = 0,
     /// DNSSEC enabled, no key loaded.
     Enabled = 1,
-    /// DNSSEC key loaded.
+    /// ABI/model state only; operational key loading is unavailable.
     KeyLoaded = 2,
-    /// Response validated / signed.
+    /// Abstract ABI state; the current FFI cannot reach it through crypto.
     Validated = 3,
 }
 
@@ -258,6 +263,9 @@ pub fn query_class(ctx: &DnsContext) -> u8 {
 /// Parse a DNS query from raw bytes. Transitions Idle -> QueryReceived.
 #[cfg(feature = "ffi")]
 pub fn parse_query(ctx: &DnsContext, data: &[u8]) -> ProvenResult<()> {
+    if data.len() != 17 {
+        return Err(ProvenError::InvalidParameter);
+    }
     let result = unsafe {
         dns_parse_query(ctx.slot, data.as_ptr(), data.len() as u16)
     };
@@ -283,6 +291,9 @@ pub fn begin_response(ctx: &DnsContext) -> ProvenResult<()> {
 /// Only valid in ResponseBuilding state. Record type and class are ABI tags.
 #[cfg(feature = "ffi")]
 pub fn add_answer(ctx: &DnsContext, rtype: u8, rclass: u8, ttl: u32, rdata: &[u8]) -> ProvenResult<()> {
+    if rdata.len() > 256 {
+        return Err(ProvenError::CapacityExceeded);
+    }
     let result = unsafe {
         dns_add_answer(ctx.slot, rtype, rclass, ttl, rdata.as_ptr(), rdata.len() as u16)
     };
@@ -292,6 +303,9 @@ pub fn add_answer(ctx: &DnsContext, rtype: u8, rclass: u8, ttl: u32, rdata: &[u8
 /// Add a resource record to the authority section.
 #[cfg(feature = "ffi")]
 pub fn add_authority(ctx: &DnsContext, rtype: u8, rclass: u8, ttl: u32, rdata: &[u8]) -> ProvenResult<()> {
+    if rdata.len() > 256 {
+        return Err(ProvenError::CapacityExceeded);
+    }
     let result = unsafe {
         dns_add_authority(ctx.slot, rtype, rclass, ttl, rdata.as_ptr(), rdata.len() as u16)
     };
@@ -301,6 +315,9 @@ pub fn add_authority(ctx: &DnsContext, rtype: u8, rclass: u8, ttl: u32, rdata: &
 /// Add a resource record to the additional section.
 #[cfg(feature = "ffi")]
 pub fn add_additional(ctx: &DnsContext, rtype: u8, rclass: u8, ttl: u32, rdata: &[u8]) -> ProvenResult<()> {
+    if rdata.len() > 256 {
+        return Err(ProvenError::CapacityExceeded);
+    }
     let result = unsafe {
         dns_add_additional(ctx.slot, rtype, rclass, ttl, rdata.as_ptr(), rdata.len() as u16)
     };
@@ -314,12 +331,15 @@ pub fn set_rcode(ctx: &DnsContext, rcode_tag: u8) -> ProvenResult<()> {
     ProvenError::from_status(result)
 }
 
-/// Build the DNS response message. Transitions ResponseBuilding -> Sent.
+/// Build the bounded root-question DNS message. Transitions ResponseBuilding -> Sent.
 ///
 /// The output buffer must be at least 512 bytes. On success, returns the
 /// number of bytes written to `out`.
 #[cfg(feature = "ffi")]
 pub fn build_response(ctx: &DnsContext, out: &mut [u8]) -> ProvenResult<u16> {
+    if out.len() < 512 {
+        return Err(ProvenError::CapacityExceeded);
+    }
     let mut out_len: u16 = 0;
     let result = unsafe {
         dns_build_response(ctx.slot, out.as_mut_ptr(), &mut out_len)
@@ -327,28 +347,28 @@ pub fn build_response(ctx: &DnsContext, out: &mut [u8]) -> ProvenResult<u16> {
     ProvenError::from_status(result).map(|()| out_len)
 }
 
-/// Enable DNSSEC. Transitions Disabled -> Enabled.
+/// Enable DNSSEC mode only; response construction then rejects because no signer exists.
 #[cfg(feature = "ffi")]
 pub fn enable_dnssec(ctx: &DnsContext) -> ProvenResult<()> {
     let result = unsafe { dns_enable_dnssec(ctx.slot) };
     ProvenError::from_status(result)
 }
 
-/// Load a DNSSEC signing key. Transitions Enabled -> KeyLoaded.
+/// Attempt to load a DNSSEC key; always rejects because the ABI accepts no key material.
 #[cfg(feature = "ffi")]
 pub fn load_dnssec_key(ctx: &DnsContext, algo: DnssecAlgorithm) -> ProvenResult<()> {
     let result = unsafe { dns_load_dnssec_key(ctx.slot, algo.to_tag()) };
     ProvenError::from_status(result)
 }
 
-/// Sign the response (DNSSEC). Transitions KeyLoaded -> Validated.
+/// Attempt DNSSEC signing; always rejects because no signing backend is present.
 #[cfg(feature = "ffi")]
 pub fn sign_response(ctx: &DnsContext) -> ProvenResult<()> {
     let result = unsafe { dns_sign_response(ctx.slot) };
     ProvenError::from_status(result)
 }
 
-/// Check DNSSEC validation result. Returns `true` if validated.
+/// Check DNSSEC validation result; always returns `false` because no validator exists.
 #[cfg(feature = "ffi")]
 pub fn validate_dnssec(ctx: &DnsContext) -> bool {
     unsafe { dns_validate_dnssec(ctx.slot) == 0 }

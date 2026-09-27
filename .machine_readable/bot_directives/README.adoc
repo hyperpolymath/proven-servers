@@ -1,41 +1,30 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= Agent Instructions
-:toc: preamble
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Bot Directives
+:toc:
 
-Methodology-aware configuration for AI agents. Read by any AI agent
-(Claude, Gemini, Copilot, etc.) at session start.
+This directory holds repository-maintained bot coverage, debt, and methodology
+metadata. It does not configure or prove that an external bot is running.
 
 == Files
 
 [cols="1,3"]
 |===
-| File | Purpose
+|File |Purpose
 
-| `methodology.a2ml`
-| Default mode, invariants, ring ceiling, priority weights, convergent budget
+|`methodology.a2ml`
+|Maintenance sequence and evidence expectations
 
-| `coverage.a2ml`
-| Session coverage tracking — what was visited, what was skipped, what has MUSTs
+|`coverage.a2ml`
+|Declared inspection coverage and explicitly skipped areas
 
-| `debt.a2ml`
-| Meander debt — things found but not fixed, carried between sessions
+|`debt.a2ml`
+|Known outstanding work carried between maintenance passes
 |===
 
-== How Agents Use These
+== Agent Guidance
 
-1. Read `methodology.a2ml` at session start — know mode, invariants, ceiling
-2. Read `coverage.a2ml` — know what was visited last time, what was skipped
-3. Read `debt.a2ml` — know what's outstanding from previous sessions
-4. At session end, update `coverage.a2ml` and `debt.a2ml`
-
-== Relationship to Other Files
-
-* `AGENTIC.a2ml` says WHAT agents can do (permissions, gating)
-* `bot_directives/` says HOW agents should work (methodology)
-* `bot_directives/` says what the gitbot-fleet does (fleet-specific)
-* `CLAUDE.md` says how Claude specifically should work (Claude-specific)
-
-== Reference
-
-ADR-002 in `standards/agentic-a2ml/docs/ADR-002-methodology-layer.adoc`
+Read `.machine_readable/6a2/AGENTIC.a2ml` for safety and evidence boundaries,
+and `docs/AI-CONVENTIONS.adoc` for human-readable instructions. Tool-specific
+configuration files are summaries only; none of these files imply that a
+particular hosted bot or external service is active.

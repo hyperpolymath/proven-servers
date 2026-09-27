@@ -98,11 +98,12 @@ test "destroy is safe with invalid slot" {
 // Authentication
 // =========================================================================
 
-test "authenticate succeeds with matching method" {
+test "method tag without credentials never authenticates" {
     const slot = authserver.authserver_create(0); // Password
     defer authserver.authserver_destroy(slot);
 
-    try std.testing.expectEqual(@as(u8, 0), authserver.authserver_authenticate(slot, 0)); // Success
+    try std.testing.expectEqual(@as(u8, 1), authserver.authserver_authenticate(slot, 0)); // InvalidCredentials
+    try std.testing.expectEqual(@as(u32, 1), authserver.authserver_failed_attempts(slot));
 }
 
 test "authenticate fails with wrong method" {
@@ -139,21 +140,21 @@ test "failed_attempts tracks count" {
 // MFA workflow
 // =========================================================================
 
-test "require_mfa then authenticate returns MFARequired" {
+test "configured MFA cannot turn a method tag into authentication" {
     const slot = authserver.authserver_create(0); // Password
     defer authserver.authserver_destroy(slot);
 
-    try std.testing.expectEqual(@as(u8, 0), authserver.authserver_require_mfa(slot, 0)); // TOTP
-    try std.testing.expectEqual(@as(u8, 4), authserver.authserver_authenticate(slot, 0)); // MFARequired
+    try std.testing.expectEqual(@as(u8, 0), authserver.authserver_require_mfa(slot, 0)); // TOTP policy
+    try std.testing.expectEqual(@as(u8, 1), authserver.authserver_authenticate(slot, 0)); // InvalidCredentials
 }
 
-test "verify_mfa then authenticate succeeds" {
+test "MFA verification fails without challenge material" {
     const slot = authserver.authserver_create(0); // Password
     defer authserver.authserver_destroy(slot);
 
     _ = authserver.authserver_require_mfa(slot, 0); // TOTP
-    try std.testing.expectEqual(@as(u8, 0), authserver.authserver_verify_mfa(slot, 0)); // TOTP
-    try std.testing.expectEqual(@as(u8, 0), authserver.authserver_authenticate(slot, 0)); // Success
+    try std.testing.expectEqual(@as(u8, 1), authserver.authserver_verify_mfa(slot, 0));
+    try std.testing.expectEqual(@as(u32, 0), authserver.authserver_token_count(slot));
 }
 
 test "verify_mfa rejects wrong method" {
@@ -175,13 +176,13 @@ test "verify_mfa rejects when not required" {
 // Token management
 // =========================================================================
 
-test "issue_token increments count" {
+test "issue_token fails closed without successful authentication" {
     const slot = authserver.authserver_create(0);
     defer authserver.authserver_destroy(slot);
 
-    try std.testing.expectEqual(@as(u8, 0), authserver.authserver_issue_token(slot, 0)); // Access
-    try std.testing.expectEqual(@as(u8, 0), authserver.authserver_issue_token(slot, 1)); // Refresh
-    try std.testing.expectEqual(@as(u32, 2), authserver.authserver_token_count(slot));
+    try std.testing.expectEqual(@as(u8, 1), authserver.authserver_issue_token(slot, 0)); // Access
+    try std.testing.expectEqual(@as(u8, 1), authserver.authserver_issue_token(slot, 1)); // Refresh
+    try std.testing.expectEqual(@as(u32, 0), authserver.authserver_token_count(slot));
 }
 
 test "issue_token rejects invalid type" {

@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= OCaml binding status
+
+== Native FFI is unavailable
+
+The OCaml modules contain ABI-tag and lifecycle-model wrappers, but native
+operations are intentionally disabled. Earlier declarations used OCaml
+`external` primitives to name raw Zig C exports directly. Those calling
+conventions are incompatible: OCaml primitives receive OCaml `value`s, while
+the Zig exports accept ordinary C ABI values. Calling the raw exports through
+those declarations could corrupt memory or crash.
+
+All former raw externals now raise a clear `Failure` through
+`Proven_unavailable.raise_unavailable`. The Dune library no longer links the
+protocol C libraries. Do not describe or use this as a functioning native
+binding until OCaml-compatible C stubs are implemented and tested.
+
+== Required follow-up
+
+* Add C stubs using the OCaml runtime ABI, with explicit conversion and
+  validation for each native function.
+* Declare those stubs through Dune `foreign_stubs` and link only the required
+  protocol libraries.
+* Compile and test every binding with the supported OCaml and Dune versions;
+  those tools were unavailable during the current audit.
+* Keep the fail-closed OCaml wrappers until the native bridge is verified.

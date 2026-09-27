@@ -3,14 +3,10 @@
 //
 // ctlog.zig -- Zig FFI implementation of proven-ctlog.
 //
-// Implements the Certificate Transparency Log (RFC 6962) server state
-// machine with:
-//   - 64-slot mutex-protected session pool
-//   - Entry submission tracking per session
-//   - Merkle tree size management
-//   - STH (Signed Tree Head) lifecycle
-//   - Inclusion/consistency proof verification (simulated)
-//   - Thread-safe via per-pool mutex
+// Implements a Certificate Transparency lifecycle model only, not an RFC 6962
+// log. Entry submission, STH signing, and Merkle proof verification fail closed;
+// no entry bytes are persisted and no Merkle hashes or signatures are produced.
+// Remaining session/state transitions are in-memory model operations.
 //
 // All exported functions use C calling convention (callconv(.c)) and
 // communicate state via u8 tags matching CTLogABI.Types.idr exactly.
@@ -260,38 +256,20 @@ pub export fn ctlog_tree_size(slot: c_int) callconv(.c) u32 {
 
 // -- Submission -----------------------------------------------------------
 
-/// Submit an entry to the CT log.
-/// Returns a SubmissionStatus tag.
+/// Entry submission is unavailable: the model does not persist entry bytes or
+/// build a Merkle tree. Always rejects so callers cannot mistake metadata for a
+/// logged certificate.
 pub export fn ctlog_submit(
     slot: c_int,
     entry_type: u8,
     data_ptr: [*]const u8,
     data_len: u32,
 ) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-
+    _ = slot;
+    _ = entry_type;
     _ = data_ptr;
     _ = data_len;
-
-    const idx = validSlot(slot) orelse return @intFromEnum(SubmissionStatus.rejected);
-    if (sessions[idx].state != .active) return @intFromEnum(SubmissionStatus.rejected);
-    if (entry_type > 1) return @intFromEnum(SubmissionStatus.rejected);
-    if (sessions[idx].entry_count >= sessions[idx].max_entries) {
-        return @intFromEnum(SubmissionStatus.rate_limited);
-    }
-
-    // Find a free entry slot
-    for (&sessions[idx].entries) |*e| {
-        if (!e.active) {
-            e.entry_type = @enumFromInt(entry_type);
-            e.active = true;
-            e.merged = false;
-            sessions[idx].entry_count += 1;
-            return @intFromEnum(SubmissionStatus.accepted);
-        }
-    }
-    return @intFromEnum(SubmissionStatus.rate_limited);
+    return @intFromEnum(SubmissionStatus.rejected);
 }
 
 // -- Merge / Sign lifecycle -----------------------------------------------
@@ -329,53 +307,34 @@ pub export fn ctlog_finish_merge(slot: c_int) callconv(.c) u8 {
     return 0;
 }
 
-/// Sign a new STH (Signed Tree Head).
-/// Transitions Signing -> Active.
+/// STH signing is unavailable because no signing key or cryptographic backend
+/// is configured. Always rejects and leaves the session state unchanged.
 pub export fn ctlog_sign_sth(slot: c_int) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-
-    const idx = validSlot(slot) orelse return 1;
-    if (sessions[idx].state != .signing) return 1;
-    sessions[idx].state = .active;
-    return 0;
+    _ = slot;
+    return 1;
 }
 
 // -- Verification ---------------------------------------------------------
 
-/// Verify an inclusion proof for an entry at a given index.
-/// Returns a VerificationResult tag.
+/// Inclusion verification is unavailable: this model has no Merkle hashes or
+/// proof bytes. It never reports a proof as valid.
 pub export fn ctlog_verify_inclusion(slot: c_int, index: u32) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-
-    const idx = validSlot(slot) orelse return @intFromEnum(VerificationResult.invalid_proof);
-    if (index >= sessions[idx].tree_size) {
-        return @intFromEnum(VerificationResult.invalid_proof);
-    }
-    // Simulated: if the entry exists and is merged, proof is valid
-    if (index < MAX_ENTRIES and sessions[idx].entries[index].active and
-        sessions[idx].entries[index].merged)
-    {
-        return @intFromEnum(VerificationResult.valid_proof);
-    }
+    _ = slot;
+    _ = index;
     return @intFromEnum(VerificationResult.invalid_proof);
 }
 
-/// Verify a consistency proof between two tree sizes.
-/// Returns a VerificationResult tag.
+/// Consistency verification is unavailable: this model has no Merkle hashes,
+/// signed tree heads, or proof bytes. It never reports a proof as valid.
 pub export fn ctlog_verify_consistency(
     slot: c_int,
     old_size: u32,
     new_size: u32,
 ) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-
-    const idx = validSlot(slot) orelse return @intFromEnum(VerificationResult.invalid_proof);
-    if (old_size > new_size) return @intFromEnum(VerificationResult.inconsistent_tree);
-    if (new_size > sessions[idx].tree_size) return @intFromEnum(VerificationResult.stale_sth);
-    return @intFromEnum(VerificationResult.valid_proof);
+    _ = slot;
+    _ = old_size;
+    _ = new_size;
+    return @intFromEnum(VerificationResult.invalid_proof);
 }
 
 // -- Shutdown / Cleanup ---------------------------------------------------

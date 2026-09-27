@@ -109,13 +109,20 @@ let participant_state_of_tag = function
   | 4 -> Some Leaving
   | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_dds_abi_version : unit -> int = "dds_abi_version"
-external c_dds_create_context : unit -> int = "dds_create_context"
-external c_dds_destroy_context : int -> unit = "dds_destroy_context"
-external c_dds_state : int -> int = "dds_state"
-external c_dds_can_transition : int -> int -> int = "dds_can_transition"
+let c_dds_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_dds_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_dds_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_dds_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_dds_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

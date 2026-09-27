@@ -111,15 +111,15 @@ test "destroy is safe with invalid slot" {
 // Key exchange
 // =========================================================================
 
-test "key_exchange transitions KeyExchange -> Ready" {
+test "key_exchange fails closed without HPKE and leaves session unready" {
     const config = "cfg";
     const slot = odns.odns_create(0, config.ptr, config.len);
     defer odns.odns_destroy(slot);
 
-    const pubkey = "fake-public-key-32bytes-padding!";
-    try std.testing.expectEqual(@as(u8, 0), odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len));
-    try std.testing.expectEqual(@as(u8, 2), odns.odns_state(slot)); // Ready
-    try std.testing.expectEqual(@as(u8, 1), odns.odns_is_ready(slot));
+    const pubkey = "not-a-validated-hpke-key";
+    try std.testing.expectEqual(@as(u8, 1), odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len));
+    try std.testing.expectEqual(@as(u8, 1), odns.odns_state(slot)); // KeyExchange
+    try std.testing.expectEqual(@as(u8, 0), odns.odns_is_ready(slot));
 }
 
 test "key_exchange rejects empty pubkey" {
@@ -131,65 +131,42 @@ test "key_exchange rejects empty pubkey" {
     try std.testing.expectEqual(@as(u8, 1), odns.odns_key_exchange(slot, pubkey.ptr, 0));
 }
 
-test "key_exchange rejects from Ready state" {
-    const config = "cfg";
-    const slot = odns.odns_create(0, config.ptr, config.len);
-    defer odns.odns_destroy(slot);
-
-    const pubkey = "key-data";
-    _ = odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len);
-    try std.testing.expectEqual(@as(u8, 1), odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len));
-}
-
 // =========================================================================
 // Query / Response lifecycle
 // =========================================================================
 
-test "submit_query transitions Ready -> Processing" {
+test "query submission fails closed when no encrypted session can be established" {
     const config = "cfg";
     const slot = odns.odns_create(0, config.ptr, config.len);
     defer odns.odns_destroy(slot);
 
     const pubkey = "key";
-    _ = odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len);
-
-    const query = "encrypted-dns-query";
-    try std.testing.expectEqual(@as(u8, 0), odns.odns_submit_query(slot, query.ptr, query.len));
-    try std.testing.expectEqual(@as(u8, 3), odns.odns_state(slot)); // Processing
-}
-
-test "get_response transitions Processing -> Ready" {
-    const config = "cfg";
-    const slot = odns.odns_create(0, config.ptr, config.len);
-    defer odns.odns_destroy(slot);
-
-    const pubkey = "key";
-    _ = odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len);
-
     const query = "query";
-    _ = odns.odns_submit_query(slot, query.ptr, query.len);
-    try std.testing.expectEqual(@as(u8, 0), odns.odns_get_response(slot));
-    try std.testing.expectEqual(@as(u8, 2), odns.odns_state(slot)); // Ready
+    _ = odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len);
+    try std.testing.expectEqual(@as(u8, 1), odns.odns_submit_query(slot, query.ptr, query.len));
+    try std.testing.expectEqual(@as(u8, 1), odns.odns_state(slot)); // remains KeyExchange
 }
 
-test "query_count increments per response" {
+test "response retrieval fails closed without a processed encrypted query" {
+    const config = "cfg";
+    const slot = odns.odns_create(0, config.ptr, config.len);
+    defer odns.odns_destroy(slot);
+
+    try std.testing.expectEqual(@as(u8, 1), odns.odns_get_response(slot));
+    try std.testing.expectEqual(@as(u32, 0), odns.odns_query_count(slot));
+}
+
+test "rejected operations never increment query_count" {
     const config = "cfg";
     const slot = odns.odns_create(0, config.ptr, config.len);
     defer odns.odns_destroy(slot);
 
     const pubkey = "key";
-    _ = odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len);
-
-    try std.testing.expectEqual(@as(u32, 0), odns.odns_query_count(slot));
-
     const query = "q1";
+    _ = odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len);
     _ = odns.odns_submit_query(slot, query.ptr, query.len);
     _ = odns.odns_get_response(slot);
-    try std.testing.expectEqual(@as(u32, 1), odns.odns_query_count(slot));
-
-    _ = odns.odns_submit_query(slot, query.ptr, query.len);
-    _ = odns.odns_get_response(slot);
-    try std.testing.expectEqual(@as(u32, 2), odns.odns_query_count(slot));
+    try std.testing.expectEqual(@as(u32, 0), odns.odns_query_count(slot));
 }
 
 test "get_format returns HPKE" {
@@ -203,13 +180,11 @@ test "get_format returns HPKE" {
 // Close / Cleanup
 // =========================================================================
 
-test "close transitions Ready -> Closing" {
+test "close transitions KeyExchange -> Closing" {
     const config = "cfg";
     const slot = odns.odns_create(0, config.ptr, config.len);
     defer odns.odns_destroy(slot);
 
-    const pubkey = "key";
-    _ = odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len);
     try std.testing.expectEqual(@as(u8, 0), odns.odns_close(slot));
     try std.testing.expectEqual(@as(u8, 4), odns.odns_state(slot)); // Closing
 }
@@ -219,8 +194,6 @@ test "cleanup transitions Closing -> Idle" {
     const slot = odns.odns_create(0, config.ptr, config.len);
     defer odns.odns_destroy(slot);
 
-    const pubkey = "key";
-    _ = odns.odns_key_exchange(slot, pubkey.ptr, pubkey.len);
     _ = odns.odns_close(slot);
     try std.testing.expectEqual(@as(u8, 0), odns.odns_cleanup(slot));
     try std.testing.expectEqual(@as(u8, 0), odns.odns_state(slot)); // Idle

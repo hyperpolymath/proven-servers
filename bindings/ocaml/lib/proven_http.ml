@@ -138,12 +138,18 @@ let request_phase_of_tag = function
   | 3 -> Some BodyReceiving | 4 -> Some Complete | 5 -> Some Responding
   | 6 -> Some Sent | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_http_abi_version : unit -> int = "http_abi_version"
-external c_http_create_context : unit -> int = "http_create_context"
-external c_http_destroy_context : int -> unit = "http_destroy_context"
-external c_http_can_transition : int -> int -> int = "http_can_transition"
+let c_http_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_http_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

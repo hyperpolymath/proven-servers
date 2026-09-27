@@ -1,23 +1,24 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# NEUROSYM.a2ml — Neurosymbolic integration metadata
-# Configuration for Hypatia scanning and symbolic reasoning.
+# NEUROSYM.a2ml — status of automated and symbolic analysis integration.
 
 [metadata]
-version = "0.1.0"
-last-updated = "2026-03-02"
+version = "0.2.0"
+last-updated = "2026-09-27"
 
-[hypatia-config]
-scan-enabled = true
-scan-depth = "standard"  # quick | standard | deep
-report-format = "logtalk"
+[automated-analysis]
+hypatia-status = "not verified as an active local or CI check in this assessment"
+panic-attack-status = "optional external scanner; not installed in the assessment workspace"
+report-format = "No repository-wide machine-consumed analysis report format is configured."
 
 [symbolic-rules]
-# Custom symbolic rules for this project
-# - { name = "no-unsafe-ffi", pattern = "believe_me|unsafeCoerce", severity = "critical" }
+active-project-rules = []
+source-scan-note = "A textual occurrence scan is heuristic; comments and generated files require review."
 
 [neural-config]
-# Neural pattern detection settings
-# confidence-threshold = 0.85
-# model = "hypatia-v2"
+model = "none configured"
+confidence-threshold = "not applicable"
+
+[limitations]
+formal-proof-status = "No neural or heuristic result substitutes for a successful Idris2 package build or executable test."

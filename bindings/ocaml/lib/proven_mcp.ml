@@ -99,12 +99,18 @@ let session_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some Connecting | 2 -> Some Ready
   | 3 -> Some Processing | 4 -> Some Disconnecting | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_mcp_abi_version : unit -> int = "mcp_abi_version"
-external c_mcp_create_context : unit -> int = "mcp_create_context"
-external c_mcp_destroy_context : int -> unit = "mcp_destroy_context"
-external c_mcp_can_transition : int -> int -> int = "mcp_can_transition"
+let c_mcp_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_mcp_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_mcp_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mcp_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

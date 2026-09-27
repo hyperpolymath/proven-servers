@@ -5,7 +5,7 @@ package proven-kerberos
 version = "0.1.0"
 authors = "Jonathan D.A. Jewell"
 license = "MPL-2.0"
-brief   = "RFC 4120 Kerberos V5 skeleton"
+brief   = "Kerberos principal/enctype model; no KDC, ticket validation, or encryption backend"
 
 sourcedir = "src"
 main = Main

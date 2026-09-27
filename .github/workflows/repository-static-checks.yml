@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# Run repository-local shell and source-policy smoke checks. These checks do
+# not compile or execute protocol implementations and are not proof evidence.
+name: Repository Static Checks
+
+on:
+  pull_request:
+    branches: ['**']
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    name: Repository-local static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Check shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' script; do
+            bash -n "$script"
+          done < <(find . -path './.git' -prune -o -type f -name '*.sh' -print0)
+
+      - name: Run selected source-pattern smoke checks
+        run: bash tests/source_smoke_test.sh
+
+      - name: Run selected security-source heuristics
+        run: bash tests/aspect/security_test.sh
+
+      - name: Check binding inventory and source policy
+        run: bash tests/binding_inventory.sh
+
+      - name: Check synchronized Justfiles
+        run: cmp -s Justfile .machine_readable/contractiles/Justfile

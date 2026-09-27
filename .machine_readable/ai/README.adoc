@@ -1,24 +1,20 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 = AI Guidance Directory
 
-Put AI-facing instructions in this folder.
+This directory is reserved for longer AI-facing guidance. Tool-specific root
+instruction files are summaries that point to `docs/AI-CONVENTIONS.adoc`.
 
-Examples:
+== Canonical Read Order
 
-* `CLAUDE.md`
-* `COPILOT.md`
-* `GEMINI.md`
-* `AI.a2ml`
-* `AI.djot`
+. `0-AI-MANIFEST.a2ml`
+. `.machine_readable/6a2/STATE.a2ml`
+. `.machine_readable/6a2/anchor/ANCHOR.a2ml`
+. `.machine_readable/policies/MAINTENANCE-AXES.a2ml`
+. The package-local README and manifest relevant to the change
 
-Avoid scattering agent instruction files around the repo root.
+== Evidence Boundary
 
-Recommended machine read order:
-
-* `.machine_readable/anchors/ANCHOR.a2ml`
-* `.machine_readable/policies/MAINTENANCE-AXES.a2ml`
-* `.machine_readable/policies/MAINTENANCE-CHECKLIST.a2ml`
-* `.machine_readable/policies/SOFTWARE-DEVELOPMENT-APPROACH.a2ml`
-* `.machine_readable/STATE.a2ml`
-* `.machine_readable/META.a2ml`
+Do not infer build, support, deployment, formal proof, or conformance from
+source presence. Report compiler/tool unavailability and static-only checks
+explicitly. The operational guidance is in `docs/AI-CONVENTIONS.adoc`.

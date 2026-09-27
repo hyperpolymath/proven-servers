@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 #
-# Python bindings for the proven-dns Zig FFI.
+# Python bindings for the bounded proven-dns message-builder FFI.
+# Accepts only exact 17-byte standard queries with one root-name question;
+# responses are capped at 512 bytes. It is not a general resolver, and DNSSEC
+# key loading, signing, and validation fail closed.
 #
 # Wraps the C-ABI functions from protocols/proven-dns/ffi/zig/src/dns.zig:
 #   - Context lifecycle: dns_create_context, dns_destroy_context
@@ -40,7 +43,7 @@ class DnsState(IntEnum):
 
 
 class DnssecState(IntEnum):
-    """DNSSEC states matching the Idris2 ABI tags."""
+    """DNSSEC ABI/model tags; key loading/signing/validation are unavailable."""
     DISABLED = 0
     ENABLED = 1
     KEY_LOADED = 2
@@ -217,7 +220,7 @@ class DnsContext:
     # -- Lifecycle ---------------------------------------------------------
 
     def parse_query(self, data: bytes) -> None:
-        """Parse a DNS query from raw bytes. Transitions Idle -> QueryReceived.
+        """Parse the exact 17-byte standard root-question query subset.
 
         Args:
             data: Raw DNS query bytes.
@@ -225,6 +228,8 @@ class DnsContext:
         Raises:
             ProvenError: On invalid state or malformed query.
         """
+        if len(data) != 17:
+            raise ValueError("DNS query must be exactly 17 bytes")
         buf = (ctypes.c_uint8 * len(data))(*data)
         check_status(self._lib.dns_parse_query(self._slot, buf, len(data)))
 
@@ -247,16 +252,22 @@ class DnsContext:
             ttl: Time-to-live in seconds.
             rdata: Raw record data bytes.
         """
+        if len(rdata) > 256:
+            raise ValueError("DNS RDATA must not exceed 256 bytes")
         buf = (ctypes.c_uint8 * len(rdata))(*rdata)
         check_status(self._lib.dns_add_answer(self._slot, rtype, rclass, ttl, buf, len(rdata)))
 
     def add_authority(self, rtype: int, rclass: int, ttl: int, rdata: bytes) -> None:
         """Add a resource record to the authority section."""
+        if len(rdata) > 256:
+            raise ValueError("DNS RDATA must not exceed 256 bytes")
         buf = (ctypes.c_uint8 * len(rdata))(*rdata)
         check_status(self._lib.dns_add_authority(self._slot, rtype, rclass, ttl, buf, len(rdata)))
 
     def add_additional(self, rtype: int, rclass: int, ttl: int, rdata: bytes) -> None:
         """Add a resource record to the additional section."""
+        if len(rdata) > 256:
+            raise ValueError("DNS RDATA must not exceed 256 bytes")
         buf = (ctypes.c_uint8 * len(rdata))(*rdata)
         check_status(self._lib.dns_add_additional(self._slot, rtype, rclass, ttl, buf, len(rdata)))
 
@@ -267,14 +278,13 @@ class DnsContext:
         check_status(self._lib.dns_set_rcode(self._slot, rcode_tag))
 
     def build_response(self, max_len: int = 512) -> bytes:
-        """Build the DNS response message. Transitions ResponseBuilding -> Sent.
+        """Build the bounded response. Requires a buffer of at least 512 bytes.
 
-        Args:
-            max_len: Maximum response buffer size (default 512).
-
-        Returns:
-            The serialized DNS response bytes.
+        The FFI supports only a root-name question, caps responses at 512 bytes,
+        and rejects DNSSEC-enabled contexts because signing is unavailable.
         """
+        if max_len < 512:
+            raise ValueError("DNS response buffer must be at least 512 bytes")
         buf = (ctypes.c_uint8 * max_len)()
         out_len = ctypes.c_uint16(0)
         check_status(self._lib.dns_build_response(self._slot, buf, ctypes.byref(out_len)))
@@ -283,19 +293,19 @@ class DnsContext:
     # -- DNSSEC ------------------------------------------------------------
 
     def enable_dnssec(self) -> None:
-        """Enable DNSSEC. Transitions Disabled -> Enabled."""
+        """Enable mode only; response building then rejects because no signer exists."""
         check_status(self._lib.dns_enable_dnssec(self._slot))
 
     def load_dnssec_key(self, algo: DnssecAlgorithm) -> None:
-        """Load a DNSSEC signing key. Transitions Enabled -> KeyLoaded."""
+        """Always fails closed: the ABI accepts no private-key material."""
         check_status(self._lib.dns_load_dnssec_key(self._slot, algo.value))
 
     def sign_response(self) -> None:
-        """Sign the response (DNSSEC). Transitions KeyLoaded -> Validated."""
+        """Always fails closed because no DNSSEC signing backend exists."""
         check_status(self._lib.dns_sign_response(self._slot))
 
     def validate_dnssec(self) -> bool:
-        """Check DNSSEC validation result. Returns True if validated."""
+        """Always returns False because no DNSSEC validator exists."""
         return self._lib.dns_validate_dnssec(self._slot) == 0
 
 

@@ -4,21 +4,22 @@
  * SPDX-License-Identifier: MPL-2.0
  * Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
  *
- * proven-nesy-solver-api ABI -- C header mirroring Idris2 type definitions.
- * DO NOT EDIT -- regenerate from src/NesySolverAPIABI/ if types change.
+ * proven-nesy-solver-api experimental C ABI header.
  *
- * ABI Version: 0.1
+ * This file is hand-maintained. No checked generator or repository-wide ABI
+ * conformance test currently establishes correspondence with the Idris2 and
+ * Zig declarations below. Update and verify all copies together when changing
+ * the interface; do not treat this header as generated evidence.
  *
- * Tag values here MUST match src/NesySolverAPIABI/Layout.idr and
- * ffi/zig/src/nesy_solver_api.zig exactly.
+ * ABI Version: 0.1 (declared)
  *
- * Type tag consistency map:
+ * Type tag declarations:
  *   ProverKind:       tags 0-8  (9 provers)
  *   InputLanguage:    tags 0-4  (5 source languages)
  *   ObligationClass:  tags 0-10 (11 classes, mirrors verisimdb Enum8)
  *   ProveOutcome:     tags 0-3  (success/failure/timeout/unknown)
  *   SessionState:     tags 0-3  (Idle/Dispatching/Recording/FailedS)
- *   SurfaceKind:      tags 0-15 (16 unified-api-adapter protocol surfaces)
+ *   SurfaceKind:      tags 0-15 (16 labels; transport implementations are not established)
  */
 
 #ifndef PROVEN_NESY_SOLVER_API_H

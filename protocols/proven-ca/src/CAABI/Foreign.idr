@@ -3,9 +3,9 @@
 --
 -- CAABI.Foreign: Foreign function declarations for the C bridge.
 --
--- Declares the opaque handle type and documents the complete FFI contract
--- that the Zig implementation must provide.  The CA FFI manages certificate
--- lifecycle, chain validation, CRL management, and OCSP responder state.
+-- Declares the opaque handle type and documents the FFI contract. The Zig
+-- implementation stores lifecycle metadata only; signing, chain validation,
+-- CRL generation, and OCSP queries fail closed without cryptographic backends.
 
 module CAABI.Foreign
 
@@ -49,10 +49,10 @@ abiVersion = 1
 -- +-------------------------+-----------------------------------------------+
 -- | ca_issue_cert           | (slot: c_int, cert_type: u8, key_algo: u8,   |
 -- |                         |  sig_algo: u8) -> c_int (cert_id, -1=fail)   |
--- |                         | Issues a new certificate in Pending state.    |
+-- |                         | Allocates Pending metadata only; no X.509 certificate is created.    |
 -- +-------------------------+-----------------------------------------------+
 -- | ca_sign_cert            | (slot: c_int, cert_id: c_int) -> u8          |
--- |                         | Pending -> Active. 0=ok, 1=rejected.         |
+-- |                         | Always rejects without signing; certificate remains Pending.         |
 -- +-------------------------+-----------------------------------------------+
 -- | ca_revoke_cert          | (slot: c_int, cert_id: c_int,                |
 -- |                         |  reason: u8) -> u8                            |
@@ -86,7 +86,7 @@ abiVersion = 1
 -- |                         | Number of certificates in this CA context.   |
 -- +-------------------------+-----------------------------------------------+
 -- | ca_validate_chain       | (slot: c_int, cert_id: c_int) -> u8          |
--- |                         | Validates issuer chain. 0=valid, 1=invalid.  |
+-- |                         | Always rejects: no DER parser or signature verifier.  |
 -- +-------------------------+-----------------------------------------------+
 -- | ca_can_issue            | (issuer: u8, child: u8) -> u8                |
 -- |                         | Stateless: can issuer type issue child type? |
@@ -100,14 +100,15 @@ abiVersion = 1
 -- |                         | Returns CRLStatus tag for this CA context.   |
 -- +-------------------------+-----------------------------------------------+
 -- | ca_update_crl           | (slot: c_int) -> u8                          |
--- |                         | Refreshes the CRL. 0=ok, 1=error.           |
+-- |                         | Always fails closed; sets CrLError without  |
+-- |                         | CRL serialization/signing support.          |
 -- +-------------------------+-----------------------------------------------+
 -- | ca_ocsp_status          | (slot: c_int) -> u8                          |
 -- |                         | Returns OCSPStatus tag for this CA context.  |
 -- +-------------------------+-----------------------------------------------+
 -- | ca_ocsp_query           | (slot: c_int, cert_id: c_int) -> u8          |
--- |                         | Queries OCSP for a cert. Returns OCSPStatus  |
--- |                         | tag (Good/Revoked/Unknown/Unavailable).      |
+-- |                         | Always returns Unavailable until an OCSP backend  |
+-- |                         | is implemented.      |
 -- +-------------------------+-----------------------------------------------+
 -- | ca_set_issuer           | (slot: c_int, cert_id: c_int,                |
 -- |                         |  issuer_id: c_int) -> u8                     |

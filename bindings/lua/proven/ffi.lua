@@ -100,15 +100,35 @@ ffi.cdef[[
   uint8_t  http_reset_context(int slot);
   uint8_t  http_can_transition(uint8_t from_phase, uint8_t to_phase);
 
-  /* ---- DNS (proven-dns) ---- */
+  /* ---- DNS (proven-dns bounded root-question message builder) ---- */
+  uint32_t dns_abi_version(void);
   int      dns_create_context(void);
   void     dns_destroy_context(int slot);
-  uint8_t  dns_parse_query(int slot, const uint8_t *data, uint32_t len);
-  uint8_t  dns_get_query_type(int slot);
-  uint32_t dns_get_query_name(int slot, uint8_t *buf, uint32_t len);
-  uint8_t  dns_set_response_code(int slot, uint8_t rcode);
-  uint8_t  dns_add_record(int slot, uint8_t rtype, const uint8_t *rdata, uint32_t rlen);
-  uint8_t  dns_send_response(int slot);
+  uint8_t  dns_state(int slot);
+  uint8_t  dns_dnssec_state(int slot);
+  uint8_t  dns_rcode(int slot);
+  uint16_t dns_answer_count(int slot);
+  uint16_t dns_authority_count(int slot);
+  uint16_t dns_additional_count(int slot);
+  uint8_t  dns_query_rtype(int slot);
+  uint8_t  dns_query_class(int slot);
+  uint8_t  dns_parse_query(int slot, const uint8_t *data, uint16_t len);
+  uint8_t  dns_begin_lookup(int slot);
+  uint8_t  dns_begin_response(int slot);
+  uint8_t  dns_add_answer(int slot, uint8_t rtype, uint8_t rclass,
+                          uint32_t ttl, const uint8_t *rdata, uint16_t rdlen);
+  uint8_t  dns_add_authority(int slot, uint8_t rtype, uint8_t rclass,
+                             uint32_t ttl, const uint8_t *rdata, uint16_t rdlen);
+  uint8_t  dns_add_additional(int slot, uint8_t rtype, uint8_t rclass,
+                              uint32_t ttl, const uint8_t *rdata, uint16_t rdlen);
+  uint8_t  dns_set_rcode(int slot, uint8_t rcode);
+  uint8_t  dns_build_response(int slot, uint8_t *out, uint16_t *out_len);
+  uint8_t  dns_enable_dnssec(int slot);
+  uint8_t  dns_load_dnssec_key(int slot, uint8_t algo);
+  uint8_t  dns_sign_response(int slot);
+  uint8_t  dns_validate_dnssec(int slot);
+  uint8_t  dns_can_transition(uint8_t from, uint8_t to);
+  uint8_t  dns_can_dnssec_transition(uint8_t from, uint8_t to);
 
   /* ---- SMTP (proven-smtp) ---- */
   int      smtp_create_context(void);

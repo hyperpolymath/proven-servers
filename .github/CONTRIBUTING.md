@@ -1,126 +1,76 @@
-# Clone the repository
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
 
-git clone https://github.com/hyperpolymath/proven-servers.git
-cd proven-servers
+# Contributing to proven-servers
 
-# Using Guix (recommended for reproducibility)
+Thank you for helping improve this repository. It contains protocol models,
+Idris2 packages, Zig FFI prototypes, language-binding sources, tests, and
+maintenance material. It is **not** a production server distribution, and the
+20 language-named binding directories are an inventory rather than a support
+promise.
 
-guix develop
+## Before you start
 
-# Or using toolbox/distrobox
+1. Read [README.adoc](../README.adoc), [QUICKSTART-DEV.adoc](../QUICKSTART-DEV.adoc),
+   [AI conventions](../docs/AI-CONVENTIONS.adoc), and the package-local README.
+2. Check [READINESS.adoc](../READINESS.adoc) and
+   [PROOF-NEEDS.adoc](../PROOF-NEEDS.adoc) for current evidence limits.
+3. For security reports, follow [SECURITY.adoc](../SECURITY.adoc); do not use a
+   public issue or pull request to disclose a vulnerability.
 
-toolbox create proven-servers-dev
-toolbox enter proven-servers-dev
-# Install dependencies manually
+## Development workflow
 
-# Verify setup
+Use a focused branch and a package-specific change. Before opening a PR:
 
-just check   # or: cargo check / mix compile / etc.
-just test    # Run test suite
-
-### Repository Structure
-
-```text
-proven-servers/
-├── src/ # Source code (Perimeter 1-2)
-├── lib/ # Library code (Perimeter 1-2)
-├── extensions/ # Extensions (Perimeter 2)
-├── plugins/ # Plugins (Perimeter 2)
-├── tools/ # Tooling (Perimeter 2)
-├── docs/ # Documentation (Perimeter 3)
-│   ├── architecture/ # ADRs, specs (Perimeter 2)
-│   └── proposals/ # RFCs (Perimeter 3)
-├── examples/ # Examples (Perimeter 3)
-├── spec/ # Spec tests (Perimeter 3)
-├── tests/ # Test suite (Perimeter 2-3)
-├── .machine_readable/ # ALL machine-readable content (Perimeter 1)
-│   ├── \*.a2ml # State files (STATE, META, ECOSYSTEM, etc.)
-│   ├── bot_directives/ # Bot configs
-│   └── contractiles/ # Policy contracts (k9, dust, lust, must, trust)
-├── .well-known/ # Protocol files (Perimeter 1-3)
-├── .github/ # GitHub config (Perimeter 1)
-│   ├── CONTRIBUTING.md # This file
-│   ├── ISSUE_TEMPLATE/
-│   └── workflows/
-├── CHANGELOG.md
-├── CODE_OF_CONDUCT.md
-├── GOVERNANCE.md
-├── LICENSE
-├── MAINTAINERS.md
-├── README.adoc
-├── SECURITY.md
-├── flake.nix # Nix flake — fallback (Perimeter 1)
-├── guix.scm # Guix package — primary (Perimeter 1)
-└── Justfile # Task runner (Perimeter 1)
+```sh
+just validate
+just test-static
+# When installed, run the applicable compiler checks:
+just build-idris
+just build-zig
+just test-zig
 ```
 
-    ---
+`just test-static` runs source-pattern and inventory heuristics; it is not a
+runtime test, formal proof, ABI-conformance test, or security certification.
+The compiler-backed tasks require Idris2 and Zig. Record exact compiler
+versions and clearly list any checks that could not run. Toolchain versions are
+not yet fully pinned repository-wide.
 
-## How to Contribute
+For changes to an individual component, also follow that package's README and
+manifest. An Idris2 build validates only the definitions in the selected
+`.ipkg`; a Zig test supports only the code paths it executes. Neither alone
+proves that a separate header or language binding conforms.
 
-### Reporting Bugs
+## Change expectations
 
-    **Before reporting**:
-    1. Search existing issues
-    2. Check if it's already fixed in `main`
-    3. Determine which perimeter the bug affects
+* Keep changes small and explain the problem and evidence in the PR.
+* Preserve fail-closed behavior where credentials, key material, or a verified
+  backend is absent. Do not turn an unavailable security operation into a
+  success path.
+* Do not claim bindings are wired/supported until they build, link, and run
+  against the intended native library.
+* Update `.machine_readable/BINDINGS.a2ml`, `READINESS.adoc`, or
+  `PROOF-NEEDS.adoc` only when current evidence justifies the change.
+* Preserve file-level SPDX identifiers and third-party license notices.
+* Keep root `Justfile` synchronized with
+  `.machine_readable/contractiles/Justfile`.
+* Do not build, sign, push, or deploy the container scaffolding; no runnable
+  application target is established.
 
-    **When reporting**:
+There is no repository-wide language formatter or complete multi-language lint
+matrix. `just fmt-check` checks Git whitespace only; do not describe it as code
+formatting.
 
-    Use the [bug report template](.github/ISSUE_TEMPLATE/bug_report.md) and include:
+## Pull requests
 
-    - Clear, descriptive title
-    - Environment details (OS, versions, toolchain)
-    - Steps to reproduce
-    - Expected vs actual behaviour
-    - Logs, screenshots, or minimal reproduction
+Use the repository PR template. Include:
 
-### Suggesting Features
+* a summary and motivation;
+* affected packages and any compatibility impact;
+* exact test/build commands and outcomes, with tool versions;
+* explicit skipped checks and remaining risks;
+* relevant issue or advisory references, when applicable.
 
-    **Before suggesting**:
-    1. Check the [roadmap](ROADMAP.md) if available
-    2. Search existing issues and discussions
-    3. Consider which perimeter the feature belongs to
-
-    **When suggesting**:
-
-    Use the [feature request template](.github/ISSUE_TEMPLATE/feature_request.md) and include:
-
-    - Problem statement (what pain point does this solve?)
-    - Proposed solution
-    - Alternatives considered
-    - Which perimeter this affects
-
-### Your First Contribution
-
-    Look for issues labelled:
-
-    - [`good first issue`](https://github.com/hyperpolymath/proven-servers/labels/good%20first%20issue) — Simple Perimeter 3 tasks
-    - [`help wanted`](https://github.com/hyperpolymath/proven-servers/labels/help%20wanted) — Community help needed
-    - [`documentation`](https://github.com/hyperpolymath/proven-servers/labels/documentation) — Docs improvements
-    - [`perimeter-3`](https://github.com/hyperpolymath/proven-servers/labels/perimeter-3) — Community sandbox scope
-
-    ---
-
-## Development Workflow
-
-### Branch Naming
-
-docs/short-description # Documentation (P3) test/what-added # Test
-additions (P3) feat/short-description # New features (P2)
-fix/issue-number-description # Bug fixes (P2) refactor/what-changed #
-Code improvements (P2) security/what-fixed # Security fixes (P1-2)
-
-
-### Commit Messages
-
-    We follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-type(scope): description
-
-Body: what changed and why.
-
-Footer: issue reference, e.g. Closes #123
-\[optional body\]
-
-\[optional footer\]
+A green source grep or historical audit report is not evidence that modified
+native code builds today. Maintainers review changes before merging.

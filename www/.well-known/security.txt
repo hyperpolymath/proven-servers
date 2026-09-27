@@ -1,9 +1,8 @@
 # SPDX-License-Identifier: MPL-2.0
-# RFC 9116 - security.txt
-# https://securitytxt.org/
+# RFC 9116 security contact for proven-servers
 
 Contact: mailto:j.d.a.jewell@open.ac.uk
-Expires: 2026-12-31T23:59:59.000Z
+Expires: 2027-09-27T23:59:59.000Z
 Preferred-Languages: en
 Canonical: https://github.com/hyperpolymath/proven-servers/.well-known/security.txt
-Policy: https://github.com/hyperpolymath/proven-servers/blob/main/SECURITY.md
+Policy: https://github.com/hyperpolymath/proven-servers/blob/main/SECURITY.adoc

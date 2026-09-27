@@ -94,12 +94,18 @@ let monitor_state_of_tag = function
   | 3 -> Some MonPaused | 4 -> Some Alerting | 5 -> Some Shutdown
   | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_monitor_abi_version : unit -> int = "monitor_abi_version"
-external c_monitor_create_context : unit -> int = "monitor_create_context"
-external c_monitor_destroy_context : int -> unit = "monitor_destroy_context"
-external c_monitor_can_transition : int -> int -> int = "monitor_can_transition"
+let c_monitor_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_monitor_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_monitor_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_monitor_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

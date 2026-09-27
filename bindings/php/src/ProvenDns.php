@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
-// PHP bindings for the proven-dns Zig FFI.
-//
-// Wraps the C-ABI functions for DNS query/response lifecycle,
-// DNSSEC signing and validation, and record management.
+// PHP bindings for the bounded proven-dns message-builder FFI.
+// Accepts only exact 17-byte standard queries with one root-name question;
+// responses are capped at 512 bytes. This is not a general resolver. DNSSEC
+// key loading, signing, and validation fail closed.
 
 declare(strict_types=1);
 
@@ -22,7 +22,7 @@ enum DnsState: int
     case Sent             = 4;
 }
 
-/** DNSSEC states matching Idris2 ABI tags. */
+/** DNSSEC state tags; the cryptographic transitions are unavailable in the FFI. */
 enum DnssecState: int
 {
     case Disabled  = 0;
@@ -42,7 +42,8 @@ enum DnssecAlgorithm: int
 }
 
 /**
- * DNS query/response context wrapping a Zig FFI slot.
+ * Bounded DNS message-builder context wrapping a Zig FFI slot.
+ * Only the exact 17-byte root-question subset is accepted; output is at most 512 bytes.
  */
 final class ProvenDns
 {
@@ -52,17 +53,17 @@ final class ProvenDns
     uint8_t dns_state(int slot);
     uint8_t dns_dnssec_state(int slot);
     uint8_t dns_rcode(int slot);
-    uint32_t dns_answer_count(int slot);
-    uint32_t dns_authority_count(int slot);
-    uint32_t dns_additional_count(int slot);
-    uint16_t dns_query_rtype(int slot);
-    uint16_t dns_query_class(int slot);
-    uint8_t dns_parse_query(int slot, const uint8_t *data, uint32_t len);
+    uint16_t dns_answer_count(int slot);
+    uint16_t dns_authority_count(int slot);
+    uint16_t dns_additional_count(int slot);
+    uint8_t dns_query_rtype(int slot);
+    uint8_t dns_query_class(int slot);
+    uint8_t dns_parse_query(int slot, const uint8_t *data, uint16_t len);
     uint8_t dns_begin_lookup(int slot);
     uint8_t dns_begin_response(int slot);
-    uint8_t dns_add_answer(int slot, uint16_t rtype, uint16_t rclass, uint32_t ttl, const uint8_t *rdata, uint32_t rdata_len);
-    uint8_t dns_add_authority(int slot, uint16_t rtype, uint16_t rclass, uint32_t ttl, const uint8_t *rdata, uint32_t rdata_len);
-    uint8_t dns_add_additional(int slot, uint16_t rtype, uint16_t rclass, uint32_t ttl, const uint8_t *rdata, uint32_t rdata_len);
+    uint8_t dns_add_answer(int slot, uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t *rdata, uint16_t rdata_len);
+    uint8_t dns_add_authority(int slot, uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t *rdata, uint16_t rdata_len);
+    uint8_t dns_add_additional(int slot, uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t *rdata, uint16_t rdata_len);
     uint8_t dns_set_rcode(int slot, uint8_t rcode);
     uint8_t dns_build_response(int slot, uint8_t *buf, uint16_t *out_len);
     uint8_t dns_enable_dnssec(int slot);
@@ -127,6 +128,9 @@ final class ProvenDns
     /** @throws ProvenError */
     public function parseQuery(string $data): void
     {
+        if (strlen($data) !== 17) {
+            throw new \InvalidArgumentException("DNS query must be exactly 17 bytes");
+        }
         ProvenError::checkStatus(self::ffi()->dns_parse_query($this->slot, $data, strlen($data)));
     }
 
@@ -138,18 +142,27 @@ final class ProvenDns
     /** @throws ProvenError */
     public function addAnswer(int $rtype, int $rclass, int $ttl, string $rdata): void
     {
+        if (strlen($rdata) > 256) {
+            throw new \InvalidArgumentException("DNS RDATA must not exceed 256 bytes");
+        }
         ProvenError::checkStatus(self::ffi()->dns_add_answer($this->slot, $rtype, $rclass, $ttl, $rdata, strlen($rdata)));
     }
 
     /** @throws ProvenError */
     public function addAuthority(int $rtype, int $rclass, int $ttl, string $rdata): void
     {
+        if (strlen($rdata) > 256) {
+            throw new \InvalidArgumentException("DNS RDATA must not exceed 256 bytes");
+        }
         ProvenError::checkStatus(self::ffi()->dns_add_authority($this->slot, $rtype, $rclass, $ttl, $rdata, strlen($rdata)));
     }
 
     /** @throws ProvenError */
     public function addAdditional(int $rtype, int $rclass, int $ttl, string $rdata): void
     {
+        if (strlen($rdata) > 256) {
+            throw new \InvalidArgumentException("DNS RDATA must not exceed 256 bytes");
+        }
         ProvenError::checkStatus(self::ffi()->dns_add_additional($this->slot, $rtype, $rclass, $ttl, $rdata, strlen($rdata)));
     }
 
@@ -160,32 +173,36 @@ final class ProvenDns
     }
 
     /**
-     * Build the DNS response wire format.
+     * Build a response for the minimal root-question model; output is capped at 512 bytes.
      *
-     * @param int $maxLen Maximum response length.
+     * @param int $maxLen Output buffer capacity; must be at least 512 bytes.
      * @return string Serialized DNS response bytes.
      * @throws ProvenError
      */
     public function buildResponse(int $maxLen = 512): string
     {
+        if ($maxLen < 512) {
+            throw new \InvalidArgumentException('DNS response buffer must be at least 512 bytes');
+        }
         $buf = \FFI::new("uint8_t[{$maxLen}]");
         $outLen = \FFI::new('uint16_t');
         ProvenError::checkStatus(self::ffi()->dns_build_response($this->slot, $buf, \FFI::addr($outLen)));
         return \FFI::string($buf, $outLen->cdata);
     }
 
-    /** @throws ProvenError */
+    /** Enable mode only; response construction then rejects without a signer. @throws ProvenError */
     public function enableDnssec(): void { ProvenError::checkStatus(self::ffi()->dns_enable_dnssec($this->slot)); }
 
-    /** @throws ProvenError */
+    /** Always fails closed: the ABI accepts no private-key material. @throws ProvenError */
     public function loadDnssecKey(DnssecAlgorithm $algo): void
     {
         ProvenError::checkStatus(self::ffi()->dns_load_dnssec_key($this->slot, $algo->value));
     }
 
-    /** @throws ProvenError */
+    /** Always fails closed because no DNSSEC signing backend exists. @throws ProvenError */
     public function signResponse(): void { ProvenError::checkStatus(self::ffi()->dns_sign_response($this->slot)); }
 
+    /** Always returns false because no DNSSEC validator exists. */
     public function validateDnssec(): bool { return self::ffi()->dns_validate_dnssec($this->slot) === 0; }
 
     public static function abiVersion(): int { return self::ffi()->dns_abi_version(); }

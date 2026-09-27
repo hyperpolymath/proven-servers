@@ -85,13 +85,20 @@ let session_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some Bound | 2 -> Some Serving
   | 3 -> Some Observing | 4 -> Some Shutdown | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_coap_abi_version : unit -> int = "coap_abi_version"
-external c_coap_create_context : unit -> int = "coap_create_context"
-external c_coap_destroy_context : int -> unit = "coap_destroy_context"
-external c_coap_state : int -> int = "coap_state"
-external c_coap_can_transition : int -> int -> int = "coap_can_transition"
+let c_coap_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_coap_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_coap_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_coap_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_coap_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

@@ -1,70 +1,74 @@
-== Quickstart
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= proven-servers — Quick Start
+:toc:
+:sectnums:
 
-Get up and running in 60 seconds.
+[IMPORTANT]
+====
+`proven-servers` is a research/prototype source monorepo of protocol models,
+FFI experiments, and language-binding scaffolds. It is not a production server
+distribution. Directory counts, source scans, and package builds do not prove
+protocol conformance, full ABI equivalence, or deployment readiness.
+====
 
-=== Prerequisites
+== Prerequisites
 
-* https://git-scm.com/[Git] 2.40+
-* https://github.com/casey/just[just] (command runner)
-* Your language toolchain (see `+Justfile+` for details)
+* Git 2.40 or newer.
+* https://github.com/casey/just[Just] for the repository task entry point.
+* Idris2 and Zig for the compiler-backed package checks. Individual package
+  manifests and `build.zig` files may require different toolchain versions.
+  Check the package documentation and manifests. The root `mise.toml` pins
+  Just only; Idris2 and Zig versions are not yet reproducibly pinned.
 
-=== From Template (New Project)
-
-[source,bash]
-----
-git clone https://github.com/hyperpolymath/rsr-template-repo my-project
-cd my-project
-rm -rf .git && git init -b main
-just init       # interactive placeholder replacement
-----
-
-=== Clone and Setup (Existing Project)
+== Clone and inspect
 
 [source,bash]
 ----
 git clone https://github.com/hyperpolymath/proven-servers.git
 cd proven-servers
+just --list
+just info
 just deps
 ----
 
-=== Build and Test
+`just deps` is an availability check; it does not install compilers. The
+current assessment workspace lacked Just, Idris2, and Zig, so no compiler-backed
+result is claimed here.
+
+== Build and test
 
 [source,bash]
 ----
-just build
-just test
+just build-idris    # Build all discovered maintained Idris2 package manifests
+just build-zig      # Build all discovered Zig manifests and the root FFI example
+just test-zig       # Run each discovered Zig test target
+just test-static    # Source-pattern and binding-policy smoke checks only
+just test           # Aggregate compiler, Zig test, and static checks
+just e2e            # Bounded selected-package sweep; not full E2E/conformance
 ----
 
-=== Verify Everything Works
+The aggregate targets fail when required tools are missing. A successful
+package build/test establishes only the behavior exercised by that package and
+test suite. Read `README.adoc`, `READINESS.adoc`, `PROOF-NEEDS.adoc`, and the
+relevant package README before interpreting results.
+
+== Project-specific validation
 
 [source,bash]
 ----
-just check
+just validate-rsr   # Local metadata paths and synchronized Justfile snapshot
+just fmt-check      # Git whitespace checks; not a source formatter
+just lint           # Shell syntax and binding-policy checks
 ----
 
-=== Project Structure
+`just validate-rsr` is a bounded repository-shape check, not an RSR
+certification. Static smoke checks are not formal proof, executable behavior,
+security assurance, ABI-wide equivalence, or protocol conformance.
 
-....
-src/         # Source code
-tests/       # Test suite
-benches/     # Benchmarks
-docs/        # Documentation
-.github/     # CI/CD workflows
-....
+== Contribution guidance
 
-=== What Next?
-
-* Browse the link:.[docs/] for architecture and conventions
-* Run `+just --list+` to see all available commands
-* Read link:../.github/CONTRIBUTING.md[CONTRIBUTING.md] when you are ready to
-contribute
-
-=== Troubleshooting
-
-If `+just deps+` fails, ensure your toolchain version matches the
-project requirements listed in the `+Justfile+` or
-`+.machine_readable/ECOSYSTEM.a2ml+`.
-
-Open a
-https://github.com/hyperpolymath/proven-servers/discussions[Discussion]
-if you get stuck.
+Read `.github/CONTRIBUTING.md` and `QUICKSTART-DEV.adoc` before editing. Do not
+run template bootstrap or global placeholder replacement: this repository has
+no `just init` task. Container, cloud deployment, release, and Pages publishing
+workflows are not configured as validated product deliverables.

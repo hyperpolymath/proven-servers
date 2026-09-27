@@ -1,142 +1,78 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= proven-servers Roadmap
-:author: Jonathan D.A. Jewell
-:revdate: 2026-04-11
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= proven-servers — Verification Roadmap
+:revdate: 2026-09-27
+:toc:
+:sectnums:
 
-== Current State
+[IMPORTANT]
+====
+This is an evidence-first worklist, not a release schedule or feature-completion
+claim. The repository is a research/prototype source monorepo. No component
+counts or percentages below imply readiness.
+====
 
-A catalog of formally verified server components in Idris2 with dependent types.
-94 modules proven (in core/, protocols/, connectors/), 19 modules in not-proven/.
-Total: 113 modules. Completion: 83%.
+== Current position
 
-Proven breakdown:
+The current checkout has not been compiler-verified in the assessment
+workspace: Just, Idris2, and Zig were unavailable. Package-directory counts in
+`README.adoc` and `TOPOLOGY.adoc` are inventory only. Historical version labels,
+completion percentages, ABI-pair counts, and deployment milestones from older
+roadmaps are withdrawn as current status until reproduced.
 
-* **84 protocol skeletons** in protocols/ (proven, type-checked)
-* **5 core primitives** in core/ (proven: audit, cli, compose, frame, fsm)
-* **5 connector interfaces** in connectors/ (proven: cacheconn, dbconn, queueconn, resolverconn, storageconn)
+== Must — establish reproducible evidence
 
-ABI-FFI status:
+. Run `just build-idris`, `just build-zig`, and `just test-zig` on a named
+  revision with recorded package-specific toolchain versions. Triage failures
+  without suppressing them; define a reproducible supported toolchain matrix.
+. Run the source-only checks (`just test-static`) and report them separately
+  from compiler-backed tests and formal proof.
+. Exercise package-specific runtime/error-path tests for behavior that is
+  currently represented only by source declarations or heuristics.
+. Verify generated/hand-maintained headers, symbols, layouts, ownership rules,
+  and calling conventions against their source packages; add a checked
+  generation or conformance path before claiming ABI-wide parity.
+. Compile, link, and execute each language binding before describing it as
+  wired or supported; preserve explicit unavailable states for missing JNI,
+  NIF, OCaml stubs, or other bridges.
+. Keep cryptographic, authentication, and other security-sensitive paths
+  fail-closed until backed by reviewed implementations and vectors.
 
-* 6/6 connectors: complete ABI-FFI pairs (Idris2 proofs, C headers, Zig FFI, integration tests)
-* 8/8 core primitives: complete ABI-FFI pairs
-* 26 protocols: full ABI-FFI pairs
-* 58 protocols: type definitions only (skeleton, no ABI-FFI yet)
-* 20 language bindings (thin wrappers over the C ABI): Ada, C++, C#, Dart, Elixir, Gleam, Go, Haskell, Java, JavaScript, Julia, Kotlin, Lua, OCaml, PHP, Python, ReScript, Ruby, Rust, Swift
+== Should — improve test quality
 
-19 not-proven modules: authconn, bgp, config, container, dbserver, deception, dhcp,
-firewall, httpd, nfs, ntp, nts, socket, ssh-bastion, syslog, tftp, tls,
-typed-frame-router, wire.
+* Add independent protocol fixtures and negative/malformed-input cases to
+  packages with maintained executable targets.
+* Add wire-level interoperability tests only for protocols whose concrete
+  implementation and test peer exist.
+* Add concurrency, resource-limit, and fuzz tests where a runnable target and
+  safe harness are available. No fuzz harness is currently configured.
+* Make test output distinguish missing package targets, skipped tools, source
+  heuristics, and executed tests.
+* Resolve mutable CI action references and review workflow permissions; an
+  action-lock inventory is not a runtime SHA-pin enforcement mechanism.
 
-== v0.9.0 -- Core ABI-FFI (Complete)
+== Could — only after a runnable baseline
 
-* [x] 6/6 connector ABI-FFI pairs (authconn, dbconn, cacheconn, queueconn, resolverconn, storageconn)
-* [x] 8/8 core primitive ABI-FFI pairs (socket, frame, fsm, wire, compose, tls, config, audit)
-* [x] Generated C headers for all ABI-FFI pairs
-* [x] Zig FFI implementations with integration tests
-* [x] 20-language bindings (Ada, C++, C#, Dart, Elixir, Gleam, Go, Haskell, Java, JavaScript, Julia, Kotlin, Lua, OCaml, PHP, Python, ReScript, Ruby, Rust, Swift)
+* Add a reproducible benchmark target with documented inputs and measurements;
+  the presence of source under `bindings/rust/benches/` is not benchmark
+  evidence.
+* Develop a package-specific service only if a concrete network runtime,
+  authentication model, tests, and maintainers are available.
+* Reconsider packaging or deployment only after a reproducible artifact build,
+  runtime health/error tests, security review, and explicit maintainer approval.
 
-== v0.10.0 -- Protocol ABI-FFI Expansion (In Progress)
+== Explicitly not scheduled
 
-* [x] 26/84 protocol skeletons with full ABI-FFI pairs
-* [ ] Remaining 58 protocols: add Layout.idr, Transitions.idr, Foreign.idr, C headers, Zig FFI
-* [ ] CI/CD integration for ABI-FFI validation
+No release version, production rollout, container publication, Pages site,
+Hypatia-to-proof feedback loop, NESY/Fly.io deployment, or external
+Echidna/VerisimDB/Lithoglyph/Groove integration is committed by this roadmap.
+Those names appear in prototype or historical source; they are not current
+operational dependencies or verified project capabilities.
 
-== v0.11.0 -- Prove Remaining 19 Modules
+== Status updates
 
-* [ ] proven-authconn (promote from not-proven/)
-* [ ] proven-bgp
-* [ ] proven-config
-* [ ] proven-container
-* [ ] proven-dbserver
-* [ ] proven-deception
-* [ ] proven-dhcp
-* [ ] proven-firewall
-* [ ] proven-httpd
-* [ ] proven-nfs
-* [ ] proven-ntp
-* [ ] proven-nts
-* [ ] proven-socket
-* [ ] proven-ssh-bastion
-* [ ] proven-syslog
-* [ ] proven-tftp
-* [ ] proven-tls
-* [ ] proven-typed-frame-router
-* [ ] proven-wire
-
-== v1.0.0 -- Stable Release
-
-* [ ] All 113 modules proven (0 in not-proven/)
-* [ ] All protocols with full ABI-FFI pairs
-* [ ] Comprehensive integration test suite
-* [ ] No believe_me, assert_total, or unsafe patterns anywhere
-* [ ] OpenSSF badge
-
-== v1.1.0 -- HTTP Capability Gateway + Consent Layer
-
-Integrate the estate's HTTP-layer tooling as first-class proven-servers consumers.
-Both repos exist and have ABI-FFI skeletons; what is missing is wiring into the
-proven-httpd + proven-typed-frame-router proof obligations and the nesy-solver-api
-deployment stack.
-
-* [ ] **proven-httpd** — promote from not-proven/; Idris2 capability-typed HTTP handler proofs
-* [ ] **proven-typed-frame-router** — promote from not-proven/; typed-frame dispatch proof obligations
-* [ ] **hybrid-automation-router integration** — wire har-core event types through proven-queueconn
-  dispatch; verified routing decisions backed by proven-fsm states
-* [ ] **conative-gating (consent-aware HTTP)** — wrap proven-httpd with conative-gating's
-  consent-checking middleware; dependent-type proof that a request cannot be forwarded
-  without a resolved consent record
-* [ ] **Invariant path tool** — expose proven-typed-frame-router as an invariant-path
-  checker for the nesy-solver-api: each `/prove` request traverses a verified route
-  that cannot skip consent, audit, or trust-level gates
-* [ ] ABI-FFI pairs for proven-httpd + proven-typed-frame-router
-* [ ] Integration tests: consent-denied → 403, missing trust-level → 403, valid path → 200
-
-== v1.2.0 -- Hypatia + CI Intelligence
-
-* [ ] **Hypatia CI scan integration** — run `hypatia scan` against all proven-servers
-  modules in CI; block merge if trust-pipeline invariants regress
-* [ ] **Hypatia → proven-servers feedback loop** — Hypatia findings routed back as
-  Idris2 proof obligations (currently listed as "potential-consumer" in ECOSYSTEM.a2ml)
-* [ ] **Automated ABI compliance check** — Hypatia rule verifying Idris2 ABI → C header
-  → Zig FFI consistency for all 84 protocol skeletons
-* [ ] Wire Hypatia scan results into STATE.a2ml via the 6A2 innervation pipeline
-
-== v1.3.0 -- VeriSimDB + Lithoglyph Aqueduct
-
-The aqueduct pipeline spec already exists at
-`verisimdb/.machine_readable/integrations/aqueduct.a2ml`.
-What is missing is the actual implementation of each stage.
-
-* [ ] **Stage 1 — sanitise**: strip PII/secrets from raw proof attempt records before
-  they leave the nesy-solver-api boundary
-* [ ] **Stage 2 — structure**: convert `VerisimAttempt` JSON into `ConvStruct` A2ML
-* [ ] **Stage 3 — lithoglyph_insert**: inscribe structured attempt as a permanent narrative
-  artefact in Lithoglyph; `LithoInscription` type (permanent, side-effect)
-* [ ] **Stage 4 — verisim_ingest**: derive counterfactual record in VeriSimDB from the
-  inscription (closes the loop: every proved obligation has both a graph inscription
-  and a counterfactual drift record)
-* [ ] Linear-type enforcement: no attempt record can skip inscription; no inscription
-  can be consumed twice (Ephapax-style affine token)
-* [ ] Wire aqueduct as a post-handler in nesy-solver-api `/prove` response path
-
-== v1.4.0 -- ReScript TEA + Cadre Router
-
-* [ ] **cadre-tea-router** (`developer-ecosystem/rescript-ecosystem/cadre-tea-router`)
-  — wire as the routing layer for the nesy-solver playground UI; replaces ad-hoc
-  ReScript component wiring with a typed TEA message bus
-* [ ] **ReScript TEA pattern** — refactor echidna's 33 ReScript UI components to route
-  all messages through the cadre-tea-router; no direct DOM side-effects outside TEA
-  update loop
-* [ ] Type-safe message dispatch: each user action (submit proof, select prover, view
-  history) modelled as a variant in the TEA `Msg` type
-* [ ] Cadre router integration test: invalid message shape → compile error, not runtime crash
-
-== Future
-
-* Additional protocol skeletons as new protocols emerge
-* Cross-protocol composition examples (e.g. OIDC proxy = proxy + authserver)
-* Performance benchmarks for FFI call overhead
-* Stapeln container deployment for verified server bundles
-* Groove protocol integration: all inter-service calls (nesy-solver-api ↔ echidna ↔
-  verisim-api) routed through Groove rather than direct HTTP
+Update this roadmap only when work is actually reprioritized or evidence is
+reproduced. Record exact revision, toolchain versions, commands, and outcomes
+in `READINESS.adoc`, `PROOF-NEEDS.adoc`, and
+`.machine_readable/6a2/STATE.a2ml`. Never replace unknown status with a guessed
+percentage.

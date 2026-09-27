@@ -74,13 +74,20 @@ let session_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some SsDown | 2 -> Some Negotiating
   | 3 -> Some Established | 4 -> Some Teardown | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_bfd_abi_version : unit -> int = "bfd_abi_version"
-external c_bfd_create_context : unit -> int = "bfd_create_context"
-external c_bfd_destroy_context : int -> unit = "bfd_destroy_context"
-external c_bfd_state : int -> int = "bfd_state"
-external c_bfd_can_transition : int -> int -> int = "bfd_can_transition"
+let c_bfd_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_bfd_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_bfd_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_bfd_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_bfd_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

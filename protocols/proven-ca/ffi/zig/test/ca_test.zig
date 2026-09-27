@@ -139,84 +139,58 @@ test "issue cert rejects invalid sig algo" {
 }
 
 // =========================================================================
-// Certificate lifecycle: full cycle
+// Certificate lifecycle fail-closed behavior
 // =========================================================================
 
-test "full lifecycle: Pending -> Active -> Suspended -> Active -> Revoked" {
+test "pending certificate is never activated without a signing backend" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
-    const cert = ca.ca_issue_cert(slot, 2, 4, 5); // EndEntity, Ed25519, PureEd25519
+    const cert = ca.ca_issue_cert(slot, 2, 4, 5); // metadata only
     try std.testing.expect(cert >= 0);
 
-    // Sign: Pending -> Active
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_sign_cert(slot, cert));
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_cert_state(slot, cert)); // Active
-
-    // Suspend: Active -> Suspended
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_suspend_cert(slot, cert));
-    try std.testing.expectEqual(@as(u8, 4), ca.ca_cert_state(slot, cert)); // Suspended
-
-    // Reinstate: Suspended -> Active
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_reinstate_cert(slot, cert));
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_cert_state(slot, cert)); // Active
-
-    // Revoke: Active -> Revoked
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_revoke_cert(slot, cert, 1)); // KeyCompromise
-    try std.testing.expectEqual(@as(u8, 2), ca.ca_cert_state(slot, cert)); // Revoked
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_cert_state(slot, cert)); // remains Pending
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_suspend_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_reinstate_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_revoke_cert(slot, cert, 1));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_expire_cert(slot, cert));
+    try std.testing.expectEqual(@as(c_int, -1), ca.ca_renew_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_cert_state(slot, cert));
 }
 
-test "expire: Active -> Expired" {
+test "expire rejects an unsigned pending metadata record" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
-    const cert = ca.ca_issue_cert(slot, 0, 0, 0); // Root, RSA2048, SHA256WithRSA
-    _ = ca.ca_sign_cert(slot, cert);
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_expire_cert(slot, cert));
-    try std.testing.expectEqual(@as(u8, 3), ca.ca_cert_state(slot, cert)); // Expired
+    const cert = ca.ca_issue_cert(slot, 0, 0, 0);
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_expire_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_cert_state(slot, cert)); // Pending
 }
 
-test "renew: Active -> new Pending cert" {
+test "renew rejects a certificate that was never signed" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
-    const cert = ca.ca_issue_cert(slot, 1, 2, 3); // Intermediate, ECDSA_P256, SHA256WithECDSA
-    _ = ca.ca_sign_cert(slot, cert);
-    const new_cert = ca.ca_renew_cert(slot, cert);
-    try std.testing.expect(new_cert >= 0);
-    try std.testing.expect(new_cert != cert);
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_cert_state(slot, new_cert)); // Pending
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_cert_type(slot, new_cert)); // Same type
+    const cert = ca.ca_issue_cert(slot, 1, 2, 3);
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
+    try std.testing.expectEqual(@as(c_int, -1), ca.ca_renew_cert(slot, cert));
+    try std.testing.expectEqual(@as(c_int, 1), ca.ca_cert_count(slot));
 }
 
 // =========================================================================
 // Invalid transitions (impossibility proofs from Transitions.idr)
 // =========================================================================
 
-test "revoked is terminal: cannot sign, suspend, expire, or renew" {
+test "unsigned pending metadata cannot enter terminal lifecycle states" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const cert = ca.ca_issue_cert(slot, 2, 0, 0);
-    _ = ca.ca_sign_cert(slot, cert);
-    _ = ca.ca_revoke_cert(slot, cert, 0);
-    // All transitions from Revoked must fail
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_suspend_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_revoke_cert(slot, cert, 0));
     try std.testing.expectEqual(@as(u8, 1), ca.ca_expire_cert(slot, cert));
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_reinstate_cert(slot, cert));
-    try std.testing.expectEqual(@as(c_int, -1), ca.ca_renew_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_cert_state(slot, cert)); // Pending
 }
 
-test "expired is terminal: cannot sign, suspend, revoke, or renew" {
-    const slot = ca.ca_create();
-    defer ca.ca_destroy(slot);
-    const cert = ca.ca_issue_cert(slot, 2, 0, 0);
-    _ = ca.ca_sign_cert(slot, cert);
-    _ = ca.ca_expire_cert(slot, cert);
-    // All transitions from Expired must fail
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_suspend_cert(slot, cert));
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_revoke_cert(slot, cert, 0));
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_reinstate_cert(slot, cert));
-    try std.testing.expectEqual(@as(c_int, -1), ca.ca_renew_cert(slot, cert));
-}
+
 
 test "cannot suspend from Pending" {
     const slot = ca.ca_create();
@@ -232,29 +206,27 @@ test "cannot expire from Pending" {
     try std.testing.expectEqual(@as(u8, 1), ca.ca_expire_cert(slot, cert));
 }
 
-test "cannot reinstate from Active" {
+test "cannot reinstate from Pending" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const cert = ca.ca_issue_cert(slot, 2, 0, 0);
-    _ = ca.ca_sign_cert(slot, cert);
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
     try std.testing.expectEqual(@as(u8, 1), ca.ca_reinstate_cert(slot, cert));
 }
 
-test "revoke from Suspended works" {
+test "revoke is unavailable until a certificate is cryptographically active" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const cert = ca.ca_issue_cert(slot, 2, 0, 0);
-    _ = ca.ca_sign_cert(slot, cert);
-    _ = ca.ca_suspend_cert(slot, cert);
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_revoke_cert(slot, cert, 2)); // CACompromise
-    try std.testing.expectEqual(@as(u8, 2), ca.ca_cert_state(slot, cert)); // Revoked
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_revoke_cert(slot, cert, 2));
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_cert_state(slot, cert)); // Pending
 }
 
 test "revoke rejects invalid reason tag" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const cert = ca.ca_issue_cert(slot, 2, 0, 0);
-    _ = ca.ca_sign_cert(slot, cert);
     try std.testing.expectEqual(@as(u8, 1), ca.ca_revoke_cert(slot, cert, 99));
 }
 
@@ -316,25 +288,14 @@ test "ca_can_issue matches Transitions.idr CanIssue" {
 // Chain validation
 // =========================================================================
 
-test "self-signed root chain is valid" {
+test "chain validation rejects metadata without DER and signatures" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
-    const root = ca.ca_issue_cert(slot, 0, 1, 1); // Root
-    _ = ca.ca_sign_cert(slot, root);
-    // Root with no issuer (-1) is self-signed and valid
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_validate_chain(slot, root));
-}
-
-test "intermediate issued by root chain is valid" {
-    const slot = ca.ca_create();
-    defer ca.ca_destroy(slot);
-    const root = ca.ca_issue_cert(slot, 0, 1, 1); // Root
-    _ = ca.ca_sign_cert(slot, root);
-    const inter = ca.ca_issue_cert(slot, 1, 2, 3); // Intermediate
-    // Set issuer
+    const root = ca.ca_issue_cert(slot, 0, 1, 1);
+    const inter = ca.ca_issue_cert(slot, 1, 2, 3);
     try std.testing.expectEqual(@as(u8, 0), ca.ca_set_issuer(slot, inter, root));
-    _ = ca.ca_sign_cert(slot, inter);
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_validate_chain(slot, inter));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_validate_chain(slot, root));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_validate_chain(slot, inter));
 }
 
 test "set_issuer rejects invalid hierarchy" {
@@ -363,11 +324,11 @@ test "initial CRL status is pending" {
     try std.testing.expectEqual(@as(u8, 2), ca.ca_crl_status(slot)); // crl_pending
 }
 
-test "update_crl transitions to current" {
+test "update_crl fails closed without CRL generation and signing" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_update_crl(slot));
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_crl_status(slot)); // current
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_update_crl(slot));
+    try std.testing.expectEqual(@as(u8, 3), ca.ca_crl_status(slot)); // crl_error
 }
 
 test "crl_status on invalid slot returns error" {
@@ -384,30 +345,26 @@ test "initial OCSP status is unavailable" {
     try std.testing.expectEqual(@as(u8, 3), ca.ca_ocsp_status(slot)); // unavailable
 }
 
-test "ocsp_query returns good for active cert" {
+test "OCSP is unavailable even for a pending certificate" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const cert = ca.ca_issue_cert(slot, 2, 4, 5);
-    _ = ca.ca_sign_cert(slot, cert);
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_ocsp_query(slot, cert)); // good
-    // OCSP status should now be 'good' (responder is serving)
-    try std.testing.expectEqual(@as(u8, 0), ca.ca_ocsp_status(slot));
+    try std.testing.expectEqual(@as(u8, 3), ca.ca_ocsp_query(slot, cert)); // unavailable
+    try std.testing.expectEqual(@as(u8, 3), ca.ca_ocsp_status(slot));
 }
 
-test "ocsp_query returns revoked for revoked cert" {
+test "OCSP query for an invalid certificate is unavailable" {
+    const slot = ca.ca_create();
+    defer ca.ca_destroy(slot);
+    try std.testing.expectEqual(@as(u8, 3), ca.ca_ocsp_query(slot, 999));
+    try std.testing.expectEqual(@as(u8, 3), ca.ca_ocsp_status(slot));
+}
+
+test "OCSP does not report an unsigned pending certificate as good" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const cert = ca.ca_issue_cert(slot, 2, 0, 0);
-    _ = ca.ca_sign_cert(slot, cert);
-    _ = ca.ca_revoke_cert(slot, cert, 0);
-    try std.testing.expectEqual(@as(u8, 1), ca.ca_ocsp_query(slot, cert)); // revoked
-}
-
-test "ocsp_query returns unknown for pending cert" {
-    const slot = ca.ca_create();
-    defer ca.ca_destroy(slot);
-    const cert = ca.ca_issue_cert(slot, 2, 0, 0);
-    try std.testing.expectEqual(@as(u8, 2), ca.ca_ocsp_query(slot, cert)); // unknown
+    try std.testing.expectEqual(@as(u8, 3), ca.ca_ocsp_query(slot, cert)); // unavailable
 }
 
 test "ocsp_query on invalid slot returns unavailable" {
@@ -521,15 +478,15 @@ test "next_serial is always greater than last issued serial" {
     try std.testing.expect(next_after > serial);
 }
 
-test "renewed cert gets new serial" {
+test "renewal does not allocate a new certificate before signing is available" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const cert = ca.ca_issue_cert(slot, 1, 2, 3);
-    _ = ca.ca_sign_cert(slot, cert);
     const old_serial = ca.ca_cert_serial(slot, cert);
-    const new_cert = ca.ca_renew_cert(slot, cert);
-    const new_serial = ca.ca_cert_serial(slot, new_cert);
-    try std.testing.expect(new_serial > old_serial);
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
+    try std.testing.expectEqual(@as(c_int, -1), ca.ca_renew_cert(slot, cert));
+    try std.testing.expectEqual(@as(c_int, 1), ca.ca_cert_count(slot));
+    try std.testing.expectEqual(old_serial, ca.ca_cert_serial(slot, cert));
 }
 
 test "serial query safe on invalid slot" {
@@ -567,7 +524,6 @@ test "validate_path_length: child < parent is valid" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const root = ca.ca_issue_cert(slot, 0, 0, 0);
-    _ = ca.ca_sign_cert(slot, root);
     _ = ca.ca_set_path_length(slot, root, 2);
     const inter = ca.ca_issue_cert(slot, 1, 0, 0);
     _ = ca.ca_set_issuer(slot, inter, root);
@@ -579,7 +535,6 @@ test "validate_path_length: child >= parent is invalid" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const root = ca.ca_issue_cert(slot, 0, 0, 0);
-    _ = ca.ca_sign_cert(slot, root);
     _ = ca.ca_set_path_length(slot, root, 1);
     const inter = ca.ca_issue_cert(slot, 1, 0, 0);
     _ = ca.ca_set_issuer(slot, inter, root);
@@ -591,7 +546,6 @@ test "validate_path_length: zero blocks further intermediates" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const root = ca.ca_issue_cert(slot, 0, 0, 0);
-    _ = ca.ca_sign_cert(slot, root);
     _ = ca.ca_set_path_length(slot, root, 0);
     const inter = ca.ca_issue_cert(slot, 1, 0, 0);
     _ = ca.ca_set_issuer(slot, inter, root);
@@ -692,27 +646,23 @@ test "key_usage query safe on invalid slot" {
 }
 
 // =========================================================================
-// Revocation irreversibility (FFI enforcement)
+// Fail-closed certificate signing and revocation
 // =========================================================================
 
-test "revoked cert cannot be re-signed (irreversible)" {
+test "certificate signing failure leaves state Pending across retries" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const cert = ca.ca_issue_cert(slot, 2, 0, 0);
-    _ = ca.ca_sign_cert(slot, cert);
-    _ = ca.ca_revoke_cert(slot, cert, 1);
-    // Attempt to sign again must fail
     try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
-    // State must remain Revoked
-    try std.testing.expectEqual(@as(u8, 2), ca.ca_cert_state(slot, cert));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_sign_cert(slot, cert));
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_cert_state(slot, cert)); // Pending
 }
 
-test "double revocation is idempotent rejection" {
+test "pending metadata cannot be revoked, including on repeated attempts" {
     const slot = ca.ca_create();
     defer ca.ca_destroy(slot);
     const cert = ca.ca_issue_cert(slot, 2, 0, 0);
-    _ = ca.ca_sign_cert(slot, cert);
-    _ = ca.ca_revoke_cert(slot, cert, 0);
-    // Second revocation attempt fails (already terminal)
     try std.testing.expectEqual(@as(u8, 1), ca.ca_revoke_cert(slot, cert, 0));
+    try std.testing.expectEqual(@as(u8, 1), ca.ca_revoke_cert(slot, cert, 0));
+    try std.testing.expectEqual(@as(u8, 0), ca.ca_cert_state(slot, cert));
 }

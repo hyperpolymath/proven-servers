@@ -85,13 +85,20 @@ let gateway_error_of_tag = function
   | 3 -> Some BadRequest | 4 -> Some ServiceUnavailable
   | 5 -> Some CircuitOpen | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_apiserver_abi_version : unit -> int = "apiserver_abi_version"
-external c_apiserver_create_context : unit -> int = "apiserver_create_context"
-external c_apiserver_destroy_context : int -> unit = "apiserver_destroy_context"
-external c_apiserver_state : int -> int = "apiserver_state"
-external c_apiserver_can_transition : int -> int -> int = "apiserver_can_transition"
+let c_apiserver_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_apiserver_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_apiserver_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_apiserver_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_apiserver_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

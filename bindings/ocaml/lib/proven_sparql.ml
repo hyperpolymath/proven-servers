@@ -61,12 +61,18 @@ let sparql_error_type_of_tag = function
   | 2 -> Some Results_too_large | 3 -> Some Unknown_graph
   | 4 -> Some Access_denied | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_sparql_abi_version : unit -> int = "sparql_abi_version"
-external c_sparql_create_context : unit -> int = "sparql_create_context"
-external c_sparql_destroy_context : int -> unit = "sparql_destroy_context"
-external c_sparql_can_transition : int -> int -> int = "sparql_can_transition"
+let c_sparql_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_sparql_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_sparql_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_sparql_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

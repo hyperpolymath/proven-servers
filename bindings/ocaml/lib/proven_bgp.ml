@@ -142,13 +142,20 @@ let path_attr_type_of_tag = function
   | 3 -> Some Med | 4 -> Some LocalPref | 5 -> Some AtomicAggr
   | 6 -> Some Aggregator | 7 -> Some Unknown | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_bgp_abi_version : unit -> int = "bgp_abi_version"
-external c_bgp_create_context : unit -> int = "bgp_create_context"
-external c_bgp_destroy_context : int -> unit = "bgp_destroy_context"
-external c_bgp_state : int -> int = "bgp_state"
-external c_bgp_can_transition : int -> int -> int = "bgp_can_transition"
+let c_bgp_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_bgp_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_bgp_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_bgp_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_bgp_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

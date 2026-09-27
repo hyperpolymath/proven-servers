@@ -1,130 +1,82 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// Template: QUICKSTART-MAINTAINER.adoc — packaging, deploying, and maintaining
-// Replace proven-servers, {{PACKAGE_NAME}}, {{DEPS}} with actuals
-= proven-servers — Quick Start for Platform Maintainers
+= proven-servers — Maintainer Quick Start
 :toc:
-:toclevels: 2
+:sectnums:
 
-== Overview
+[IMPORTANT]
+====
+This repository is a research/prototype source monorepo. It has no configured
+release artifact, system package, production container image, or validated
+network-service deployment. This guide is for maintaining source and evidence,
+not for packaging or deploying a server.
+====
 
-This guide covers packaging, deploying, and maintaining proven-servers for
-distribution on your platform.
-
-== Runtime Dependencies
-
-{{DEPS}}
-
-== Build from Source
-
-[source,bash]
-----
-git clone https://github.com/hyperpolymath/proven-servers.git
-cd proven-servers
-just build-release
-----
-
-Output: `{{BUILD_OUTPUT_PATH}}`
-
-== Packaging
-
-=== Guix
+== Establish current state
 
 [source,bash]
 ----
-guix build -f build/guix.scm
+git status --short
+git log -1 --oneline
+just info
+just deps
 ----
 
-=== Nix
+`just deps` reports whether Just, Idris2, and Zig are available. It does not
+install them. `mise.toml` pins Just only; Idris2 and Zig are not pinned. Inspect each
+package manifest and build file before selecting compiler versions.
+
+== Verification sequence
 
 [source,bash]
 ----
-nix build
+just fmt-check
+just lint
+just test-static
+just build-idris
+just build-zig
+just test-zig
+just test
+just validate-rsr
 ----
 
-=== Container (Stapeln)
+The compiler-backed commands fail if required tools are absent. `test-static`
+contains source-pattern/inventory checks only. `validate-rsr` checks selected
+metadata paths and the synchronized Justfile snapshot; it is not a full RSR
+certification. Record the commit, tool versions, exact commands, and results.
 
-[source,bash]
-----
-just stapeln-export    # Generates Containerfile
-podman build -t proven-servers .
-----
+For focused work, run the package-specific `.ipkg` or `zig build` test target
+and read its README. A package build does not establish external protocol
+conformance, repository-wide ABI equivalence, production suitability, or
+formal correctness beyond the checked propositions.
 
-=== Manual Package
+== Evidence and change review
 
-[source,bash]
-----
-just install --prefix=/usr/local
-----
+. Read `README.adoc`, `READINESS.adoc`, `PROOF-NEEDS.adoc`, and
+  `.machine_readable/6a2/STATE.a2ml`.
+. Inspect the implementation and test coverage; treat old audit reports as
+  historical evidence only.
+. Keep binding availability, proof status, cryptographic claims, and protocol
+  support aligned with current executable evidence.
+. Do not modify credentials or run package installation, network deployment,
+  release, container, or firewall commands as part of a source review.
+. In pull requests, state what ran, what did not run, the relevant toolchain
+  versions, and what remains unverified.
 
-Files installed:
+== Disabled operations
 
-[cols="1,2"]
-|===
-| Path | Contents
+There is no `just setup`, `just install`, or `just build-release` success path.
+`just doctor` only reports local tool availability and Git state; it does not
+repair or install anything. `just assail` requires the optional external
+`panic-attack` scanner. `setup.sh` is a non-mutating information helper.
+Release and Pages publishing workflows have been removed; container and cloud
+deployment are not supported deliverables. Do not reintroduce these operations
+until a package-specific artifact and reproducible runtime test plan have been
+reviewed.
 
-| `$PREFIX/bin/`
-| Executables
+== Handoff
 
-| `$PREFIX/share/{{PACKAGE_NAME}}/`
-| Data files, assets
-
-| `$PREFIX/share/doc/{{PACKAGE_NAME}}/`
-| Documentation
-
-| `$PREFIX/share/applications/`
-| .desktop file (Linux, if GUI)
-
-| `$PREFIX/share/man/man1/`
-| Man pages
-|===
-
-== Configuration
-
-Default config location: `$XDG_CONFIG_HOME/{{PACKAGE_NAME}}/config.toml`
-
-Fallback: `$HOME/.config/{{PACKAGE_NAME}}/config.toml`
-
-== Health Checks
-
-[source,bash]
-----
-just doctor            # Full diagnostic
-just run --version   # Version check
-just run --selftest  # Built-in self-test
-----
-
-== Updating
-
-[source,bash]
-----
-git pull
-just build-release
-just install --prefix=/usr/local
-----
-
-Or via OPSM: `opsm update {{PACKAGE_NAME}}`
-
-== Security Notes
-
-* License: MPL-2.0 (Palimpsest License)
-* All dependencies SHA-pinned
-* `panic-attacker` scan results: link:INSTALL-SECURITY-REPORT.adoc[]
-* OpenSSF Scorecard: see badge in README
-
-== Multi-Instance Deployment
-
-For deploying multiple instances (e.g., different users or tenants):
-
-[source,bash]
-----
-just install --prefix=/opt/{{PACKAGE_NAME}}-instance1 --config=/etc/{{PACKAGE_NAME}}/instance1.toml
-just install --prefix=/opt/{{PACKAGE_NAME}}-instance2 --config=/etc/{{PACKAGE_NAME}}/instance2.toml
-----
-
-Each instance has isolated config, data, and logs.
-
-== Reporting Issues
-
-* Upstream: https://github.com/hyperpolymath/proven-servers/issues
-* With diagnostic: `just help-me` (pre-fills context)
+When compiler access is unavailable, leave the checkout explicitly
+`not compiler-verified`. The next maintainer should run the full configured
+Idris2 and Zig matrix in a suitable environment, investigate failures by
+package, and update the evidence files only after reproducing results.

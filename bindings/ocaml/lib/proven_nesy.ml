@@ -113,12 +113,18 @@ let nesy_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some Ready | 2 -> Some Reasoning
   | 3 -> Some Verifying | 4 -> Some Drift | 5 -> Some Shutdown | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_nesy_abi_version : unit -> int = "nesy_abi_version"
-external c_nesy_create_context : unit -> int = "nesy_create_context"
-external c_nesy_destroy_context : int -> unit = "nesy_destroy_context"
-external c_nesy_can_transition : int -> int -> int = "nesy_can_transition"
+let c_nesy_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_nesy_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_nesy_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_nesy_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

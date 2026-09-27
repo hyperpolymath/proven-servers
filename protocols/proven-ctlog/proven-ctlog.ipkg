@@ -5,7 +5,7 @@ package proven-ctlog
 version = "0.1.0"
 authors = "Jonathan D.A. Jewell"
 license = "MPL-2.0"
-brief   = "Proven skeleton for Certificate Transparency Log (RFC 6962)"
+brief   = "Certificate Transparency lifecycle model; no persistent log, Merkle tree, or signing backend"
 
 sourcedir = "src"
 main = Main

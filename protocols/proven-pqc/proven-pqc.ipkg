@@ -5,7 +5,7 @@ package proven-pqc
 version = "0.1.0"
 authors = "Jonathan D.A. Jewell"
 license = "MPL-2.0"
-brief   = "Post-Quantum Cryptography server with NIST FIPS 203/204/205 algorithms"
+brief   = "PQC lifecycle/negotiation model; cryptographic operations fail closed without a backend"
 
 sourcedir = "src"
 main = Main

@@ -64,12 +64,18 @@ let dialog_state_to_tag = function
 let dialog_state_of_tag = function
   | 0 -> Some Early | 1 -> Some Confirmed | 2 -> Some Terminated | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_voip_abi_version : unit -> int = "voip_abi_version"
-external c_voip_create_context : unit -> int = "voip_create_context"
-external c_voip_destroy_context : int -> unit = "voip_destroy_context"
-external c_voip_can_transition : int -> int -> int = "voip_can_transition"
+let c_voip_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_voip_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_voip_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_voip_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

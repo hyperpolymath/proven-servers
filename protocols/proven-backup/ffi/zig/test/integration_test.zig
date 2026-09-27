@@ -125,23 +125,23 @@ test "start transitions Idle -> Running" {
     try std.testing.expectEqual(@as(u8, 1), backup.backup_state(slot)); // Running
 }
 
-test "verify transitions Running -> Verifying" {
+test "verification fails closed and marks a running job Failed" {
     const slot = backup.backup_create(0, 4, 0, 0);
     defer backup.backup_destroy(slot);
 
     _ = backup.backup_start(slot);
-    try std.testing.expectEqual(@as(u8, 0), backup.backup_verify(slot));
-    try std.testing.expectEqual(@as(u8, 2), backup.backup_state(slot)); // Verifying
+    try std.testing.expectEqual(@as(u8, 1), backup.backup_verify(slot)); // no artifact verifier
+    try std.testing.expectEqual(@as(u8, 4), backup.backup_state(slot)); // Failed
 }
 
-test "complete transitions Verifying -> Complete" {
+test "a backup cannot complete after unavailable verification" {
     const slot = backup.backup_create(0, 4, 0, 0);
     defer backup.backup_destroy(slot);
 
     _ = backup.backup_start(slot);
-    _ = backup.backup_verify(slot);
-    try std.testing.expectEqual(@as(u8, 0), backup.backup_complete(slot));
-    try std.testing.expectEqual(@as(u8, 3), backup.backup_state(slot)); // Complete
+    try std.testing.expectEqual(@as(u8, 1), backup.backup_verify(slot));
+    try std.testing.expectEqual(@as(u8, 1), backup.backup_complete(slot));
+    try std.testing.expectEqual(@as(u8, 4), backup.backup_state(slot)); // Failed, never Complete
 }
 
 test "fail transitions Running -> Failed" {
@@ -153,13 +153,13 @@ test "fail transitions Running -> Failed" {
     try std.testing.expectEqual(@as(u8, 4), backup.backup_state(slot)); // Failed
 }
 
-test "fail transitions Verifying -> Failed" {
+test "unavailable verification cannot be reported as another successful transition" {
     const slot = backup.backup_create(0, 4, 0, 0);
     defer backup.backup_destroy(slot);
 
     _ = backup.backup_start(slot);
-    _ = backup.backup_verify(slot);
-    try std.testing.expectEqual(@as(u8, 0), backup.backup_fail(slot));
+    try std.testing.expectEqual(@as(u8, 1), backup.backup_verify(slot));
+    try std.testing.expectEqual(@as(u8, 1), backup.backup_fail(slot)); // already Failed
     try std.testing.expectEqual(@as(u8, 4), backup.backup_state(slot)); // Failed
 }
 
@@ -195,13 +195,12 @@ test "set_retention rejects invalid policy" {
 // Reset
 // =========================================================================
 
-test "reset Complete -> Idle" {
+test "reset after verification failure clears only the Failed job state" {
     const slot = backup.backup_create(0, 4, 0, 0);
     defer backup.backup_destroy(slot);
 
     _ = backup.backup_start(slot);
-    _ = backup.backup_verify(slot);
-    _ = backup.backup_complete(slot);
+    try std.testing.expectEqual(@as(u8, 1), backup.backup_verify(slot));
     try std.testing.expectEqual(@as(u8, 0), backup.backup_reset(slot));
     try std.testing.expectEqual(@as(u8, 0), backup.backup_state(slot)); // Idle
 }
@@ -286,12 +285,12 @@ test "cannot complete from Running" {
     try std.testing.expectEqual(@as(u8, 1), backup.backup_complete(slot));
 }
 
-test "cannot cancel from Verifying" {
+test "cannot cancel after verification fails closed" {
     const slot = backup.backup_create(0, 4, 0, 0);
     defer backup.backup_destroy(slot);
 
     _ = backup.backup_start(slot);
-    _ = backup.backup_verify(slot);
+    try std.testing.expectEqual(@as(u8, 1), backup.backup_verify(slot));
     try std.testing.expectEqual(@as(u8, 1), backup.backup_cancel(slot));
 }
 

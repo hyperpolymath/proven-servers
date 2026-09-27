@@ -6,12 +6,9 @@
 -- Declares the opaque handle type and documents the complete FFI contract
 -- that the Zig implementation (ffi/zig/src/backup.zig) must provide.
 --
--- The Zig FFI manages:
---   - 64-slot mutex-protected backup job pool
---   - Backup job configuration (type, schedule, compression, encryption)
---   - Job lifecycle state machine
---   - Retention policy enforcement
---   - Verification tracking
+-- The Zig FFI manages in-memory job metadata and lifecycle state only. It has
+-- no backup-data backend; backup_verify rejects and moves Running jobs to
+-- Failed rather than claiming content was verified.
 --
 -- All functions use C calling convention and communicate state via
 -- Bits8 tags matching BackupABI.Types exactly.
@@ -66,10 +63,11 @@ abiVersion = 1
 -- |                             | Transitions Idle -> Running.              |
 -- +-----------------------------+-------------------------------------------+
 -- | backup_verify               | (slot: c_int) -> u8 (0=ok, 1=rejected)   |
--- |                             | Transitions Running -> Verifying.         |
+-- |                             | Fails closed without a data verifier;      |
+-- |                             | transitions Running -> Failed and returns 1.|
 -- +-----------------------------+-------------------------------------------+
 -- | backup_complete             | (slot: c_int) -> u8 (0=ok, 1=rejected)   |
--- |                             | Transitions Verifying -> Complete.        |
+-- |                             | Requires Verifying; unreachable until a real verifier exists.        |
 -- +-----------------------------+-------------------------------------------+
 -- | backup_fail                 | (slot: c_int) -> u8 (0=ok, 1=rejected)   |
 -- |                             | Transitions Running/Verifying -> Failed.  |

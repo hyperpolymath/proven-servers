@@ -70,12 +70,12 @@ abiVersion = 1
 -- +-----------------------------+-------------------------------------------+
 -- | nesy_verify_proof           | (slot: c_int, index: u32)                 |
 -- |                             |  -> u8 (ProofStatus tag)                  |
--- |                             | Ready -> Verifying -> Ready.              |
+-- |                             | Returns Failed; no proof checker linked.  |
 -- +-----------------------------+-------------------------------------------+
 -- | nesy_proof_count            | (slot: c_int) -> u32                      |
 -- +-----------------------------+-------------------------------------------+
 -- | nesy_detect_drift           | (slot: c_int) -> u8 (DriftKind tag)       |
--- |                             | May transition to Drift state.            |
+-- |                             | Returns 255 (unavailable; not a tag).     |
 -- +-----------------------------+-------------------------------------------+
 -- | nesy_resolve_drift          | (slot: c_int) -> u8 (0=ok, 1=rejected)   |
 -- |                             | Drift -> Ready.                           |

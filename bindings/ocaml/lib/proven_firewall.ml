@@ -58,34 +58,58 @@ let conntrack_state_of_tag = function
   | 0 -> Some Ct_none | 1 -> Some Ct_tracking | 2 -> Some Ct_established
   | 3 -> Some Ct_related | 4 -> Some Ct_expired | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_fw_abi_version : unit -> int = "fw_abi_version"
-external c_fw_create_context : unit -> int = "fw_create_context"
-external c_fw_destroy_context : int -> unit = "fw_destroy_context"
-external c_fw_packet_state : int -> int = "fw_packet_state"
-external c_fw_conntrack_state : int -> int = "fw_conntrack_state"
-external c_fw_get_decision : int -> int = "fw_get_decision"
-external c_fw_rule_count : int -> int = "fw_rule_count"
-external c_fw_packet_proto : int -> int = "fw_packet_proto"
-external c_fw_packet_chain : int -> int = "fw_packet_chain"
-external c_fw_packet_src_ip : int -> int = "fw_packet_src_ip"
-external c_fw_packet_dst_ip : int -> int = "fw_packet_dst_ip"
-external c_fw_packet_src_port : int -> int = "fw_packet_src_port"
-external c_fw_packet_dst_port : int -> int = "fw_packet_dst_port"
-external c_fw_classify_packet : int -> int -> int -> int -> int -> int -> int -> int
-  = "fw_classify_packet_bytecode" "fw_classify_packet"
-external c_fw_begin_chain : int -> int = "fw_begin_chain"
-external c_fw_add_rule : int -> int -> int -> int -> int -> int
-  = "fw_add_rule_bytecode" "fw_add_rule"
-external c_fw_set_default_action : int -> int -> int = "fw_set_default_action"
-external c_fw_evaluate_rules : int -> int = "fw_evaluate_rules"
-external c_fw_commit : int -> int = "fw_commit"
-external c_fw_begin_tracking : int -> int = "fw_begin_tracking"
-external c_fw_complete_tracking : int -> int -> int = "fw_complete_tracking"
-external c_fw_expire_conn : int -> int = "fw_expire_conn"
-external c_fw_can_transition : int -> int -> int = "fw_can_transition"
-external c_fw_can_conntrack_transition : int -> int -> int = "fw_can_conntrack_transition"
+let c_fw_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_packet_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_conntrack_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_get_decision : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_rule_count : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_packet_proto : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_packet_chain : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_packet_src_ip : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_packet_dst_ip : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_packet_src_port : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_packet_dst_port : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_classify_packet : int -> int -> int -> int -> int -> int -> int -> int = fun _arg0 _arg1 _arg2 _arg3 _arg4 _arg5 _arg6 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_begin_chain : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_add_rule : int -> int -> int -> int -> int -> int = fun _arg0 _arg1 _arg2 _arg3 _arg4 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_set_default_action : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_evaluate_rules : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_commit : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_begin_tracking : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_complete_tracking : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_expire_conn : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_fw_can_conntrack_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

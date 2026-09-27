@@ -1,43 +1,20 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-# Authoritative source: docs/AI-CONVENTIONS.md
+# Authoritative guidance: docs/AI-CONVENTIONS.adoc
 
-# STARTUP: Read 0-AI-MANIFEST.a2ml first, then .machine_readable/STATE.a2ml.
+# STARTUP: Read 0-AI-MANIFEST.a2ml, .machine_readable/6a2/STATE.a2ml,
+# and .machine_readable/6a2/anchor/ANCHOR.a2ml.
 
-# LICENSE
-# All original code: MPL-2.0.
-# Never AGPL-3.0. MPL-2.0 only as platform-required fallback.
-# SPDX header required on every source file.
-# Copyright: Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+# Distinguish model proofs, native tests, ABI correspondence, binding linking,
+# and protocol interoperability. Report skipped tools and checks explicitly.
+# Never treat source-pattern smoke checks or historical audit reports as
+# current runtime/proof evidence.
 
-# STATE FILES (.machine_readable/ ONLY)
-# Never create in repo root: STATE.a2ml, META.a2ml, ECOSYSTEM.a2ml,
-# AGENTIC.a2ml, NEUROSYM.a2ml, PLAYBOOK.a2ml.
-# The .machine_readable/ directory is the single source of truth.
+# Keep operations fail-closed when credentials, key material, or a verified
+# backend are absent. Container deployment is disabled in the current tree.
 
-# BANNED PATTERNS
-# Idris2: believe_me, assert_total, assert_smaller, unsafePerformIO
-# Haskell: unsafeCoerce, unsafePerformIO, undefined, error
-# OCaml: Obj.magic, Obj.repr, Obj.obj
-# Coq: Admitted
-# Lean: sorry
-# Rust: transmute (unless FFI with // SAFETY: comment)
+# Existing binding languages are allowed as source inventory. Do not add a new
+# language/runtime without a documented scope and toolchain rationale.
 
-# BANNED LANGUAGES
-# TypeScript -> ReScript
-# Node.js / npm / bun -> Deno
-# Go -> Rust
-# Python -> Julia or Rust
-
-# CONTAINERS
-# Runtime: Podman (never Docker).
-# File: Containerfile (never Dockerfile).
-# Base: cgr.dev/chainguard/wolfi-base:latest or cgr.dev/chainguard/static:latest.
-
-# ABI/FFI
-# ABI: Idris2 with dependent types (src/abi/).
-# FFI: Zig with C ABI (ffi/zig/).
-# Headers: generated/abi/.
-
-# BUILD: Use just (justfile) for all tasks.
-# STYLE: Descriptive names. Document all files. SPDX headers everywhere.
+# Preserve SPDX and third-party license notices. Original project code is
+# generally MPL-2.0. See docs/AI-CONVENTIONS.adoc for configured tasks.

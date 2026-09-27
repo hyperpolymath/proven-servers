@@ -78,19 +78,19 @@ abiVersion = 1
 -- +-------------------------+---------------------------------------------+
 -- | pqc_encapsulate         | (slot: c_int, ct: *u8, ct_len: *u32,        |
 -- |                         |  ss: *u8, ss_len: *u32) -> u8               |
--- |                         | Requires Active key state, KEM algorithm.   |
+-- |                         | Unavailable: returns 1; output lengths 0.   |
 -- +-------------------------+---------------------------------------------+
 -- | pqc_decapsulate         | (slot: c_int, ct: *const u8, ct_len: u32,   |
 -- |                         |  ss: *u8, ss_len: *u32) -> u8               |
--- |                         | Requires Active key state, KEM algorithm.   |
+-- |                         | Unavailable: returns 1; output length 0.    |
 -- +-------------------------+---------------------------------------------+
 -- | pqc_sign                | (slot: c_int, msg: *const u8, msg_len: u32, |
 -- |                         |  sig: *u8, sig_len: *u32) -> u8             |
--- |                         | Requires Active key state, sig algorithm.   |
+-- |                         | Unavailable: returns 1; output length 0.    |
 -- +-------------------------+---------------------------------------------+
 -- | pqc_verify              | (slot: c_int, msg: *const u8, msg_len: u32, |
 -- |                         |  sig: *const u8, sig_len: u32) -> u8        |
--- |                         | Requires Active key state, sig algorithm.   |
+-- |                         | Always returns 1 (unavailable/rejected).   |
 -- +-------------------------+---------------------------------------------+
 -- | pqc_set_hybrid_mode     | (slot: c_int, mode: u8) -> u8               |
 -- |                         | Set the hybrid mode for this context.       |

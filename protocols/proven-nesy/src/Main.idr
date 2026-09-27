@@ -19,4 +19,4 @@ main = do
   putStrLn $ "  NeuralBackends: " ++ show [LocalModel, Claude, Gemini, Mistral, GPT, CustomNeural]
   putStrLn $ "  Confidence:     " ++ show [Verified, HighNeural, MediumNeural, LowNeural, Unknown, Contradicted]
   putStrLn $ "  DriftKinds:     " ++ show [NoDrift, SemanticDrift, ConfidenceDrift, FactualDrift, TemporalDrift, CatastrophicDrift]
-  putStrLn "All types total, all Show instances verified."
+  putStrLn "This output demonstrates model constructors only; no proof checker is connected."

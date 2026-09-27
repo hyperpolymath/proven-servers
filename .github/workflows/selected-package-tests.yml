@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# This runs a bounded selected-package build/test sweep. It is not a complete
+# repository matrix, a cross-language conformance suite, or a benchmark job.
+
+name: Selected Package Tests
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'connectors/**'
+      - 'protocols/**'
+      - 'core/**'
+      - 'bindings/**'
+      - 'tests/**'
+      - 'tools/**'
+      - 'Justfile'
+      - '.github/workflows/selected-package-tests.yml'
+      - '.github/workflows/repository-static-checks.yml'
+      - '.github/workflows/actions.lock'
+      - '.machine_readable/rsr-profile.a2ml'
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: selected-package-tests-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  selected-package-tests:
+    name: Selected Idris2 and Zig package tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7.0.1
+      - name: Install Zig 0.15.2
+        uses: goto-bus-stop/setup-zig@v2.2.1
+        with:
+          version: 0.15.2
+      - name: Install Idris2 build prerequisites
+        run: sudo apt-get update && sudo apt-get install -y chezscheme libgmp-dev
+      - name: Install Idris2 0.7.0
+        run: |
+          git clone --depth 1 --branch v0.7.0 https://github.com/idris-lang/Idris2.git "$RUNNER_TEMP/Idris2"
+          make -C "$RUNNER_TEMP/Idris2" bootstrap SCHEME=scheme
+          make -C "$RUNNER_TEMP/Idris2" install
+          echo "$HOME/.idris2/bin" >> "$GITHUB_PATH"
+          "$HOME/.idris2/bin/idris2" --version
+      - name: Run selected package tests
+        run: bash tests/e2e.sh

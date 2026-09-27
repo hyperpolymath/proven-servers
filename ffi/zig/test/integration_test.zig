@@ -1,183 +1,102 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// PROVEN_SERVERS Integration Tests
 //
-// These tests verify that the Zig FFI correctly implements the Idris2 ABI
+// Tests for the generic root-level FFI prototype. These call the Zig module
+// directly; they do not test a compiled C consumer or establish a protocol ABI.
 
 const std = @import("std");
 const testing = std.testing;
+const proven_servers = @import("proven_servers");
 
-// Import FFI functions
-extern fn proven_servers_init() ?*opaque {};
-extern fn proven_servers_free(?*opaque {}) void;
-extern fn proven_servers_process(?*opaque {}, u32) c_int;
-extern fn proven_servers_get_string(?*opaque {}) ?[*:0]const u8;
-extern fn proven_servers_free_string(?[*:0]const u8) void;
-extern fn proven_servers_last_error() ?[*:0]const u8;
-extern fn proven_servers_version() [*:0]const u8;
-extern fn proven_servers_is_initialized(?*opaque {}) u32;
-
-//==============================================================================
-// Lifecycle Tests
-//==============================================================================
+// Lifecycle -----------------------------------------------------------------
 
 test "create and destroy handle" {
-    const handle = proven_servers_init() orelse return error.InitFailed;
-    defer proven_servers_free(handle);
-
-    try testing.expect(handle != null);
-}
-
-test "handle is initialized" {
-    const handle = proven_servers_init() orelse return error.InitFailed;
-    defer proven_servers_free(handle);
-
-    const initialized = proven_servers_is_initialized(handle);
-    try testing.expectEqual(@as(u32, 1), initialized);
+    const handle = proven_servers.proven_servers_init() orelse return error.InitFailed;
+    defer proven_servers.proven_servers_free(handle);
+    try testing.expectEqual(@as(u32, 1), proven_servers.proven_servers_is_initialized(handle));
 }
 
 test "null handle is not initialized" {
-    const initialized = proven_servers_is_initialized(null);
-    try testing.expectEqual(@as(u32, 0), initialized);
-}
-
-//==============================================================================
-// Operation Tests
-//==============================================================================
-
-test "process with valid handle" {
-    const handle = proven_servers_init() orelse return error.InitFailed;
-    defer proven_servers_free(handle);
-
-    const result = proven_servers_process(handle, 42);
-    try testing.expectEqual(@as(c_int, 0), result); // 0 = ok
-}
-
-test "process with null handle returns error" {
-    const result = proven_servers_process(null, 42);
-    try testing.expectEqual(@as(c_int, 4), result); // 4 = null_pointer
-}
-
-//==============================================================================
-// String Tests
-//==============================================================================
-
-test "get string result" {
-    const handle = proven_servers_init() orelse return error.InitFailed;
-    defer proven_servers_free(handle);
-
-    const str = proven_servers_get_string(handle);
-    defer if (str) |s| proven_servers_free_string(s);
-
-    try testing.expect(str != null);
-}
-
-test "get string with null handle" {
-    const str = proven_servers_get_string(null);
-    try testing.expect(str == null);
-}
-
-//==============================================================================
-// Error Handling Tests
-//==============================================================================
-
-test "last error after null handle operation" {
-    _ = proven_servers_process(null, 0);
-
-    const err = proven_servers_last_error();
-    try testing.expect(err != null);
-
-    if (err) |e| {
-        const err_str = std.mem.span(e);
-        try testing.expect(err_str.len > 0);
-    }
-}
-
-test "no error after successful operation" {
-    const handle = proven_servers_init() orelse return error.InitFailed;
-    defer proven_servers_free(handle);
-
-    _ = proven_servers_process(handle, 0);
-
-    // Error should be cleared after successful operation
-    // (This depends on implementation)
-}
-
-//==============================================================================
-// Version Tests
-//==============================================================================
-
-test "version string is not empty" {
-    const ver = proven_servers_version();
-    const ver_str = std.mem.span(ver);
-
-    try testing.expect(ver_str.len > 0);
-}
-
-test "version string is semantic version format" {
-    const ver = proven_servers_version();
-    const ver_str = std.mem.span(ver);
-
-    // Should be in format X.Y.Z
-    try testing.expect(std.mem.count(u8, ver_str, ".") >= 1);
-}
-
-//==============================================================================
-// Memory Safety Tests
-//==============================================================================
-
-test "multiple handles are independent" {
-    const h1 = proven_servers_init() orelse return error.InitFailed;
-    defer proven_servers_free(h1);
-
-    const h2 = proven_servers_init() orelse return error.InitFailed;
-    defer proven_servers_free(h2);
-
-    try testing.expect(h1 != h2);
-
-    // Operations on h1 should not affect h2
-    _ = proven_servers_process(h1, 1);
-    _ = proven_servers_process(h2, 2);
-}
-
-test "double free is safe" {
-    const handle = proven_servers_init() orelse return error.InitFailed;
-
-    proven_servers_free(handle);
-    proven_servers_free(handle); // Should not crash
+    try testing.expectEqual(@as(u32, 0), proven_servers.proven_servers_is_initialized(null));
 }
 
 test "free null is safe" {
-    proven_servers_free(null); // Should not crash
+    proven_servers.proven_servers_free(null);
 }
 
-//==============================================================================
-// Thread Safety Tests (if applicable)
-//==============================================================================
+// Example operations ---------------------------------------------------------
 
-test "concurrent operations" {
-    const handle = proven_servers_init() orelse return error.InitFailed;
-    defer proven_servers_free(handle);
+test "process accepts a live handle as a no-op example" {
+    const handle = proven_servers.proven_servers_init() orelse return error.InitFailed;
+    defer proven_servers.proven_servers_free(handle);
+    try testing.expectEqual(proven_servers.Result.ok, proven_servers.proven_servers_process(handle, 42));
+}
 
-    const ThreadContext = struct {
-        h: *opaque {},
-        id: u32,
-    };
+test "process rejects a null handle" {
+    try testing.expectEqual(proven_servers.Result.null_pointer, proven_servers.proven_servers_process(null, 42));
+    try testing.expect(proven_servers.proven_servers_last_error() != null);
+}
 
-    const thread_fn = struct {
-        fn run(ctx: ThreadContext) void {
-            _ = proven_servers_process(ctx.h, ctx.id);
-        }
-    }.run;
+test "process array bounds its declared length" {
+    const handle = proven_servers.proven_servers_init() orelse return error.InitFailed;
+    defer proven_servers.proven_servers_free(handle);
 
-    var threads: [4]std.Thread = undefined;
-    for (&threads, 0..) |*thread, i| {
-        thread.* = try std.Thread.spawn(.{}, thread_fn, .{
-            ThreadContext{ .h = handle, .id = @intCast(i) },
-        });
-    }
+    try testing.expectEqual(
+        proven_servers.Result.null_pointer,
+        proven_servers.proven_servers_process_array(handle, null, 1),
+    );
+    try testing.expectEqual(
+        proven_servers.Result.invalid_param,
+        proven_servers.proven_servers_process_array(handle, null, 1_048_577),
+    );
+    try testing.expectEqual(
+        proven_servers.Result.ok,
+        proven_servers.proven_servers_process_array(handle, null, 0),
+    );
+}
 
-    for (threads) |thread| {
-        thread.join();
-    }
+test "get string returns a static example value" {
+    const handle = proven_servers.proven_servers_init() orelse return error.InitFailed;
+    defer proven_servers.proven_servers_free(handle);
+
+    const result = proven_servers.proven_servers_get_string(handle) orelse return error.MissingResult;
+    try testing.expectEqualStrings("Example result", std.mem.span(result));
+    proven_servers.proven_servers_free_string(result);
+}
+
+test "get string rejects a null handle" {
+    try testing.expect(proven_servers.proven_servers_get_string(null) == null);
+}
+
+// Error and version reporting -----------------------------------------------
+
+test "successful operation clears the thread-local error" {
+    _ = proven_servers.proven_servers_process(null, 0);
+    try testing.expect(proven_servers.proven_servers_last_error() != null);
+
+    const handle = proven_servers.proven_servers_init() orelse return error.InitFailed;
+    defer proven_servers.proven_servers_free(handle);
+    _ = proven_servers.proven_servers_process(handle, 0);
+    try testing.expect(proven_servers.proven_servers_last_error() == null);
+}
+
+test "version string is non-empty" {
+    try testing.expect(std.mem.span(proven_servers.proven_servers_version()).len > 0);
+}
+
+test "build information is non-empty" {
+    try testing.expect(std.mem.span(proven_servers.proven_servers_build_info()).len > 0);
+}
+
+// Handle separation ----------------------------------------------------------
+
+test "multiple handles have distinct addresses" {
+    const first = proven_servers.proven_servers_init() orelse return error.InitFailed;
+    defer proven_servers.proven_servers_free(first);
+    const second = proven_servers.proven_servers_init() orelse return error.InitFailed;
+    defer proven_servers.proven_servers_free(second);
+
+    try testing.expect(first != second);
+    try testing.expectEqual(proven_servers.Result.ok, proven_servers.proven_servers_process(first, 1));
+    try testing.expectEqual(proven_servers.Result.ok, proven_servers.proven_servers_process(second, 2));
 }

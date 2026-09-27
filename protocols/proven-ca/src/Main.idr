@@ -53,7 +53,7 @@ allKeyUsageBits =
 
 main : IO ()
 main = do
-  putStrLn "proven-ca : Certificate Authority server"
+  putStrLn "proven-ca : X.509 lifecycle metadata model (signing and validation unavailable)"
   putStrLn $ "  Max path length: " ++ show maxPathLength
   putStrLn $ "  Default validity: " ++ show defaultValidityDays ++ " days"
   putStrLn $ "  CRL update interval: " ++ show crlUpdateHours ++ " hours"

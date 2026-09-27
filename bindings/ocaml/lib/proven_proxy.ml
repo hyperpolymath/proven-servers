@@ -62,12 +62,18 @@ let proxy_error_of_tag = function
   | 0 -> Some Bad_gateway | 1 -> Some Gateway_timeout
   | 2 -> Some Upstream_refused | 3 -> Some Upstream_tls | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_proxy_abi_version : unit -> int = "proxy_abi_version"
-external c_proxy_create_context : unit -> int = "proxy_create_context"
-external c_proxy_destroy_context : int -> unit = "proxy_destroy_context"
-external c_proxy_can_transition : int -> int -> int = "proxy_can_transition"
+let c_proxy_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_proxy_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_proxy_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_proxy_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

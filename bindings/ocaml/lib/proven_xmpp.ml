@@ -74,12 +74,18 @@ let stream_error_of_tag = function
   | 6 -> Some Policy_violation | 7 -> Some Resource_constraint
   | 8 -> Some System_shutdown | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_xmpp_abi_version : unit -> int = "xmpp_abi_version"
-external c_xmpp_create_context : unit -> int = "xmpp_create_context"
-external c_xmpp_destroy_context : int -> unit = "xmpp_destroy_context"
-external c_xmpp_can_transition : int -> int -> int = "xmpp_can_transition"
+let c_xmpp_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_xmpp_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_xmpp_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_xmpp_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

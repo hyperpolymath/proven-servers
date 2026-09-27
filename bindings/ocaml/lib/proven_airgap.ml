@@ -80,13 +80,20 @@ let validation_check_of_tag = function
   | 2 -> Some FormatCheck | 3 -> Some ContentInspection
   | 4 -> Some MalwareScan | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_airgap_abi_version : unit -> int = "airgap_abi_version"
-external c_airgap_create_context : unit -> int = "airgap_create_context"
-external c_airgap_destroy_context : int -> unit = "airgap_destroy_context"
-external c_airgap_state : int -> int = "airgap_state"
-external c_airgap_can_transition : int -> int -> int = "airgap_can_transition"
+let c_airgap_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_airgap_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_airgap_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_airgap_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_airgap_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

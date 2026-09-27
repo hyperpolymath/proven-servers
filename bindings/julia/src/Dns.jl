@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# Julia bindings for the proven-dns protocol (DNS server).
+# Julia bindings for the bounded proven-dns message-builder FFI.
+# It accepts exact 17-byte standard root-question queries and caps responses
+# at 512 bytes; it is not a general resolver. DNSSEC crypto fails closed.
 #
 # Wraps the C-ABI functions from protocols/proven-dns/ffi/zig/src/dns.zig
 # via ccall into libproven_dns.so.
@@ -31,13 +33,12 @@ const LIB = "libproven_dns"
     STATE_SENT              = 4
 end
 
-"""DNSSEC processing states."""
+"""DNSSEC ABI/model states; key loading, signing, and validation are unavailable."""
 @enum DnssecState::UInt8 begin
     DNSSEC_DISABLED   = 0
     DNSSEC_ENABLED    = 1
     DNSSEC_KEY_LOADED = 2
-    DNSSEC_SIGNED     = 3
-    DNSSEC_VALIDATED  = 4
+    DNSSEC_VALIDATED  = 3
 end
 
 """DNS response codes."""
@@ -120,9 +121,10 @@ end
 """
     parse_query(slot::SlotId, data::Vector{UInt8})
 
-Parse a DNS query from raw bytes. Throws on invalid state.
+Parse only the exact 17-byte standard query with one root-name question.
 """
 function parse_query(slot::SlotId, data::Vector{UInt8})::Nothing
+    length(data) == 17 || throw(ArgumentError("DNS query must be exactly 17 bytes"))
     raw = ccall((:dns_parse_query, LIB), UInt8,
                 (Cint, Ptr{UInt8}, UInt16),
                 slot, data, UInt16(length(data)))
@@ -160,7 +162,7 @@ end
 """
     enable_dnssec(slot::SlotId)
 
-Enable DNSSEC for the context. Throws on invalid state.
+Enable DNSSEC mode only; response construction then rejects without a signer.
 """
 function enable_dnssec(slot::SlotId)::Nothing
     check_status(ccall((:dns_enable_dnssec, LIB), UInt8, (Cint,), slot))
@@ -169,7 +171,7 @@ end
 """
     sign_response(slot::SlotId)
 
-Sign the DNS response with DNSSEC. Throws on invalid state.
+Always fails closed because no DNSSEC signing backend is available.
 """
 function sign_response(slot::SlotId)::Nothing
     check_status(ccall((:dns_sign_response, LIB), UInt8, (Cint,), slot))
@@ -178,10 +180,10 @@ end
 """
     validate_dnssec(slot::SlotId)
 
-Validate DNSSEC signatures. Throws on invalid state.
+Always returns false because no DNSSEC validator is available.
 """
-function validate_dnssec(slot::SlotId)::Nothing
-    check_status(ccall((:dns_validate_dnssec, LIB), UInt8, (Cint,), slot))
+function validate_dnssec(slot::SlotId)::Bool
+    ccall((:dns_validate_dnssec, LIB), UInt8, (Cint,), slot) == 0x00
 end
 
 """
@@ -197,7 +199,7 @@ end
 """
     can_dnssec_transition(from::DnssecState, to::DnssecState) -> Bool
 
-Check whether a DNSSEC state transition is valid.
+Check the abstract DNSSEC state model only; this does not imply crypto availability.
 """
 function can_dnssec_transition(from::DnssecState, to::DnssecState)::Bool
     ccall((:dns_can_dnssec_transition, LIB), UInt8,

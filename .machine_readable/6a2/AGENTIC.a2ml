@@ -1,12 +1,11 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# AGENTIC.a2ml — AI agent constraints and capabilities
-# Defines what AI agents can and cannot do in this repository.
+# AGENTIC.a2ml — AI-agent scope, evidence, and safety constraints.
 
 [metadata]
-version = "0.1.0"
-last-updated = "2026-03-02"
+version = "0.2.0"
+last-updated = "2026-09-27"
 
 [agent-permissions]
 can-edit-source = true
@@ -14,14 +13,22 @@ can-edit-tests = true
 can-edit-docs = true
 can-edit-config = true
 can-create-files = true
+external-actions-require-approval = true
 
 [agent-constraints]
-# What AI agents must NOT do:
-# - Never use banned language patterns (believe_me, unsafeCoerce, etc.)
-# - Never commit secrets or credentials
-# - Never use banned languages (TypeScript, Python, Go, etc.)
-# - Never place state files in repository root (must be in .machine_readable/)
-# - Never use AGPL license (use MPL-2.0)
+never-commit-secrets = true
+never-claim-build-or-test-success-without-running-the-current-command = true
+never-equate-source-grep-or-type-level-models-with-runtime-conformance = true
+never-enable-authentication-or-cryptographic-success-without-required-material-and-verified-backend = true
+never-enable-container-publishing-until-a-deployable-server-target-is-validated = true
+never-create-duplicate-core-state-files-at-repository-root = true
+
+[language-policy]
+model-and-abi-specification = "Idris2 where present"
+native-ffi = "Zig where present"
+existing-bindings = "Language-named directories are source inventory; do not infer operational support."
+new-language = "Do not add a new implementation language or runtime without recording scope and toolchain rationale."
+forbidden-proof-escape-hatches = ["believe_me", "assert_total", "assert_smaller", "unsafeCoerce", "Obj.magic", "Admitted", "sorry"]
 
 [maintenance-integrity]
 fail-closed = true
@@ -30,7 +37,11 @@ allow-silent-skip = false
 require-rerun-after-fix = true
 release-claim-requires-hard-pass = true
 
+[tooling-boundary]
+required-for-full-package-checks = ["just", "idris2", "zig"]
+formatter = "No repository-wide formatter is configured; do not report fmt-check as formatting."
+static-tests = "Report as source-pattern/inventory smoke checks only."
+
 [automation-hooks]
-# on-enter: Read 0-AI-MANIFEST.a2ml, then STATE.a2ml
-# on-exit: Update STATE.a2ml with session outcomes
-# on-commit: Run just validate-rsr
+on-enter = ["Read 0-AI-MANIFEST.a2ml", "Read .machine_readable/6a2/STATE.a2ml", "Read .machine_readable/6a2/anchor/ANCHOR.a2ml"]
+on-exit = ["Record completed work, test outcomes, skips, and remaining risks in the handoff"]

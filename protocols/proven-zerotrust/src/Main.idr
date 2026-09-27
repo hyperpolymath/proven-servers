@@ -29,7 +29,7 @@ allSessionStates = [Unauthenticated, PartialAuth, Authenticated, Elevated, Locke
 
 main : IO ()
 main = do
-  putStrLn "proven-zerotrust : Zero Trust authentication server"
+  putStrLn "proven-zerotrust : Zero Trust policy state model (denies without identity/device evidence)"
   putStrLn $ "  Max session duration: " ++ show maxSessionDuration ++ " seconds"
   putStrLn $ "  Reauth interval: " ++ show reauthInterval ++ " seconds"
   putStrLn $ "  AuthFactors:       " ++ show allAuthFactors

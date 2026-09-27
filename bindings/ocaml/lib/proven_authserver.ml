@@ -87,13 +87,20 @@ let session_state_of_tag = function
   | 0 -> Some Active | 1 -> Some Expired | 2 -> Some Revoked
   | 3 -> Some Locked | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_authserver_abi_version : unit -> int = "authserver_abi_version"
-external c_authserver_create_context : unit -> int = "authserver_create_context"
-external c_authserver_destroy_context : int -> unit = "authserver_destroy_context"
-external c_authserver_state : int -> int = "authserver_state"
-external c_authserver_can_transition : int -> int -> int = "authserver_can_transition"
+let c_authserver_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_authserver_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_authserver_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_authserver_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_authserver_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

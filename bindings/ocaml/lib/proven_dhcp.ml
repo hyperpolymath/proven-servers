@@ -152,14 +152,22 @@ let relay_sub_option_of_tag = function
   | 1 -> Some RemoteId
   | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_dhcp_abi_version : unit -> int = "dhcp_abi_version"
-external c_dhcp_create_context : unit -> int = "dhcp_create_context"
-external c_dhcp_destroy_context : int -> unit = "dhcp_destroy_context"
-external c_dhcp_state : int -> int = "dhcp_state"
-external c_dhcp_lease_state : int -> int = "dhcp_lease_state"
-external c_dhcp_can_transition : int -> int -> int = "dhcp_can_transition"
+let c_dhcp_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_dhcp_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_dhcp_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_dhcp_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_dhcp_lease_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_dhcp_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

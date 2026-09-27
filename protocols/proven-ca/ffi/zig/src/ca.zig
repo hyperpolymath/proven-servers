@@ -3,14 +3,12 @@
 //
 // ca.zig -- Zig FFI implementation of proven-ca.
 //
-// Implements verified certificate authority state machine with:
-//   - Slot-based CA context management (up to 64 concurrent contexts)
-//   - Per-context certificate store (up to 64 certs per context)
-//   - Certificate lifecycle enforcement matching Idris2 Transitions.idr
-//   - CA hierarchy validation matching CanIssue GADT
-//   - CRL management with status tracking
-//   - OCSP responder state per context
+// Implements a certificate-lifecycle metadata model with:
+//   - Slot-based CA context management and certificate metadata
+//   - Hierarchy policy checks matching CanIssue GADT
+//   - Fail-closed X.509 signing, chain validation, CRL, and OCSP operations
 //   - Thread-safe via mutex
+// It does not issue signed X.509 certificates or provide a production CA.
 
 const std = @import("std");
 
@@ -355,14 +353,17 @@ pub export fn ca_issue_cert(slot: c_int, cert_type_tag: u8, key_algo_tag: u8, si
 
 // -- Certificate state transitions --------------------------------------------
 
+/// Reject certificate activation until X.509 encoding and cryptographic signing
+/// are implemented. A pending metadata record is never promoted to Active.
 pub export fn ca_sign_cert(slot: c_int, cert_id: c_int) callconv(.c) u8 {
     mutex.lock();
     defer mutex.unlock();
     const ctx_idx = validContext(slot) orelse return 1;
     const cid = validCert(ctx_idx, cert_id) orelse return 1;
     if (contexts[ctx_idx].certs[cid].state != .pending) return 1;
-    contexts[ctx_idx].certs[cid].state = .active;
-    return 0;
+    // No issuer private-key material, certificate encoder, or signature
+    // backend is available, so claiming a successful signature is unsafe.
+    return 1;
 }
 
 pub export fn ca_revoke_cert(slot: c_int, cert_id: c_int, reason_tag: u8) callconv(.c) u8 {
@@ -485,28 +486,15 @@ pub export fn ca_cert_count(slot: c_int) callconv(.c) c_int {
 
 // -- Chain validation ---------------------------------------------------------
 
+/// Validate a serialized X.509 chain. This FFI currently stores only
+/// certificate metadata and has no DER parser or signature verifier, so it
+/// rejects every otherwise-valid record rather than reporting a false proof.
 pub export fn ca_validate_chain(slot: c_int, cert_id: c_int) callconv(.c) u8 {
     mutex.lock();
     defer mutex.unlock();
     const ctx_idx = validContext(slot) orelse return 1;
-    const cid = validCert(ctx_idx, cert_id) orelse return 1;
-    const cert = &contexts[ctx_idx].certs[cid];
-
-    // Self-signed root: valid chain of length 1
-    if (cert.cert_type == .root and cert.issuer_id == -1) return 0;
-
-    // Must have an issuer
-    if (cert.issuer_id < 0) return 1;
-    const issuer_cid = validCert(ctx_idx, cert.issuer_id) orelse return 1;
-    const issuer = &contexts[ctx_idx].certs[issuer_cid];
-
-    // Issuer must be Active
-    if (issuer.state != .active and issuer.state != .pending) return 1;
-
-    // Check CanIssue relationship
-    if (!canIssueCheck(@intFromEnum(issuer.cert_type), @intFromEnum(cert.cert_type))) return 1;
-
-    return 0; // chain valid
+    _ = validCert(ctx_idx, cert_id) orelse return 1;
+    return 1; // X.509 chain verification backend unavailable.
 }
 
 pub export fn ca_set_issuer(slot: c_int, cert_id: c_int, issuer_id: c_int) callconv(.c) u8 {
@@ -552,13 +540,14 @@ pub export fn ca_crl_status(slot: c_int) callconv(.c) u8 {
     return @intFromEnum(contexts[ctx_idx].crl_status);
 }
 
+/// Reject CRL refresh until revocation entries can be serialized and the CRL
+/// can be signed. Surface the unavailable state instead of claiming success.
 pub export fn ca_update_crl(slot: c_int) callconv(.c) u8 {
     mutex.lock();
     defer mutex.unlock();
     const ctx_idx = validContext(slot) orelse return 1;
-    // Transition CRL to current state (simulates successful CRL generation)
-    contexts[ctx_idx].crl_status = .current;
-    return 0;
+    contexts[ctx_idx].crl_status = .crl_error;
+    return 1;
 }
 
 // -- OCSP responder -----------------------------------------------------------
@@ -570,19 +559,18 @@ pub export fn ca_ocsp_status(slot: c_int) callconv(.c) u8 {
     return @intFromEnum(contexts[ctx_idx].ocsp_status);
 }
 
+/// Query OCSP status. The responder/backend is not implemented, so every
+/// query fails closed as Unavailable and the context never advertises service.
 pub export fn ca_ocsp_query(slot: c_int, cert_id: c_int) callconv(.c) u8 {
     mutex.lock();
     defer mutex.unlock();
     const ctx_idx = validContext(slot) orelse return 3; // unavailable
-    const cid = validCert(ctx_idx, cert_id) orelse return 2; // unknown
-    const state = contexts[ctx_idx].certs[cid].state;
-    // Update OCSP responder status to reflect it is serving
-    contexts[ctx_idx].ocsp_status = .good;
-    return switch (state) {
-        .active => 0, // good
-        .revoked => 1, // revoked
-        .pending, .expired, .suspended => 2, // unknown (not definitively good/revoked)
+    _ = validCert(ctx_idx, cert_id) orelse {
+        contexts[ctx_idx].ocsp_status = .unavailable;
+        return 3;
     };
+    contexts[ctx_idx].ocsp_status = .unavailable;
+    return 3;
 }
 
 // -- Validity period ----------------------------------------------------------

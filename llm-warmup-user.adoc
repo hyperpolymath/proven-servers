@@ -1,19 +1,19 @@
-== LLM Warmup — proven-servers (User)
+= LLM Warmup — proven-servers Reader
 
-=== What is proven-servers?
+== Scope
 
-See README.adoc for overview.
+This repository contains research/prototype source, protocol models, FFI
+experiments, and binding scaffolds. It does not currently provide an
+end-user server or supported deployment. Read `README.adoc`, `READINESS.adoc`,
+and the package-specific README before relying on any component.
 
-=== Key Commands
+== Useful references
 
-* `+just setup+` — set up development environment
-* `+just build+` — build the project
-* `+just test+` — run tests
-* `+just doctor+` — diagnose issues
-* `+just heal+` — attempt auto-repair
+* `QUICKSTART-USER.adoc` — what readers can and cannot run.
+* `QUICKSTART-DEV.adoc` — package build and test instructions.
+* `SECURITY.adoc` — vulnerability reporting and security scope.
 
-=== Quick Context
-
-* License: MPL-2.0
-* Part of hyperpolymath ecosystem
-* See EXPLAINME.adoc for architecture
+There is no supported `just setup`, `just run`, or `just install` path.
+`just doctor` reports availability/state only; it does not install or repair
+anything. Directory presence and static smoke tests do not establish server or
+protocol support.

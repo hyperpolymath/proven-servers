@@ -100,11 +100,12 @@ uint8_t  dns_query_rtype(int slot);
 uint8_t  dns_query_class(int slot);
 
 /* -- Lifecycle transitions ------------------------------------------------ */
+/* Exact 17-byte standard root-question subset (QR=0, OPCODE=QUERY); RD is the only flag. */
 uint8_t dns_parse_query(int slot, const uint8_t *buf, uint16_t len);
 uint8_t dns_begin_lookup(int slot);
 uint8_t dns_begin_response(int slot);
 
-/* -- Record addition ------------------------------------------------------ */
+/* -- Record addition (RDATA <=256 bytes; non-empty RDATA needs a valid pointer) -- */
 uint8_t dns_add_answer(int slot, uint8_t rtype, uint8_t rclass,
                        uint32_t ttl, const uint8_t *rdata, uint16_t rdlen);
 uint8_t dns_add_authority(int slot, uint8_t rtype, uint8_t rclass,
@@ -114,9 +115,10 @@ uint8_t dns_add_additional(int slot, uint8_t rtype, uint8_t rclass,
 uint8_t dns_set_rcode(int slot, uint8_t rcode);
 
 /* -- Response building ---------------------------------------------------- */
+/* out requires >=512 writable bytes; no capacity parameter. Messages >512 reject before writing. */
 uint8_t dns_build_response(int slot, uint8_t *out, uint16_t *out_len);
 
-/* -- DNSSEC operations ---------------------------------------------------- */
+/* -- DNSSEC operations: cryptographic key load/sign/validation fail closed -- */
 uint8_t dns_enable_dnssec(int slot);
 uint8_t dns_load_dnssec_key(int slot, uint8_t algo);
 uint8_t dns_sign_response(int slot);

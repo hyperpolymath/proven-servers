@@ -300,8 +300,9 @@ pub export fn nesy_add_proof(
     return 1;
 }
 
-/// Verify a proof obligation by index. Returns ProofStatus tag.
-/// Transitions Ready -> Verifying -> Ready, simulating proof success.
+/// Verify a proof obligation by index. No proof checker or proof bytes are
+/// connected to this model, so valid-looking metadata must never become Proved.
+/// Returns Failed and leaves the obligation untrusted.
 pub export fn nesy_verify_proof(slot: c_int, index: u32) callconv(.c) u8 {
     mutex.lock();
     defer mutex.unlock();
@@ -313,10 +314,9 @@ pub export fn nesy_verify_proof(slot: c_int, index: u32) callconv(.c) u8 {
     if (index >= MAX_PROOFS) return @intFromEnum(ProofStatus.failed);
     if (!sessions[idx].proofs[index].active) return @intFromEnum(ProofStatus.failed);
 
-    // Simulate proof verification: mark as proved.
-    sessions[idx].proofs[index].status = .proved;
+    sessions[idx].proofs[index].status = .failed;
     sessions[idx].state = .ready;
-    return @intFromEnum(ProofStatus.proved);
+    return @intFromEnum(ProofStatus.failed);
 }
 
 /// Returns the number of active proof obligations.
@@ -327,20 +327,11 @@ pub export fn nesy_proof_count(slot: c_int) callconv(.c) u32 {
     return sessions[idx].proof_count;
 }
 
-/// Detect drift between neural and symbolic results.
-/// Returns DriftKind tag. May transition to Drift state on non-trivial drift.
+/// Drift detection has no connected symbolic/neural results. Return 255 as an
+/// unavailable sentinel (not a DriftKind tag); callers must treat it as unknown.
 pub export fn nesy_detect_drift(slot: c_int) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-
-    const idx = validSlot(slot) orelse return @intFromEnum(DriftKind.no_drift);
-    if (sessions[idx].state != .ready and sessions[idx].state != .reasoning) {
-        return @intFromEnum(DriftKind.no_drift);
-    }
-
-    // Simulated drift detection: no drift by default.
-    sessions[idx].last_drift = .no_drift;
-    return @intFromEnum(DriftKind.no_drift);
+    _ = slot;
+    return 255;
 }
 
 /// Resolve drift, returning to Ready state. Drift -> Ready.

@@ -64,12 +64,18 @@ let alert_state_of_tag = function
   | 0 -> Some New | 1 -> Some Acknowledged | 2 -> Some In_progress
   | 3 -> Some Resolved | 4 -> Some False_positive | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_siem_abi_version : unit -> int = "siem_abi_version"
-external c_siem_create_context : unit -> int = "siem_create_context"
-external c_siem_destroy_context : int -> unit = "siem_destroy_context"
-external c_siem_can_transition : int -> int -> int = "siem_can_transition"
+let c_siem_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_siem_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_siem_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_siem_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

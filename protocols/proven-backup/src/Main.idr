@@ -9,7 +9,6 @@ import Backup
 %default total
 
 ||| Print server name, port, and enumerate all type constructors.
-partial
 main : IO ()
 main = do
   putStrLn "=========================================="

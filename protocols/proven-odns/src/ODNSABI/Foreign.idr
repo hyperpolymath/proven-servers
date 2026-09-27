@@ -6,12 +6,10 @@
 -- Declares the opaque handle type and documents the complete FFI contract
 -- that the Zig implementation (ffi/zig/src/odns.zig) must provide.
 --
--- The Zig FFI manages:
---   - 64-slot mutex-protected session pool
---   - HPKE key pair management
---   - Query/response encapsulation tracking
---   - Role-based access enforcement (Client/Proxy/Target)
---   - Nonce management for replay protection
+-- The Zig FFI is a state-machine model, not an Oblivious DNS implementation:
+-- it has no HPKE cryptography, encrypted request/response processing, DNS
+-- transport, or replay protection. Key exchange and query operations reject
+-- until a reviewed protocol backend is integrated.
 --
 -- All functions use C calling convention and communicate state via
 -- Bits8 tags matching ODNSABI.Types exactly.
@@ -59,16 +57,14 @@ abiVersion = 1
 -- +-----------------------------+-------------------------------------------+
 -- | odns_key_exchange           | (slot: c_int, pubkey_ptr: ptr,            |
 -- |                             |  pubkey_len: u32) -> u8                  |
--- |                             | (0=ok, 1=rejected)                        |
--- |                             | Transitions KeyExchange -> Ready.         |
+-- |                             | Always rejects until HPKE is integrated.   |
 -- +-----------------------------+-------------------------------------------+
 -- | odns_submit_query           | (slot: c_int, query_ptr: ptr,             |
 -- |                             |  query_len: u32) -> u8                   |
--- |                             | Transitions Ready -> Processing.          |
+-- |                             | Always rejects until encrypted transport.  |
 -- +-----------------------------+-------------------------------------------+
 -- | odns_get_response           | (slot: c_int) -> u8                       |
--- |                             | Returns response status,                  |
--- |                             | transitions Processing -> Ready.          |
+-- |                             | Always rejects until HPKE decryption.      |
 -- +-----------------------------+-------------------------------------------+
 -- | odns_get_role               | (slot: c_int) -> u8 (Role tag)            |
 -- +-----------------------------+-------------------------------------------+
