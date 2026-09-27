@@ -28,26 +28,46 @@ let state_of_tag = function
 let qos_to_code = function
   | QoS0 -> 0 | QoS1 -> 1 | QoS2 -> 2
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_mqtt_abi_version : unit -> int = "mqtt_abi_version"
-external c_mqtt_create : int -> int -> int -> int = "mqtt_create"
-external c_mqtt_destroy : int -> unit = "mqtt_destroy"
-external c_mqtt_state : int -> int = "mqtt_state"
-external c_mqtt_version : int -> int = "mqtt_version"
-external c_mqtt_can_publish : int -> int = "mqtt_can_publish"
-external c_mqtt_can_subscribe : int -> int = "mqtt_can_subscribe"
-external c_mqtt_subscription_count : int -> int = "mqtt_subscription_count"
-external c_mqtt_puback : int -> int -> int = "mqtt_puback"
-external c_mqtt_pubrec : int -> int -> int = "mqtt_pubrec"
-external c_mqtt_pubrel : int -> int -> int = "mqtt_pubrel"
-external c_mqtt_pubcomp : int -> int -> int = "mqtt_pubcomp"
-external c_mqtt_qos_state : int -> int -> int = "mqtt_qos_state"
-external c_mqtt_disconnect : int -> int = "mqtt_disconnect"
-external c_mqtt_cleanup : int -> int = "mqtt_cleanup"
-external c_mqtt_retained_count : unit -> int = "mqtt_retained_count"
-external c_mqtt_can_transition : int -> int -> int = "mqtt_can_transition"
-external c_mqtt_qos_can_transition : int -> int -> int -> int = "mqtt_qos_can_transition"
+let c_mqtt_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_create : int -> int -> int -> int = fun _arg0 _arg1 _arg2 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_destroy : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_version : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_can_publish : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_can_subscribe : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_subscription_count : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_puback : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_pubrec : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_pubrel : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_pubcomp : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_qos_state : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_disconnect : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_cleanup : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_retained_count : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_mqtt_qos_can_transition : int -> int -> int -> int = fun _arg0 _arg1 _arg2 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

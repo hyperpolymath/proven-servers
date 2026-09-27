@@ -62,12 +62,18 @@ let error_status_of_tag = function
   | 13 -> Some Commit_failed | 14 -> Some Undo_failed
   | 15 -> Some Authorization_error | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_snmp_abi_version : unit -> int = "snmp_abi_version"
-external c_snmp_create_context : unit -> int = "snmp_create_context"
-external c_snmp_destroy_context : int -> unit = "snmp_destroy_context"
-external c_snmp_can_transition : int -> int -> int = "snmp_can_transition"
+let c_snmp_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_snmp_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_snmp_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_snmp_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

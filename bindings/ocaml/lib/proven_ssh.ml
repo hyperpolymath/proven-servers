@@ -168,12 +168,18 @@ let channel_open_failure_of_tag = function
   | 0 -> Some Admin_prohibited | 1 -> Some Connect_failed
   | 2 -> Some Unknown_channel_type | 3 -> Some Resource_shortage | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_ssh_abi_version : unit -> int = "ssh_abi_version"
-external c_ssh_create_context : unit -> int = "ssh_create_context"
-external c_ssh_destroy_context : int -> unit = "ssh_destroy_context"
-external c_ssh_can_transition : int -> int -> int = "ssh_can_transition"
+let c_ssh_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

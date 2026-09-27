@@ -6,12 +6,9 @@
 -- Declares the opaque handle type and documents the complete FFI contract
 -- that the Zig implementation (ffi/zig/src/zerotrust.zig) must provide.
 --
--- The Zig FFI manages:
---   - 64-slot mutex-protected session pool
---   - Policy engine with configurable policy types
---   - Trust score calculation from context signals
---   - Signal aggregation across multiple context dimensions
---   - Access evaluation pipeline (GADT-aligned state machine)
+-- The Zig FFI models the policy state machine and caller-supplied signal
+-- aggregation only. No identity verifier or device attestation backend exists;
+-- claimed confidence/trust scores are not evidence and access is denied.
 --
 -- All functions use C calling convention and communicate state via
 -- Bits8 tags matching ZeroTrustABI.Layout exactly.
@@ -76,37 +73,28 @@ abiVersion = 1
 -- |                             | after PolicyEvaluated/Granted/Denied).      |
 -- +-----------------------------+---------------------------------------------+
 -- | zt_verify_identity          | (slot: c_int, confidence: u8) -> u8         |
--- |                             | Verify identity with given confidence level.|
--- |                             | Transitions: RequestReceived ->             |
--- |                             |   IdentityVerified (if confidence > 0)      |
--- |                             |   or AccessDenied (if confidence == 0).     |
--- |                             | Returns 0=ok, 1=rejected.                   |
+-- |                             | Rejects caller-supplied confidence because  |
+-- |                             | no authentication backend exists. Valid tags|
+-- |                             | move RequestReceived -> AccessDenied;      |
+-- |                             | confidence is not stored; returns 1.        |
 -- +-----------------------------+---------------------------------------------+
 -- | zt_check_device             | (slot: c_int, trust: u8) -> u8              |
--- |                             | Check device with given trust score.        |
--- |                             | Transitions: IdentityVerified ->            |
--- |                             |   DeviceChecked (if trust > 0)              |
--- |                             |   or AccessDenied (if trust == 0).          |
--- |                             | Returns 0=ok, 1=rejected.                   |
+-- |                             | Always rejects: no identity evidence or   |
+-- |                             | device attestation backend is connected.  |
+-- |                             | Caller-supplied scores are never stored.   |
 -- +-----------------------------+---------------------------------------------+
 -- | zt_evaluate_policy          | (slot: c_int) -> u8                         |
--- |                             | Evaluate all policies against current       |
--- |                             | context signals, identity, and device trust.|
--- |                             | Transitions: DeviceChecked ->               |
--- |                             |   PolicyEvaluated.                          |
--- |                             | Returns 0=ok, 1=rejected.                   |
+-- |                             | Unreachable: no verified identity or       |
+-- |                             | device state can be established.           |
+-- |                             | Caller-supplied signals do not grant access.|
 -- +-----------------------------+---------------------------------------------+
 -- | zt_grant_access             | (slot: c_int) -> u8                         |
--- |                             | Grant access after policy evaluation.       |
--- |                             | Transitions: PolicyEvaluated ->             |
--- |                             |   AccessGranted (if decision is Allow)      |
--- |                             |   or AccessDenied (otherwise).              |
--- |                             | Returns 0=ok, 1=rejected.                   |
+-- |                             | Cannot grant in this FFI: no verified      |
+-- |                             | identity/device evidence reaches policy.   |
 -- +-----------------------------+---------------------------------------------+
 -- | zt_add_signal               | (slot: c_int, kind: u8, value: u16) -> u8   |
--- |                             | Add a context signal with a 0-1000 score.   |
--- |                             | Can be called at any non-terminal phase.    |
--- |                             | Returns 0=ok, 1=rejected.                   |
+-- |                             | Store caller-supplied signal metadata only;  |
+-- |                             | it is not verified evidence for access.    |
 -- +-----------------------------+---------------------------------------------+
 -- | zt_signal_count             | (slot: c_int) -> u32                        |
 -- |                             | Returns number of active context signals.   |
@@ -116,8 +104,8 @@ abiVersion = 1
 -- |                             | Returns 0 if signal not set.                |
 -- +-----------------------------+---------------------------------------------+
 -- | zt_trust_score              | (slot: c_int) -> u16                        |
--- |                             | Compute aggregate trust score from all      |
--- |                             | active signals (weighted average, 0-1000).  |
+-- |                             | Compute an aggregate of caller-supplied     |
+-- |                             | metadata; this is not identity evidence.   |
 -- +-----------------------------+---------------------------------------------+
 -- | zt_trust_level              | (slot: c_int) -> u8 (TrustLevel tag)        |
 -- |                             | Returns trust level derived from aggregate  |

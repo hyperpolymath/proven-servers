@@ -76,12 +76,18 @@ let nfs_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some Mounted | 2 -> Some FileOpen
   | 3 -> Some Locked | 4 -> Some Busy | 5 -> Some Unmounting | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_nfs_abi_version : unit -> int = "nfs_abi_version"
-external c_nfs_create_context : unit -> int = "nfs_create_context"
-external c_nfs_destroy_context : int -> unit = "nfs_destroy_context"
-external c_nfs_can_transition : int -> int -> int = "nfs_can_transition"
+let c_nfs_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_nfs_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_nfs_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_nfs_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

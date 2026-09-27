@@ -96,13 +96,20 @@ let replication_mode_of_tag = function
   | 0 -> Some ReplNone | 1 -> Some Primary | 2 -> Some Replica
   | 3 -> Some Sentinel | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_cache_abi_version : unit -> int = "cache_abi_version"
-external c_cache_create_context : unit -> int = "cache_create_context"
-external c_cache_destroy_context : int -> unit = "cache_destroy_context"
-external c_cache_state : int -> int = "cache_state"
-external c_cache_can_transition : int -> int -> int = "cache_can_transition"
+let c_cache_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_cache_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_cache_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_cache_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_cache_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

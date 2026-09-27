@@ -8,7 +8,7 @@
 package proven-nesy
 version = 0.1.0
 authors = "Jonathan D.A. Jewell"
-brief   = "Neurosymbolic integration server — formal ABI types"
+brief   = "Neurosymbolic state/type model; no connected proof checker or drift detector"
 
 sourcedir = "src"
 main = Main

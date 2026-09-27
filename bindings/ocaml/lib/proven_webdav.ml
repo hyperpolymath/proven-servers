@@ -82,12 +82,18 @@ let property_op_to_tag = function
 let property_op_of_tag = function
   | 0 -> Some Set | 1 -> Some Remove | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_webdav_abi_version : unit -> int = "webdav_abi_version"
-external c_webdav_create_context : unit -> int = "webdav_create_context"
-external c_webdav_destroy_context : int -> unit = "webdav_destroy_context"
-external c_webdav_can_transition : int -> int -> int = "webdav_can_transition"
+let c_webdav_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_webdav_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_webdav_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_webdav_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

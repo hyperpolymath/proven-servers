@@ -67,12 +67,18 @@ let delay_mechanism_to_tag = function
 let delay_mechanism_of_tag = function
   | 0 -> Some E2e | 1 -> Some P2p | 2 -> Some Dm_disabled | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_ptp_abi_version : unit -> int = "ptp_abi_version"
-external c_ptp_create_context : unit -> int = "ptp_create_context"
-external c_ptp_destroy_context : int -> unit = "ptp_destroy_context"
-external c_ptp_can_transition : int -> int -> int = "ptp_can_transition"
+let c_ptp_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ptp_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ptp_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ptp_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

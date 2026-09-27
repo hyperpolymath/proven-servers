@@ -65,30 +65,31 @@ abiVersion = 1
 -- | ctlog_submit                  | (slot: c_int, entry_type: u8,           |
 -- |                               |  data_ptr: ptr, data_len: u32)          |
 -- |                               |  -> u8 (SubmissionStatus tag)           |
--- |                               | Submit an entry for inclusion.          |
+-- |                               | Always rejects: no persistent log/tree. |
 -- +-------------------------------+-----------------------------------------+
 -- | ctlog_entry_count             | (slot: c_int) -> u32                    |
--- |                               | Returns total submitted entries.        |
+-- |                               | Model counter; submissions fail closed. |
 -- +-------------------------------+-----------------------------------------+
 -- | ctlog_tree_size               | (slot: c_int) -> u32                    |
--- |                               | Returns current Merkle tree size.       |
+-- |                               | Model counter; no Merkle tree exists.   |
 -- +-------------------------------+-----------------------------------------+
 -- | ctlog_begin_merge             | (slot: c_int) -> u8 (0=ok, 1=rejected) |
 -- |                               | Transitions Active -> Merging.          |
 -- +-------------------------------+-----------------------------------------+
 -- | ctlog_finish_merge            | (slot: c_int) -> u8 (0=ok, 1=rejected) |
--- |                               | Transitions Merging -> Active or        |
--- |                               | Merging -> Signing.                     |
+-- |                               | In-memory lifecycle model only;         |
+-- |                               | does not build a Merkle tree.           |
 -- +-------------------------------+-----------------------------------------+
--- | ctlog_sign_sth                | (slot: c_int) -> u8 (0=ok, 1=rejected) |
--- |                               | Transitions Signing -> Active.          |
+-- | ctlog_sign_sth                | (slot: c_int) -> u8                     |
+-- |                               | Always rejects: no signing backend.     |
 -- +-------------------------------+-----------------------------------------+
 -- | ctlog_verify_inclusion        | (slot: c_int, index: u32)               |
 -- |                               |  -> u8 (VerificationResult tag)         |
+-- |                               | Always rejects: no Merkle proof input.  |
 -- +-------------------------------+-----------------------------------------+
 -- | ctlog_verify_consistency      | (slot: c_int, old_size: u32,            |
 -- |                               |  new_size: u32)                         |
--- |                               |  -> u8 (VerificationResult tag)         |
+-- |                               | Always rejects: no Merkle proof input.  |
 -- +-------------------------------+-----------------------------------------+
 -- | ctlog_shutdown                | (slot: c_int) -> u8 (0=ok, 1=rejected) |
 -- |                               | Transitions to Shutdown.                |

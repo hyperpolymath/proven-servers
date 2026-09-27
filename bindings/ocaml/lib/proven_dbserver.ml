@@ -192,13 +192,20 @@ let session_state_of_tag = function
   | 5 -> Some Disconnecting
   | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_dbserver_abi_version : unit -> int = "dbserver_abi_version"
-external c_dbserver_create_context : unit -> int = "dbserver_create_context"
-external c_dbserver_destroy_context : int -> unit = "dbserver_destroy_context"
-external c_dbserver_state : int -> int = "dbserver_state"
-external c_dbserver_can_transition : int -> int -> int = "dbserver_can_transition"
+let c_dbserver_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_dbserver_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_dbserver_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_dbserver_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_dbserver_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

@@ -3,14 +3,10 @@
 //
 // odns.zig -- Zig FFI implementation of proven-odns.
 //
-// Implements an Oblivious DNS (draft-pauly-dprive-oblivious-doh) session
-// state machine with:
-//   - 64-slot mutex-protected session pool
-//   - HPKE key pair management (simulated)
-//   - Query/response encapsulation tracking
-//   - Role-based access enforcement (Client/Proxy/Target)
-//   - Query counter for statistics
-//   - Thread-safe via per-pool mutex
+// Implements an Oblivious DNS session-state model, not an encrypted DNS
+// implementation. There is no HPKE backend, DNS transport, encrypted query
+// processing, or response decryption; those operations fail closed.
+// The remaining ABI models session creation, roles, cleanup, and counters.
 //
 // All exported functions use C calling convention (callconv(.c)) and
 // communicate state via u8 tags matching ODNSABI.Types.idr exactly.
@@ -159,58 +155,37 @@ pub export fn odns_state(slot: c_int) callconv(.c) u8 {
     return @intFromEnum(sessions[idx].state);
 }
 
-/// Complete HPKE key exchange. Returns 0 on success, 1 on rejection.
-/// Transitions: KeyExchange -> Ready.
+/// HPKE key exchange is unavailable because no reviewed HPKE backend is linked.
+/// Always returns 1 and leaves the session in KeyExchange.
 pub export fn odns_key_exchange(
     slot: c_int,
     pubkey_ptr: [*]const u8,
     pubkey_len: u32,
 ) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-
-    const idx = validSlot(slot) orelse return 1;
-    if (sessions[idx].state != .key_exchange) return 1;
-    if (pubkey_len == 0 or pubkey_len > MAX_PUBKEY_LEN) return 1;
-
-    @memcpy(sessions[idx].pubkey[0..pubkey_len], pubkey_ptr[0..pubkey_len]);
-    sessions[idx].pubkey_len = pubkey_len;
-    sessions[idx].state = .ready;
-    return 0;
+    _ = slot;
+    _ = pubkey_ptr;
+    _ = pubkey_len;
+    return 1;
 }
 
-/// Submit an oblivious DNS query. Returns 0 on success, 1 on rejection.
-/// Transitions: Ready -> Processing.
+/// Encrypted query submission is unavailable without HPKE and DNS transport.
+/// Always rejects without changing session state.
 pub export fn odns_submit_query(
     slot: c_int,
     query_ptr: [*]const u8,
     query_len: u32,
 ) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-
+    _ = slot;
     _ = query_ptr;
-
-    const idx = validSlot(slot) orelse return 1;
-    if (sessions[idx].state != .ready) return 1;
-    if (query_len == 0 or query_len > MAX_QUERY_LEN) return 1;
-
-    sessions[idx].state = .processing;
-    return 0;
+    _ = query_len;
+    return 1;
 }
 
-/// Get query response (simulated). Returns 0 on success, 1 on failure.
-/// Transitions: Processing -> Ready.
+/// Response retrieval and decryption are unavailable without an HPKE backend.
+/// Always rejects and never increments the processed-query counter.
 pub export fn odns_get_response(slot: c_int) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-
-    const idx = validSlot(slot) orelse return 1;
-    if (sessions[idx].state != .processing) return 1;
-
-    sessions[idx].query_count += 1;
-    sessions[idx].state = .ready;
-    return 0;
+    _ = slot;
+    return 1;
 }
 
 /// Returns the role tag for this session.

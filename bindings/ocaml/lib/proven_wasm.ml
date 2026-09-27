@@ -44,12 +44,18 @@ let mutability_to_tag = function
 let mutability_of_tag = function
   | 0 -> Some Immutable | 1 -> Some Mutable | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_wasm_abi_version : unit -> int = "wasm_abi_version"
-external c_wasm_create_context : unit -> int = "wasm_create_context"
-external c_wasm_destroy_context : int -> unit = "wasm_destroy_context"
-external c_wasm_can_transition : int -> int -> int = "wasm_can_transition"
+let c_wasm_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_wasm_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_wasm_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_wasm_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

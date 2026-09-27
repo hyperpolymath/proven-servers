@@ -1,47 +1,22 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
-# Authoritative source: docs/AI-CONVENTIONS.md
+# Authoritative guidance: docs/AI-CONVENTIONS.adoc
 
-# Read 0-AI-MANIFEST.a2ml in the repo root FIRST for canonical file locations.
+# Read 0-AI-MANIFEST.a2ml, .machine_readable/6a2/STATE.a2ml, and
+# .machine_readable/6a2/anchor/ANCHOR.a2ml before editing.
 
-# LICENSE
-# All original code: MPL-2.0 (SPDX header required on every file).
-# Never use AGPL-3.0. Fallback to MPL-2.0 only when platform requires it.
-# Copyright: Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+# Be precise about evidence: Idris2 model builds, Zig tests, generated ABI
+# checks, binding links, and protocol interoperability are different claims.
+# Grep-based smoke checks are not runtime tests or formal proofs.
 
-# STATE FILES
-# .a2ml metadata files go in .machine_readable/ ONLY.
-# Never create STATE.a2ml, META.a2ml, ECOSYSTEM.a2ml, AGENTIC.a2ml,
-# NEUROSYM.a2ml, or PLAYBOOK.a2ml in the repository root.
+# Keep unavailable authentication/cryptographic operations fail-closed. Do not
+# publish or deploy the current container scaffolding.
 
-# BANNED PATTERNS
-# Idris2: believe_me, assert_total, assert_smaller, unsafePerformIO
-# Haskell: unsafeCoerce, unsafePerformIO, undefined, error
-# OCaml: Obj.magic, Obj.repr, Obj.obj
-# Coq: Admitted
-# Lean: sorry
-# Rust: transmute (unless FFI with // SAFETY: comment)
+# Existing language bindings are source inventory, not supported-language
+# promises. Do not add a language/runtime without recording rationale and a
+# reproducible toolchain plan.
 
-# BANNED LANGUAGES
-# TypeScript -> use ReScript
-# Node.js / npm / bun -> use Deno
-# Go -> use Rust
-# Python -> use Julia or Rust
+# Preserve per-file SPDX identifiers, third-party notices, and repository
+# licensing rules. Original source is generally MPL-2.0.
 
-# CONTAINERS
-# Runtime: Podman (never Docker)
-# File: Containerfile (never Dockerfile)
-# Base: cgr.dev/chainguard/wolfi-base:latest
-
-# ABI/FFI STANDARD
-# ABI definitions: Idris2 with dependent types (src/abi/)
-# FFI implementation: Zig with C ABI (ffi/zig/)
-# Generated C headers: generated/abi/
-
-# BUILD SYSTEM
-# Use just (justfile) for all build, test, lint, and format tasks.
-
-# CODE STYLE
-# Use descriptive variable names.
-# Annotate and document all files.
-# Add SPDX-License-Identifier header to every source file.
+# Use configured Justfile tasks; `fmt-check` checks Git whitespace only.

@@ -20,7 +20,7 @@ import Authserver
 covering
 main : IO ()
 main = do
-  putStrLn "proven-authserver v0.1.0 -- authentication server"
+  putStrLn "proven-authserver v0.1.0 -- authentication lifecycle model (no credential verifier)"
   putStrLn ""
   putStrLn $ "Auth port:           " ++ show authPort
   putStrLn $ "Token TTL:           " ++ show tokenTTL ++ " seconds"

@@ -265,31 +265,19 @@ pub export fn authserver_authenticate(slot: c_int, method: u8) callconv(.c) u8 {
     }
     if (method > 7) return @intFromEnum(AuthResult.invalid_credentials);
 
-    // Check if already locked out from too many failures
+    // This ABI carries no credential material and has no authenticator. A
+    // matching method tag is not proof of identity, so every attempt fails.
     if (sessions[idx].failed_attempts >= MAX_FAILED_ATTEMPTS) {
         sessions[idx].state = .locked;
         return @intFromEnum(AuthResult.account_locked);
     }
 
-    const req_method: AuthMethod = @enumFromInt(method);
-
-    // Simulate auth: method must match session's configured method
-    if (req_method != sessions[idx].auth_method) {
-        sessions[idx].failed_attempts += 1;
-        if (sessions[idx].failed_attempts >= MAX_FAILED_ATTEMPTS) {
-            sessions[idx].state = .locked;
-            return @intFromEnum(AuthResult.account_locked);
-        }
-        return @intFromEnum(AuthResult.invalid_credentials);
+    sessions[idx].failed_attempts += 1;
+    if (sessions[idx].failed_attempts >= MAX_FAILED_ATTEMPTS) {
+        sessions[idx].state = .locked;
+        return @intFromEnum(AuthResult.account_locked);
     }
-
-    // Check if MFA is required and not yet verified
-    if (sessions[idx].mfa_required and !sessions[idx].mfa_verified) {
-        return @intFromEnum(AuthResult.mfa_required);
-    }
-
-    sessions[idx].auth_count += 1;
-    return @intFromEnum(AuthResult.success);
+    return @intFromEnum(AuthResult.invalid_credentials);
 }
 
 // -- MFA ----------------------------------------------------------------------
@@ -309,21 +297,12 @@ pub export fn authserver_require_mfa(slot: c_int, mfa_method: u8) callconv(.c) u
     return 0;
 }
 
-/// Verify MFA challenge. Returns 0 on success, 1 on rejection.
+/// Verify MFA challenge. The ABI accepts no challenge/response material, so
+/// the method tag alone cannot verify a factor. Always rejects without mutation.
 pub export fn authserver_verify_mfa(slot: c_int, mfa_method: u8) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-
-    const idx = validSlot(slot) orelse return 1;
-    if (sessions[idx].state != .active) return 1;
-    if (!sessions[idx].mfa_required) return 1;
-    if (mfa_method > 4) return 1;
-
-    const req_mfa: MFAMethod = @enumFromInt(mfa_method);
-    if (req_mfa != sessions[idx].mfa_method) return 1;
-
-    sessions[idx].mfa_verified = true;
-    return 0;
+    _ = slot;
+    _ = mfa_method;
+    return 1;
 }
 
 // -- Token management ---------------------------------------------------------
@@ -337,6 +316,10 @@ pub export fn authserver_issue_token(slot: c_int, token_type: u8) callconv(.c) u
     const idx = validSlot(slot) orelse return 1;
     if (sessions[idx].state != .active) return 1;
     if (token_type > 3) return 1;
+    // This model has no authenticator, so auth_count remains zero and token
+    // issuance fails closed until a reviewed identity backend is integrated.
+    if (sessions[idx].auth_count == 0) return 1;
+    if (sessions[idx].mfa_required and !sessions[idx].mfa_verified) return 1;
 
     // Find free token slot
     for (&sessions[idx].tokens) |*t| {

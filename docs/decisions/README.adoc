@@ -1,18 +1,17 @@
-== Architecture Decision Records
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Architecture Decision Records
 
-We record significant architectural decisions using
-https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions[Architecture
-Decision Records (ADRs)], as described by Michael Nygard.
+Significant architectural choices are recorded as dated ADR documents in this
+directory. The current records are selected history, not a complete or
+machine-validated decision log.
 
-Each ADR captures the context, decision, and consequences of a choice
-that affects the project’s structure, dependencies, or conventions.
+== Create an ADR
 
-=== Creating a new ADR
+There is no `just adr` generator. Copy `0000-template.adoc` to the next
+available numbered `.adoc` filename, replace every example section, and review
+its paths, status, and evidence before opening a pull request.
 
-[source,bash]
-----
-just adr "Title of decision"
-----
-
-This creates a new numbered file in `+docs/decisions/+` from the
-template at `+0000-template.md+`.
+Use `Proposed` until the maintainer accepts the decision. If a later decision
+changes an earlier one, link the records and update the earlier status without
+rewriting its historical context.

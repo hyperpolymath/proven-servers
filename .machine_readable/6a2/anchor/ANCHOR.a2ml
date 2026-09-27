@@ -1,52 +1,55 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# ANCHOR.a2ml - authoritative anchor for this repository
+# ANCHOR.a2ml — repository semantic and evidence boundary.
 
 [metadata]
-version = "1.0.0"
-last-updated = "2026-03-02"
+version = "1.1.0"
+last-updated = "2026-09-27"
 
 [anchor]
 schema = "hyperpolymath.anchor/1"
 repo = "hyperpolymath/proven-servers"
-authority = "upstream-canonical"
+authority = "repository-maintained"
 
 purpose = [
-  "Define canonical semantics and policy boundaries for this repository.",
-  "Declare what downstream/satellite repos can extend but not redefine.",
-  "Provide a stable golden path and invariant contract for release readiness.",
+  "Define the source repository's purpose and verification boundary.",
+  "Prevent source presence, models, and historical audit reports from being mistaken for operational or current proof evidence.",
+  "Provide the repository-specific development and maintenance entry points.",
 ]
 
 [identity]
 project = "proven-servers"
-kind = "library"                         # language | library | service | tool
-one-sentence = "Dependently-typed protocol implementations with verified ABI/FFI"
-domain = "network-protocols"
+kind = "source-monorepo"
+one-sentence = "A research and prototype monorepo containing protocol models, FFI experiments, language-binding sources, and supporting documentation."
+domain = "protocol-models-and-ffi"
 
 [semantic-authority]
-policy = "canonical"
+policy = "canonical-within-this-repository"
 
 owns = [
-  "Project semantics and specification",
-  "Invariant definitions and contractiles",
-  "Reference implementation behavior",
+  "Repository-specific project scope and evidence claims",
+  "Package-level model and FFI source where present",
+  "Repository maintenance policy and binding-readiness declarations",
 ]
 
 [implementation-policy]
-allowed = ["Rust", "Idris2", "Zig", "Scheme", "Shell", "Just", "AsciiDoc", "Markdown"]
-forbidden = ["Node.js", "npm"]
+model-and-abi-languages = ["Idris2"]
+native-ffi-language = ["Zig"]
+existing-binding-source-languages = ["Ada", "C", "C++", "C#", "Dart", "Elixir", "Gleam", "Go", "Haskell", "Java", "JavaScript", "Julia", "Kotlin", "Lua", "OCaml", "PHP", "Python", "ReScript", "Ruby", "Rust", "Swift"]
+new-language-policy = "Require a documented scope and toolchain rationale; existing binding directories do not establish support."
+license = "MPL-2.0 for original source, subject to file-level SPDX and third-party license notices."
 
 [golden-path]
-smoke-test-command = [
-  "just test",
-  "just quality",
-]
+source-smoke-test = "just test-static"
+compiler-backed-test = "just test"
+quality-command = "just quality"
+limitations = "Compiler-backed tasks require Just, Idris2, and Zig; static smoke tasks are not proofs or conformance tests."
 
 success-criteria = [
-  "Core tests pass",
-  "Quality gates pass",
-  "No unresolved critical security findings",
+  "Relevant package builds and executable tests pass on the exact revision and recorded toolchains.",
+  "Model, ABI, generated header, native implementation, and binding correspondence is tested for each claimed bridge.",
+  "Readiness and deployment claims are supported by current evidence.",
 ]
 
 [satellite-policy]
@@ -56,7 +59,9 @@ must-have-anchor = true
 must-have-golden-path = true
 
 [semantic-authority-files]
-language-spec = "SPECIFICATION.md"
-formal-proofs = "docs/proofs/PROOFS.adoc"
-type-theory = "docs/theory/THEORY.adoc"
-algorithms = "docs/theory/ALGORITHMS.adoc"
+human-overview = "README.adoc"
+current-state = "READINESS.adoc"
+verification-needs = "PROOF-NEEDS.adoc"
+architecture-metadata = ".machine_readable/6a2/META.a2ml"
+project-state = ".machine_readable/6a2/STATE.a2ml"
+task-entrypoint = "Justfile"

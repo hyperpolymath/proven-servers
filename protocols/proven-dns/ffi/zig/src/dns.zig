@@ -3,13 +3,13 @@
 //
 // dns.zig -- Zig FFI implementation of proven-dns.
 //
-// Implements the verified DNS query lifecycle state machine with:
+// Implements a bounded DNS state-machine/message-builder model with:
 //   - 64-slot mutex-protected context pool
-//   - State machine enforcement matching Idris2 DNSABI.Transitions.idr
-//   - DNS message builder (header + question + answer + authority + additional)
-//   - Record type encoding (ABI tags <-> IANA wire codes)
-//   - DNSSEC state machine (enable, key load, sign/validate)
+//   - A deliberately narrow root-question query subset
+//   - Responses capped at 512 bytes and non-authoritative/non-recursive flags
+//   - DNSSEC configuration state; key loading/signing/validation fail closed
 //   - Thread-safe via per-slot mutex pool
+// This is not a general resolver or a production DNSSEC implementation.
 
 const std = @import("std");
 
@@ -75,7 +75,7 @@ pub const DnsState = enum(u8) {
     sent = 4,
 };
 
-/// DNSSEC states (matching DNSABI.Transitions.idr).
+/// DNSSEC ABI/model tags; key loading, signing, and validation are unavailable.
 pub const DnssecState = enum(u8) {
     disabled = 0,
     enabled = 1,
@@ -150,7 +150,7 @@ const Context = struct {
     state: DnsState,
     /// Current DNSSEC state.
     dnssec_state: DnssecState,
-    /// DNSSEC algorithm (valid when key_loaded or validated).
+    /// Reserved ABI/model tag; this FFI never selects a cryptographic algorithm.
     dnssec_algo: u8,
     /// Response code.
     rcode: u8,
@@ -158,6 +158,8 @@ const Context = struct {
     query_rtype: u8,
     /// Parsed query class (ABI tag).
     query_class: u8,
+    /// Recursion Desired bit copied from a supported query.
+    recursion_desired: bool,
     /// Parsed query transaction ID.
     transaction_id: u16,
     /// Whether this slot is in use.
@@ -192,6 +194,7 @@ const empty_context: Context = .{
     .rcode = 0,
     .query_rtype = 255,
     .query_class = 255,
+    .recursion_desired = false,
     .transaction_id = 0,
     .active = false,
     .answers = [_]ResourceRecord{empty_rr} ** 16,
@@ -307,45 +310,38 @@ pub export fn dns_query_class(slot: c_int) callconv(.c) u8 {
 
 // -- Lifecycle transitions ----------------------------------------------------
 
-/// Parse a DNS query from a raw buffer.
-/// Transitions: Idle -> QueryReceived.
-/// The buffer must contain at least a 12-byte DNS header.
+/// Parse only an exact 17-byte standard request (QR=0, OPCODE=QUERY) with
+/// one root-name question, a recognized type/class, no other sections, and RD
+/// as its only set flag.
+/// Other packets are rejected because this context does not retain arbitrary
+/// QNAMEs or EDNS data. Transitions: Idle -> QueryReceived on valid input.
 pub export fn dns_parse_query(slot: c_int, buf: ?[*]const u8, len: u16) callconv(.c) u8 {
     const idx = validSlot(slot) orelse return 1;
     mutexes[idx].lock();
     defer mutexes[idx].unlock();
     if (contexts[idx].state != .idle) return 1;
-
-    // Minimum DNS header is 12 bytes
-    if (len < 12) return 1;
+    if (len != 17) return 1;
     const data = buf orelse return 1;
 
-    // Parse transaction ID (bytes 0-1, big-endian)
-    contexts[idx].transaction_id = (@as(u16, data[0]) << 8) | @as(u16, data[1]);
-
-    // Parse opcode from flags byte (byte 2, bits 1-4)
-    // We store but don't validate opcode here — the ABI tag check is in Layout.idr
-
-    // If we have a question section (bytes 4-5 > 0), try to extract qtype and qclass
-    const qdcount: u16 = (@as(u16, data[4]) << 8) | @as(u16, data[5]);
-    if (qdcount > 0 and len > 12) {
-        // Skip the QNAME (series of length-prefixed labels ending with 0)
-        var offset: usize = 12;
-        while (offset < len) {
-            const label_len = data[offset];
-            offset += 1;
-            if (label_len == 0) break;
-            offset += label_len;
-        }
-        // Read QTYPE (2 bytes) and QCLASS (2 bytes) if available
-        if (offset + 4 <= len) {
-            const wire_type: u16 = (@as(u16, data[offset]) << 8) | @as(u16, data[offset + 1]);
-            const wire_class: u16 = (@as(u16, data[offset + 2]) << 8) | @as(u16, data[offset + 3]);
-            contexts[idx].query_rtype = wireTypeToAbiTag(wire_type);
-            contexts[idx].query_class = wireClassToAbiTag(wire_class);
-        }
+    // Accept only a standard query (QR=0, opcode=QUERY), optionally RD=1.
+    if ((data[2] & 0xFE) != 0 or data[3] != 0) return 1;
+    if (data[4] != 0 or data[5] != 1) return 1; // exactly one question
+    for (data[6..12]) |section_count| {
+        if (section_count != 0) return 1; // unsupported response/additional sections
     }
+    if (data[12] != 0) return 1; // only the root QNAME is retained/encoded
 
+    const wire_type: u16 = (@as(u16, data[13]) << 8) | @as(u16, data[14]);
+    const wire_class: u16 = (@as(u16, data[15]) << 8) | @as(u16, data[16]);
+    const query_type = wireTypeToAbiTag(wire_type);
+    const query_class = wireClassToAbiTag(wire_class);
+    if (query_type == 255 or query_class == 255) return 1;
+
+    // Commit parsed data only after the entire minimal packet is validated.
+    contexts[idx].transaction_id = (@as(u16, data[0]) << 8) | @as(u16, data[1]);
+    contexts[idx].recursion_desired = (data[2] & 1) != 0;
+    contexts[idx].query_rtype = query_type;
+    contexts[idx].query_class = query_class;
     contexts[idx].state = .query_received;
     return 0;
 }
@@ -399,6 +395,7 @@ fn addRecord(slot: c_int, section: Section, rtype: u8, rclass: u8, ttl: u32, rda
     if (rtype > 14) return 1; // invalid ABI record type tag
     if (rclass > 3) return 1; // invalid ABI query class tag
     if (rdlen > 256) return 1; // rdata too large
+    if (rdlen > 0 and rdata == null) return 1; // non-empty rdata requires a pointer
 
     var rr: ResourceRecord = empty_rr;
     rr.rtype = rtype;
@@ -445,7 +442,9 @@ pub export fn dns_set_rcode(slot: c_int, rcode_tag: u8) callconv(.c) u8 {
 
 /// Build a DNS response message into the provided buffer.
 /// Transitions: ResponseBuilding -> Sent.
-/// The output buffer must be at least 512 bytes.
+/// The output buffer must be at least 512 bytes. Responses exceeding that
+/// limit are rejected before writing any bytes. DNSSEC-enabled contexts are
+/// rejected because no signer is available; unsigned operation remains usable.
 /// On success, out_len is set to the actual message length.
 pub export fn dns_build_response(slot: c_int, out: ?[*]u8, out_len: ?*u16) callconv(.c) u8 {
     const idx = validSlot(slot) orelse return 1;
@@ -455,6 +454,12 @@ pub export fn dns_build_response(slot: c_int, out: ?[*]u8, out_len: ?*u16) callc
 
     const buf = out orelse return 1;
     const len_ptr = out_len orelse return 1;
+    len_ptr.* = 0;
+
+    // DNSSEC was requested, but this implementation cannot produce or verify
+    // signatures. Never send an unsigned response under an enabled DNSSEC state.
+    if (contexts[idx].dnssec_state != .disabled) return 1;
+    if (responseLength(&contexts[idx]) > 512) return 1;
 
     var offset: usize = 0;
 
@@ -462,9 +467,10 @@ pub export fn dns_build_response(slot: c_int, out: ?[*]u8, out_len: ?*u16) callc
     // Transaction ID
     buf[0] = @truncate(contexts[idx].transaction_id >> 8);
     buf[1] = @truncate(contexts[idx].transaction_id);
-    // Flags: QR=1, Opcode=0, AA=1, TC=0, RD=1, RA=1, Z=0, RCODE
-    buf[2] = 0x85; // 1_0000_1_0_1 = QR=1, Opcode=0, AA=1, TC=0, RD=1
-    buf[3] = 0x80 | (contexts[idx].rcode & 0x0F); // RA=1, Z=0, RCODE
+    // QR=1, standard opcode, AA=0, TC=0, echo RD; RA=0 because recursion
+    // is not implemented. Do not claim authority or recursive service.
+    buf[2] = 0x80 | @as(u8, if (contexts[idx].recursion_desired) 1 else 0);
+    buf[3] = contexts[idx].rcode & 0x0F; // RA=0, Z=0, RCODE
     // QDCOUNT = 1 (echo back the question)
     buf[4] = 0;
     buf[5] = 1;
@@ -501,6 +507,24 @@ pub export fn dns_build_response(slot: c_int, out: ?[*]u8, out_len: ?*u16) callc
     len_ptr.* = @intCast(offset);
     contexts[idx].state = .sent;
     return 0;
+}
+
+/// Calculate the uncompressed wire length before writing to the caller's
+/// fixed-minimum (512-byte) output buffer.
+fn responseLength(ctx: *const Context) usize {
+    return 17 + sectionWireLength(&ctx.answers, ctx.answer_count) +
+        sectionWireLength(&ctx.authorities, ctx.authority_count) +
+        sectionWireLength(&ctx.additionals, ctx.additional_count);
+}
+
+fn sectionWireLength(records: *const [16]ResourceRecord, count: u16) usize {
+    var length: usize = 0;
+    var i: usize = 0;
+    while (i < count) : (i += 1) {
+        // Root owner name (1), TYPE (2), CLASS (2), TTL (4), RDLENGTH (2), RDATA.
+        length += 11 + @as(usize, records[i].rdlen);
+    }
+    return length;
 }
 
 /// Write a section of resource records into the output buffer.
@@ -541,7 +565,7 @@ fn writeSection(buf: [*]u8, start_offset: usize, records: *const [16]ResourceRec
 
 // -- DNSSEC operations --------------------------------------------------------
 
-/// Enable DNSSEC on a context.
+/// Mark DNSSEC mode requested. No crypto backend exists; response building fails closed.
 /// Transitions: DnssecDisabled -> DnssecEnabled.
 pub export fn dns_enable_dnssec(slot: c_int) callconv(.c) u8 {
     const idx = validSlot(slot) orelse return 1;
@@ -552,38 +576,33 @@ pub export fn dns_enable_dnssec(slot: c_int) callconv(.c) u8 {
     return 0;
 }
 
-/// Load a DNSSEC signing key.
-/// Transitions: DnssecEnabled -> DnssecKeyLoaded.
+/// Load a DNSSEC signing key. This ABI accepts only an algorithm tag, not
+/// private-key material, so it cannot load a key and always rejects.
 pub export fn dns_load_dnssec_key(slot: c_int, algo: u8) callconv(.c) u8 {
     const idx = validSlot(slot) orelse return 1;
     mutexes[idx].lock();
     defer mutexes[idx].unlock();
-    if (contexts[idx].dnssec_state != .enabled) return 1;
-    if (algo > 4) return 1; // invalid DNSSEC algorithm tag
-    contexts[idx].dnssec_algo = algo;
-    contexts[idx].dnssec_state = .key_loaded;
-    return 0;
+    if (contexts[idx].dnssec_state != .enabled or algo > 4) return 1;
+    return 1; // No private key bytes or key-management backend are provided.
 }
 
-/// Sign the response (DNSSEC).
-/// Transitions: DnssecKeyLoaded -> DnssecValidated.
-/// Only valid when lifecycle state is ResponseBuilding.
+/// Sign the response (DNSSEC). No signing backend is present, so a key tag or
+/// state transition is never treated as evidence of a generated signature.
 pub export fn dns_sign_response(slot: c_int) callconv(.c) u8 {
     const idx = validSlot(slot) orelse return 1;
     mutexes[idx].lock();
     defer mutexes[idx].unlock();
     if (contexts[idx].dnssec_state != .key_loaded) return 1;
     if (contexts[idx].state != .response_building) return 1;
-    contexts[idx].dnssec_state = .validated;
-    return 0;
+    return 1;
 }
 
-/// Check DNSSEC validation result.
+/// Check DNSSEC validation result. No DNSSEC validator is available.
 pub export fn dns_validate_dnssec(slot: c_int) callconv(.c) u8 {
     const idx = validSlot(slot) orelse return 1;
     mutexes[idx].lock();
     defer mutexes[idx].unlock();
-    return if (contexts[idx].dnssec_state == .validated) 0 else 1;
+    return 1;
 }
 
 // -- Stateless transition checks ----------------------------------------------
@@ -602,7 +621,7 @@ pub export fn dns_can_transition(from: u8, to: u8) callconv(.c) u8 {
     return 0;
 }
 
-/// Check whether a DNSSEC state transition is valid.
+/// Check the abstract DNSSEC state model only; this does not imply that crypto is available.
 /// Matches DNSABI.Transitions.validateDnssecTransition exactly.
 pub export fn dns_can_dnssec_transition(from: u8, to: u8) callconv(.c) u8 {
     if (from == 0 and to == 1) return 1; // Disabled -> Enabled

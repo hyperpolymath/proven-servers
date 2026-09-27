@@ -5,7 +5,7 @@ package proven-odns
 version = "0.1.0"
 authors = "Jonathan D.A. Jewell"
 license = "MPL-2.0"
-brief   = "Formally verified Oblivious DNS types (draft-pauly-dprive-oblivious-doh)"
+brief   = "Oblivious DNS session-state model; no HPKE or encrypted DNS backend"
 
 sourcedir = "src"
 main = Main

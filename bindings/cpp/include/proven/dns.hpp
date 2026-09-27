@@ -2,18 +2,21 @@
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
 /// @file dns.hpp
-/// @brief C++ bindings for proven-dns (DNS server protocol).
+/// @brief C++ bindings for the bounded proven-dns message-builder FFI.
 ///
-/// RAII wrapper around the Zig FFI context pool. Lifecycle:
-/// Idle -> QueryReceived -> Lookup -> ResponseBuilding -> Sent.
-/// DNSSEC sub-state: Disabled -> Enabled -> KeyLoaded -> Validated.
+/// Bounded root-question message-builder wrapper around the Zig FFI context pool.
+/// It accepts only the exact 17-byte standard-query subset and emits at most
+/// 512 bytes; this is not a general resolver. DNSSEC key loading/signing/
+/// validation fail closed; DNSSEC states below are ABI/model tags only.
 
 #ifndef PROVEN_DNS_HPP
 #define PROVEN_DNS_HPP
 
 #include "error.hpp"
 #include <cstdint>
+#include <cstddef>
 #include <optional>
+#include <stdexcept>
 
 extern "C" {
     uint32_t dns_abi_version();
@@ -27,6 +30,7 @@ extern "C" {
     uint16_t dns_additional_count(int slot);
     uint8_t dns_query_rtype(int slot);
     uint8_t dns_query_class(int slot);
+    // Raw FFI: accepts only the exact 17-byte standard root-question subset.
     uint8_t dns_parse_query(int slot, const uint8_t* buf, uint16_t len);
     uint8_t dns_begin_lookup(int slot);
     uint8_t dns_begin_response(int slot);
@@ -34,6 +38,7 @@ extern "C" {
     uint8_t dns_add_authority(int slot, uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t* rdata, uint16_t rdlen);
     uint8_t dns_add_additional(int slot, uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t* rdata, uint16_t rdlen);
     uint8_t dns_set_rcode(int slot, uint8_t rcode_tag);
+    // Raw FFI: out must reference at least 512 writable bytes; no capacity argument exists.
     uint8_t dns_build_response(int slot, uint8_t* out, uint16_t* out_len);
     uint8_t dns_enable_dnssec(int slot);
     uint8_t dns_load_dnssec_key(int slot, uint8_t algo);
@@ -50,7 +55,7 @@ enum class DnsState : uint8_t {
     Idle = 0, QueryReceived = 1, Lookup = 2, ResponseBuilding = 3, Sent = 4
 };
 
-/// @brief DNSSEC sub-state machine.
+/// @brief DNSSEC ABI/model state tags; cryptographic operations are unavailable.
 enum class DnssecState : uint8_t {
     Disabled = 0, Enabled = 1, KeyLoaded = 2, Validated = 3
 };
@@ -93,38 +98,52 @@ public:
     [[nodiscard]] uint8_t query_rtype() const { return dns_query_rtype(slot_); }
     [[nodiscard]] uint8_t query_class() const { return dns_query_class(slot_); }
 
-    /// @brief Parse a DNS query. Transitions Idle -> QueryReceived.
-    void parse_query(const uint8_t* data, uint16_t len) {
-        ProvenError::check_status(dns_parse_query(slot_, data, len));
+    /// @brief Parse only the exact 17-byte standard root-question query subset.
+    void parse_query(const uint8_t* data, std::size_t len) {
+        if (data == nullptr || len != 17) {
+            throw std::invalid_argument("DNS query must be a non-null 17-byte buffer");
+        }
+        ProvenError::check_status(dns_parse_query(slot_, data, static_cast<uint16_t>(len)));
     }
 
     void begin_lookup() { ProvenError::check_status(dns_begin_lookup(slot_)); }
     void begin_response() { ProvenError::check_status(dns_begin_response(slot_)); }
 
-    void add_answer(uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t* rdata, uint16_t rdlen) {
-        ProvenError::check_status(dns_add_answer(slot_, rtype, rclass, ttl, rdata, rdlen));
+    void add_answer(uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t* rdata, std::size_t rdlen) {
+        check_rdata(rdata, rdlen);
+        ProvenError::check_status(dns_add_answer(slot_, rtype, rclass, ttl, rdata, static_cast<uint16_t>(rdlen)));
     }
 
-    void add_authority(uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t* rdata, uint16_t rdlen) {
-        ProvenError::check_status(dns_add_authority(slot_, rtype, rclass, ttl, rdata, rdlen));
+    void add_authority(uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t* rdata, std::size_t rdlen) {
+        check_rdata(rdata, rdlen);
+        ProvenError::check_status(dns_add_authority(slot_, rtype, rclass, ttl, rdata, static_cast<uint16_t>(rdlen)));
     }
 
-    void add_additional(uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t* rdata, uint16_t rdlen) {
-        ProvenError::check_status(dns_add_additional(slot_, rtype, rclass, ttl, rdata, rdlen));
+    void add_additional(uint8_t rtype, uint8_t rclass, uint32_t ttl, const uint8_t* rdata, std::size_t rdlen) {
+        check_rdata(rdata, rdlen);
+        ProvenError::check_status(dns_add_additional(slot_, rtype, rclass, ttl, rdata, static_cast<uint16_t>(rdlen)));
     }
 
     void set_rcode(uint8_t rcode_tag) { ProvenError::check_status(dns_set_rcode(slot_, rcode_tag)); }
 
-    /// @brief Build response. Returns bytes written to out.
-    uint16_t build_response(uint8_t* out) {
+    /// @brief Build response. Requires an output buffer of at least 512 bytes.
+    /// @return Number of bytes written (at most 512).
+    uint16_t build_response(uint8_t* out, std::size_t capacity) {
+        if (out == nullptr || capacity < 512) {
+            throw std::invalid_argument("DNS response buffer must be at least 512 bytes");
+        }
         uint16_t out_len = 0;
         ProvenError::check_status(dns_build_response(slot_, out, &out_len));
         return out_len;
     }
 
+    /// Enable mode only; response construction then rejects without a signer.
     void enable_dnssec() { ProvenError::check_status(dns_enable_dnssec(slot_)); }
+    /// Always fails closed: the ABI accepts no private-key material.
     void load_dnssec_key(DnssecAlgorithm algo) { ProvenError::check_status(dns_load_dnssec_key(slot_, static_cast<uint8_t>(algo))); }
+    /// Always fails closed because no DNSSEC signing backend exists.
     void sign_response() { ProvenError::check_status(dns_sign_response(slot_)); }
+    /// Always returns false because no DNSSEC validator exists.
     [[nodiscard]] bool validate_dnssec() const { return dns_validate_dnssec(slot_) == 0; }
 
     static bool can_transition(DnsState from, DnsState to) {
@@ -138,6 +157,12 @@ public:
     static uint32_t abi_version() { return dns_abi_version(); }
 
 private:
+    static void check_rdata(const uint8_t* data, std::size_t len) {
+        if (len > 256 || (len > 0 && data == nullptr)) {
+            throw std::invalid_argument("DNS RDATA must be at most 256 bytes and non-null when non-empty");
+        }
+    }
+
     int slot_;
 };
 

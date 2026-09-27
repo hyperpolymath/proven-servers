@@ -36,7 +36,7 @@ allOperations = [KeyGen, Encapsulate, Decapsulate, Sign, Verify]
 
 main : IO ()
 main = do
-  putStrLn "proven-pqc : Post-Quantum Cryptography server"
+  putStrLn "proven-pqc : PQC lifecycle/negotiation model (cryptography unavailable)"
   putStrLn $ "  Default KEM: " ++ defaultKEM
   putStrLn $ "  Default Sig: " ++ defaultSig
   putStrLn $ "  Default Hybrid Mode: " ++ show defaultHybridMode

@@ -407,47 +407,25 @@ pub export fn krb_selected_enctype(slot: c_int) callconv(.c) u8 {
 
 // -- Authentication state transitions -----------------------------------------
 
-/// Simulates AS exchange: Initial -> TGTObtained.
-/// Requires client principal and realm to be set.
-/// Returns 0 on success, 1 if rejected.
+/// AS exchange is unavailable: this ABI has no KDC connection, credentials,
+/// pre-authentication, or encrypted ticket validation. Always rejects.
 pub export fn krb_obtain_tgt(slot: c_int) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-    const idx = validSlot(slot) orelse return 1;
-    if (contexts[idx].auth_state != .initial) return 1;
-    if (!contexts[idx].client_set) return 1;
-    if (contexts[idx].realm_len == 0) return 1;
-
-    contexts[idx].auth_state = .tgt_obtained;
-    contexts[idx].has_tgt = true;
-    return 0;
+    _ = slot;
+    return 1;
 }
 
-/// Simulates TGS exchange: TGTObtained -> ServiceTicketObtained.
-/// Requires service principal to be set.
-/// Returns 0 on success, 1 if rejected.
+/// TGS exchange is unavailable: this ABI has no validated TGT, KDC, or
+/// encrypted service ticket. Always rejects.
 pub export fn krb_obtain_service_ticket(slot: c_int) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-    const idx = validSlot(slot) orelse return 1;
-    if (contexts[idx].auth_state != .tgt_obtained) return 1;
-    if (!contexts[idx].service_set) return 1;
-
-    contexts[idx].auth_state = .service_ticket_obtained;
-    contexts[idx].has_service_ticket = true;
-    return 0;
+    _ = slot;
+    return 1;
 }
 
-/// Simulates AP exchange: ServiceTicketObtained -> Authenticated.
-/// Returns 0 on success, 1 if rejected.
+/// AP authentication is unavailable: no service ticket or authenticator is
+/// accepted or verified by this model. Always rejects.
 pub export fn krb_authenticate(slot: c_int) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-    const idx = validSlot(slot) orelse return 1;
-    if (contexts[idx].auth_state != .service_ticket_obtained) return 1;
-
-    contexts[idx].auth_state = .authenticated;
-    return 0;
+    _ = slot;
+    return 1;
 }
 
 /// Forces transition to AuthFailed with the given error code.

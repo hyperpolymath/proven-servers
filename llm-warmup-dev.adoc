@@ -1,19 +1,25 @@
-== LLM Warmup — proven-servers (Developer)
+= LLM Warmup — proven-servers Developer
 
-=== What is proven-servers?
+== Scope
 
-See README.adoc for overview.
+`proven-servers` is a research/prototype source monorepo, not a deployable
+server suite. Start with `0-AI-MANIFEST.a2ml`, `README.adoc`, and
+`.machine_readable/6a2/STATE.a2ml`.
 
-=== Key Commands
+== Configured commands
 
-* `+just setup+` — set up development environment
-* `+just build+` — build the project
-* `+just test+` — run tests
-* `+just doctor+` — diagnose issues
-* `+just heal+` — attempt auto-repair
+* `just info` — show project phase and readiness.
+* `just deps` — report whether Just, Idris2, and Zig are available; install
+  nothing.
+* `just test-static` — source-pattern, security-heuristic, and binding
+  inventory checks only.
+* `just build-idris`, `just build-zig`, `just test-zig` — compiler-backed
+  package checks; require the corresponding tools.
+* `just e2e` — bounded selected-package sweep, not full network E2E or
+  cross-language conformance.
 
-=== Quick Context
-
-* License: MPL-2.0
-* Part of hyperpolymath ecosystem
-* See EXPLAINME.adoc for architecture
+There is no `just setup`, `heal`, `install`, release, or deployment recipe.
+`just doctor` reports tool availability and Git state only; `just assail` invokes
+an optional external scanner. Static checks and historical audit reports are
+not proof or runtime evidence. Record skipped tools and limitations in any
+handoff.

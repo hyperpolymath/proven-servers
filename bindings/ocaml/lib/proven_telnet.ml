@@ -73,12 +73,18 @@ let session_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some Negotiating | 2 -> Some Session_active
   | 3 -> Some Subneg | 4 -> Some Closing | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_telnet_abi_version : unit -> int = "telnet_abi_version"
-external c_telnet_create_context : unit -> int = "telnet_create_context"
-external c_telnet_destroy_context : int -> unit = "telnet_destroy_context"
-external c_telnet_can_transition : int -> int -> int = "telnet_can_transition"
+let c_telnet_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_telnet_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_telnet_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_telnet_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

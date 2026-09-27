@@ -1,31 +1,33 @@
-# AI Manifest for 6a2 Directory
+= AI Manifest: 6a2 metadata
 
-## Purpose
+:toc:
 
-This manifest declares the AI-assistant context for the 6a2 machine-readable metadata directory.
+== Purpose
 
-## Canonical Locations
+This file describes the repository's six core A2ML metadata documents. It is
+supporting guidance; `.machine_readable/6a2/` is the canonical location.
 
-The 6 core A2ML files MUST exist in this directory:
-1. AGENTIC.a2ml
-2. ECOSYSTEM.a2ml
-3. META.a2ml
-4. NEUROSYM.a2ml
-5. PLAYBOOK.a2ml
-6. STATE.a2ml
+== Core Metadata
 
-## Invariants
+The following files live directly in `.machine_readable/6a2/`:
 
-- No duplicate files in root directory
-- Single source of truth: this directory is authoritative
-- No stale metadata
+* `AGENTIC.a2ml` — agent scope, safety, and evidence constraints
+* `ECOSYSTEM.a2ml` — repository role and integration evidence boundary
+* `META.a2ml` — architecture and development metadata
+* `NEUROSYM.a2ml` — status of automated/symbolic analysis
+* `PLAYBOOK.a2ml` — current maintenance and verification runbook
+* `STATE.a2ml` — current project status and evidence
 
-## Protocol
+The canonical anchor is stored separately at
+`.machine_readable/6a2/anchor/ANCHOR.a2ml`.
 
-When multiple agents may write to A2ML files concurrently:
-1. Read file and record git-sha-at-read in [provenance] section
-2. Lock by creating .lock-<FILENAME>
-3. Write updated file with new [provenance] metadata
-4. Release by removing lock file
-5. On conflict: re-read and retry if git-sha-at-read does not match HEAD
+== Editing Rules
 
+* Keep exactly one authoritative copy of each core metadata document.
+* Update `last-updated` when the document's substantive facts change.
+* Keep claims consistent with source, reproducible commands, and the human
+  readiness/proof-needs documentation.
+* Record build results with the exact revision, tool versions, command, and
+  outcome; a source scan or historical report is not current verification.
+* Do not create ad-hoc locks or provenance sections unless a repository tool
+  defines and validates that protocol.

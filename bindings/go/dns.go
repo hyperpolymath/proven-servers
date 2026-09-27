@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 
-// DNS protocol bindings for proven-servers.
+// Bounded DNS message-builder bindings for proven-servers.
 //
+// Accepts only exact 17-byte standard queries with one root-name question;
+// responses are capped at 512 bytes. This is not a general resolver. DNSSEC
+// key loading, signing, and validation fail closed (validation is always false).
 // Wraps the C-ABI functions from protocols/proven-dns/ffi/zig/src/dns.zig.
 // Lifecycle: create -> parse_query -> begin_lookup -> begin_response ->
 // add records -> set_rcode -> build_response -> destroy.
@@ -53,14 +56,14 @@ const (
 	DnsSent                             // Response sent (terminal)
 )
 
-// DnssecState represents the DNSSEC sub-state machine.
+// DnssecState represents abstract DNSSEC ABI/model tags, not crypto capability.
 type DnssecState uint8
 
 const (
 	DnssecDisabled  DnssecState = iota // DNSSEC disabled
 	DnssecEnabled                      // DNSSEC enabled, no key loaded
-	DnssecKeyLoaded                    // DNSSEC key loaded
-	DnssecValidated                    // Response validated / signed
+	DnssecKeyLoaded                    // ABI/model state; operational key loading is unavailable
+	DnssecValidated                    // ABI/model state; no operational DNSSEC validation
 )
 
 // DnssecAlgorithm represents a DNSSEC signing algorithm.
@@ -147,9 +150,9 @@ func (ctx *DnsContext) QueryClass() uint8 {
 	return uint8(C.dns_query_class(ctx.slot))
 }
 
-// ParseQuery parses a DNS query from raw bytes. Transitions Idle -> QueryReceived.
+// ParseQuery accepts only the exact 17-byte standard root-question subset.
 func (ctx *DnsContext) ParseQuery(data []byte) error {
-	if len(data) == 0 {
+	if len(data) != 17 {
 		return &ProvenError{Code: 0, Kind: ErrInvalidParameter}
 	}
 	return statusError(C.dns_parse_query(ctx.slot, (*C.uint8_t)(unsafe.Pointer(&data[0])), C.uint16_t(len(data))))
@@ -167,6 +170,9 @@ func (ctx *DnsContext) BeginResponse() error {
 
 // AddAnswer adds a resource record to the answer section.
 func (ctx *DnsContext) AddAnswer(rtype, rclass uint8, ttl uint32, rdata []byte) error {
+	if len(rdata) > 256 {
+		return &ProvenError{Code: 0, Kind: ErrCapacityExceeded}
+	}
 	var ptr *C.uint8_t
 	if len(rdata) > 0 {
 		ptr = (*C.uint8_t)(unsafe.Pointer(&rdata[0]))
@@ -176,6 +182,9 @@ func (ctx *DnsContext) AddAnswer(rtype, rclass uint8, ttl uint32, rdata []byte) 
 
 // AddAuthority adds a resource record to the authority section.
 func (ctx *DnsContext) AddAuthority(rtype, rclass uint8, ttl uint32, rdata []byte) error {
+	if len(rdata) > 256 {
+		return &ProvenError{Code: 0, Kind: ErrCapacityExceeded}
+	}
 	var ptr *C.uint8_t
 	if len(rdata) > 0 {
 		ptr = (*C.uint8_t)(unsafe.Pointer(&rdata[0]))
@@ -185,6 +194,9 @@ func (ctx *DnsContext) AddAuthority(rtype, rclass uint8, ttl uint32, rdata []byt
 
 // AddAdditional adds a resource record to the additional section.
 func (ctx *DnsContext) AddAdditional(rtype, rclass uint8, ttl uint32, rdata []byte) error {
+	if len(rdata) > 256 {
+		return &ProvenError{Code: 0, Kind: ErrCapacityExceeded}
+	}
 	var ptr *C.uint8_t
 	if len(rdata) > 0 {
 		ptr = (*C.uint8_t)(unsafe.Pointer(&rdata[0]))
@@ -197,7 +209,7 @@ func (ctx *DnsContext) SetRcode(rcodeTag uint8) error {
 	return statusError(C.dns_set_rcode(ctx.slot, C.uint8_t(rcodeTag)))
 }
 
-// BuildResponse builds the DNS response message. Transitions ResponseBuilding -> Sent.
+// BuildResponse builds the bounded response. Transitions ResponseBuilding -> Sent.
 // The output buffer must be at least 512 bytes. Returns the number of bytes written.
 func (ctx *DnsContext) BuildResponse(out []byte) (uint16, error) {
 	if len(out) < 512 {
@@ -208,22 +220,22 @@ func (ctx *DnsContext) BuildResponse(out []byte) (uint16, error) {
 	return uint16(outLen), err
 }
 
-// EnableDnssec enables DNSSEC. Transitions Disabled -> Enabled.
+// EnableDnssec enables DNSSEC mode only; response construction then rejects without a signer.
 func (ctx *DnsContext) EnableDnssec() error {
 	return statusError(C.dns_enable_dnssec(ctx.slot))
 }
 
-// LoadDnssecKey loads a DNSSEC signing key. Transitions Enabled -> KeyLoaded.
+// LoadDnssecKey always fails closed: the ABI has no private-key material.
 func (ctx *DnsContext) LoadDnssecKey(algo DnssecAlgorithm) error {
 	return statusError(C.dns_load_dnssec_key(ctx.slot, C.uint8_t(algo)))
 }
 
-// SignResponse signs the response (DNSSEC). Transitions KeyLoaded -> Validated.
+// SignResponse always fails closed because no DNSSEC signing backend exists.
 func (ctx *DnsContext) SignResponse() error {
 	return statusError(C.dns_sign_response(ctx.slot))
 }
 
-// ValidateDnssec checks DNSSEC validation. Returns true if validated.
+// ValidateDnssec always returns false because no DNSSEC validator exists.
 func (ctx *DnsContext) ValidateDnssec() bool {
 	return C.dns_validate_dnssec(ctx.slot) == 0
 }

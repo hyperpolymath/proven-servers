@@ -96,12 +96,18 @@ let ntp_error_of_tag = function
   | 3 -> Some InvalidPacket | 4 -> Some KissOfDeath
   | 5 -> Some StratumTooHigh | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_ntp_abi_version : unit -> int = "ntp_abi_version"
-external c_ntp_create_context : unit -> int = "ntp_create_context"
-external c_ntp_destroy_context : int -> unit = "ntp_destroy_context"
-external c_ntp_can_transition : int -> int -> int = "ntp_can_transition"
+let c_ntp_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ntp_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ntp_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ntp_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

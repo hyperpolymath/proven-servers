@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 //
-// Swift bindings for the proven-dns protocol.
-// Wraps the C-ABI functions from protocols/proven-dns/ffi/zig/src/dns.zig.
+// Swift bindings for the bounded proven-dns message-builder FFI.
+// Only exact 17-byte standard queries with one root-name question are accepted;
+// responses are capped at 512 bytes. DNSSEC cryptographic operations fail closed.
 // Enums match Idris2 ABI tags exactly (DnsABI.Layout).
 
 import Foundation
@@ -35,6 +36,20 @@ import Foundation
 @_silgen_name("dns_can_transition") private func dns_can_transition(_ from: UInt8, _ to: UInt8) -> UInt8
 @_silgen_name("dns_can_dnssec_transition") private func dns_can_dnssec_transition(_ from: UInt8, _ to: UInt8) -> UInt8
 
+// Pass a stable non-null pointer even for empty RDATA; the FFI ignores it when len is zero.
+private func withDnsRdataPointer(
+    _ data: Data,
+    body: (UnsafePointer<UInt8>, UInt16) -> UInt8
+) -> UInt8 {
+    if data.isEmpty {
+        var emptyByte: UInt8 = 0
+        return withUnsafePointer(to: &emptyByte) { body($0, 0) }
+    }
+    return data.withUnsafeBytes { buffer in
+        body(buffer.baseAddress!.assumingMemoryBound(to: UInt8.self), UInt16(buffer.count))
+    }
+}
+
 // MARK: - Enums matching Idris2 ABI tags
 
 /// DNS query lifecycle states (tags 0-4).
@@ -62,7 +77,7 @@ public enum DnssecState: Int, CaseIterable, Sendable {
     case enabled = 1
     /// DNSSEC key loaded.
     case keyLoaded = 2
-    /// Response validated/signed.
+    /// Abstract ABI state; the current FFI cannot perform DNSSEC validation.
     case validated = 3
 
     public init?(tag: UInt8) { self.init(rawValue: Int(tag)) }
@@ -88,12 +103,13 @@ public enum DnssecAlgorithm: Int, CaseIterable, Sendable {
 
 // MARK: - Swift-idiomatic wrapper
 
-/// Swift wrapper for the proven DNS server protocol FFI.
+/// Swift wrapper for the bounded proven DNS message-builder FFI.
 ///
 /// Manages an opaque context slot in the Zig FFI pool. The context is
 /// automatically destroyed when this object is deallocated.
 ///
-/// Lifecycle: Idle -> QueryReceived -> Lookup -> ResponseBuilding -> Sent.
+/// Bounded message builder, not a general resolver. Only the exact 17-byte
+/// standard root-question query subset is accepted; DNSSEC crypto fails closed.
 public final class ProvenDns: @unchecked Sendable {
 
     private let slot: Int32
@@ -134,11 +150,12 @@ public final class ProvenDns: @unchecked Sendable {
     /// The query class (ABI tag, 255 = unset).
     public var queryClass: UInt8 { dns_query_class(slot) }
 
-    /// Parse a DNS query from raw bytes. Transitions Idle -> QueryReceived.
+    /// Parse only the exact 17-byte standard root-question query subset.
     ///
-    /// - Parameter data: Raw DNS query bytes.
-    /// - Throws: ``ProvenError/invalidState`` if not in Idle state.
+    /// - Parameter data: Exactly 17 bytes for the standard root-question subset.
+    /// - Throws: ``ProvenError/invalidParameter`` for another length, or invalid state.
     public func parseQuery(_ data: Data) throws {
+        guard data.count == 17 else { throw ProvenError.invalidParameter }
         let result = data.withUnsafeBytes { buf -> UInt8 in
             let ptr = buf.baseAddress!.assumingMemoryBound(to: UInt8.self)
             return dns_parse_query(slot, ptr, UInt16(buf.count))
@@ -166,30 +183,30 @@ public final class ProvenDns: @unchecked Sendable {
     ///   - rtype: Record type ABI tag.
     ///   - rclass: Record class ABI tag.
     ///   - ttl: Time-to-live in seconds.
-    ///   - rdata: Record data bytes.
-    /// - Throws: ``ProvenError/invalidState`` if not in ResponseBuilding state.
+    ///   - rdata: Record data bytes (at most 256 bytes).
+    /// - Throws: ``ProvenError/capacityExceeded`` for oversized data or invalid state.
     public func addAnswer(rtype: UInt8, rclass: UInt8, ttl: UInt32, rdata: Data) throws {
-        let result = rdata.withUnsafeBytes { buf -> UInt8 in
-            let ptr = buf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return dns_add_answer(slot, rtype, rclass, ttl, ptr, UInt16(buf.count))
+        guard rdata.count <= 256 else { throw ProvenError.capacityExceeded }
+        let result = withDnsRdataPointer(rdata) { ptr, len in
+            dns_add_answer(slot, rtype, rclass, ttl, ptr, len)
         }
         try ProvenError.checkStatus(result)
     }
 
     /// Add a resource record to the authority section.
     public func addAuthority(rtype: UInt8, rclass: UInt8, ttl: UInt32, rdata: Data) throws {
-        let result = rdata.withUnsafeBytes { buf -> UInt8 in
-            let ptr = buf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return dns_add_authority(slot, rtype, rclass, ttl, ptr, UInt16(buf.count))
+        guard rdata.count <= 256 else { throw ProvenError.capacityExceeded }
+        let result = withDnsRdataPointer(rdata) { ptr, len in
+            dns_add_authority(slot, rtype, rclass, ttl, ptr, len)
         }
         try ProvenError.checkStatus(result)
     }
 
     /// Add a resource record to the additional section.
     public func addAdditional(rtype: UInt8, rclass: UInt8, ttl: UInt32, rdata: Data) throws {
-        let result = rdata.withUnsafeBytes { buf -> UInt8 in
-            let ptr = buf.baseAddress!.assumingMemoryBound(to: UInt8.self)
-            return dns_add_additional(slot, rtype, rclass, ttl, ptr, UInt16(buf.count))
+        guard rdata.count <= 256 else { throw ProvenError.capacityExceeded }
+        let result = withDnsRdataPointer(rdata) { ptr, len in
+            dns_add_additional(slot, rtype, rclass, ttl, ptr, len)
         }
         try ProvenError.checkStatus(result)
     }
@@ -202,7 +219,7 @@ public final class ProvenDns: @unchecked Sendable {
         try ProvenError.checkStatus(dns_set_rcode(slot, rcodeTag))
     }
 
-    /// Build the DNS response message. Transitions ResponseBuilding -> Sent.
+    /// Build a root-question response, capped at 512 bytes.
     ///
     /// - Returns: The serialised DNS response as `Data`.
     /// - Throws: ``ProvenError/invalidState`` if not in ResponseBuilding state.
@@ -213,24 +230,24 @@ public final class ProvenDns: @unchecked Sendable {
         return Data(buf.prefix(Int(outLen)))
     }
 
-    /// Enable DNSSEC. Transitions Disabled -> Enabled.
+    /// Enable mode only; response construction then rejects because no signer exists.
     public func enableDnssec() throws {
         try ProvenError.checkStatus(dns_enable_dnssec(slot))
     }
 
-    /// Load a DNSSEC signing key. Transitions Enabled -> KeyLoaded.
+    /// Always fails closed: the ABI accepts no private-key material.
     ///
     /// - Parameter algorithm: The DNSSEC algorithm to use.
     public func loadDnssecKey(algorithm: DnssecAlgorithm) throws {
         try ProvenError.checkStatus(dns_load_dnssec_key(slot, algorithm.tag))
     }
 
-    /// Sign the response (DNSSEC). Transitions KeyLoaded -> Validated.
+    /// Always fails closed because no DNSSEC signing backend exists.
     public func signResponse() throws {
         try ProvenError.checkStatus(dns_sign_response(slot))
     }
 
-    /// Check DNSSEC validation result.
+    /// Always returns false because no DNSSEC validator exists.
     public var isDnssecValid: Bool {
         dns_validate_dnssec(slot) == 0
     }

@@ -11,7 +11,7 @@ import CTLog
 covering
 main : IO ()
 main = do
-  putStrLn "proven-ctlog — Certificate Transparency Log (RFC 6962) skeleton"
+  putStrLn "proven-ctlog — Certificate Transparency lifecycle model (no RFC 6962 log backend)"
   putStrLn $ "  Port: " ++ show ctlogPort
   putStrLn $ "  Max Chain Length: " ++ show maxChainLength
   putStrLn $ "  Max Merge Delay: " ++ show maxMergeDelay ++ "s"

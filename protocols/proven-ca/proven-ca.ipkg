@@ -5,7 +5,7 @@ package proven-ca
 version = "0.2.0"
 authors = "Jonathan D.A. Jewell"
 license = "MPL-2.0"
-brief   = "Certificate Authority with X.509 lifecycle management and ABI-FFI bridge"
+brief   = "X.509 lifecycle metadata model; signing, chain, CRL, and OCSP fail closed"
 
 sourcedir = "src"
 main = Main

@@ -9,7 +9,6 @@ import Media
 %default total
 
 ||| Print server name, ports, and enumerate all type constructors.
-partial
 main : IO ()
 main = do
   putStrLn "=========================================="

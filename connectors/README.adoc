@@ -1,137 +1,69 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-//
-// connectors/README.adoc — Overview of the proven-servers connector interfaces.
-
-= Connector Interfaces
+= Connector Source Inventory
 :author: Jonathan D.A. Jewell
 :email: j.d.a.jewell@open.ac.uk
-:revdate: 2026-03-01
+:revdate: 2026-09-27
+:toc:
 
-== What Connectors Are
+[IMPORTANT]
+====
+This directory is a package inventory, not a set of verified connector
+implementations. Names, model types, exported symbols, and historical design
+notes do not establish that a connector builds, links, or interoperates with an
+external service.
+====
 
-Connectors define the **interface** between a formally verified server core
-and external infrastructure. Each connector is a state machine:
-connect, operate, disconnect — with every valid and invalid transition
-proven at the type level.
+== Current directories
 
-There are 6 connectors:
+The current top-level connector directories are:
 
-[cols="1,2,1,1"]
-|===
-| Connector | Purpose | States | Transitions
+* `proven-cacheconn`
+* `proven-dbconn`
+* `proven-nesy-solver-api`
+* `proven-queueconn`
+* `proven-resolverconn`
+* `proven-storageconn`
 
-| `proven-dbconn`
-| Relational database connections (query, transaction, prepare)
-| 5
-| 9
+There is no maintained `proven-authconn` directory. Connector contents and
+language coverage vary; not every directory follows a common Idris2/Zig/C
+layout. See each package manifest and README for its actual files and limits.
 
-| `proven-authconn`
-| Authentication lifecycle (MFA, tokens, lockout)
-| 6
-| 11
+== Interface evidence
 
-| `proven-cacheconn`
-| Cache connections (TTL, eviction, degradation)
-| 4
-| 8
+Some packages contain Idris2 model types or state-transition declarations,
+Zig sources, hand-maintained/generated-looking C headers, and test targets.
+Those are separate source artifacts. A successful model build would establish
+only the checked Idris2 propositions; it would not prove that an independent
+Zig implementation, C header, language binding, or external protocol conforms.
 
-| `proven-queueconn`
-| Message queue pub/sub (subscribe, publish, ack/reject)
-| 5
-| 11
+No repository-wide header generator or ABI-conformance matrix currently
+establishes correspondence across the connector packages. The
+`proven-nesy-solver-api` package explicitly describes its FFI dispatch paths as
+stubs and its HTTP/Fly.io work as experimental; deployment is disabled. Do not
+interpret its endpoint or transport labels as implemented protocol support.
 
-| `proven-resolverconn`
-| DNS resolution (13 record types, DNSSEC, caching)
-| 4
-| 9
+== Package checks
 
-| `proven-storageconn`
-| Object storage (upload, download, integrity checks)
-| 5
-| 11
-|===
-
-== Directory Structure
-
-Each connector follows the same layout:
-
-[source]
-----
-connectors/proven-<name>/
-├── src/
-│   ├── <Name>Conn.idr              # Core types (existing skeleton)
-│   ├── <Name>Conn/Types.idr        # Sum types for the domain
-│   ├── <Name>Conn/Main.idr         # Entry point
-│   ├── <Name>ConnABI.idr           # Re-export module (ABI layer)
-│   └── <Name>ConnABI/
-│       ├── Layout.idr              # Tag encodings + roundtrip proofs
-│       ├── Transitions.idr         # GADT state machine + witnesses
-│       └── Foreign.idr             # Opaque handles + FFI contract
-├── generated/abi/
-│   └── <name>.h                    # C ABI header
-└── ffi/zig/
-    ├── build.zig                   # Zig build configuration
-    ├── src/<name>.zig              # Zig FFI implementation
-    └── test/<name>_test.zig        # Integration tests
-----
-
-== The ABI-FFI Pattern
-
-Each connector has three Idris2 ABI modules and a Zig FFI implementation.
-
-=== Layer 1: Layout.idr (tag encodings)
-
-Encodes each sum type as `Bits8` tags. Provides an encoder, a decoder,
-and a **roundtrip proof** ensuring they are inverse:
-
-[source,idris]
-----
-storageOpToTag : StorageOp -> Bits8
-tagToStorageOp : Bits8 -> Maybe StorageOp
-tagToStorageOpRoundtrip : (x : StorageOp) -> tagToStorageOp (storageOpToTag x) = Just x
-----
-
-=== Layer 2: Transitions.idr (state machine)
-
-A GADT encoding every legal state transition, **capability witnesses**
-(predicates on which states allow certain operations), **impossibility
-proofs** (eliminating bad states), and **decidability procedures**
-(compile-time branching on capability).
-
-=== Layer 3: Foreign.idr (FFI contract)
-
-Opaque handle types via `[external]` and a documented function contract
-listing every exported C-ABI function.
-
-=== Layer 4: Zig FFI (runtime enforcement)
-
-`enum(u8)` types matching the C header, handle structs tracking runtime
-state, and exported `callconv(.c)` functions that enforce the state
-machine by switching on the handle's current state.
-
-== Building
+When toolchains are available, the root tasks discover current package
+manifests and Zig build files:
 
 [source,bash]
 ----
-# Build any connector (shared + static libraries)
-cd connectors/proven-dbconn/ffi/zig && zig build
-
-# Run tests
-cd connectors/proven-authconn/ffi/zig && zig build test
-
-# Build all connectors
-for conn in dbconn authconn cacheconn queueconn resolverconn storageconn; do
-  (cd connectors/proven-$conn/ffi/zig && zig build test)
-done
+just build-idris
+just build-zig
+just test-zig
 ----
 
-== Error Convention
+These tasks require Idris2 and Zig; read their exit status and record exact
+versions. This assessment workspace did not run the compiler-backed matrix.
+For a focused change, inspect the package README and use its actual `.ipkg` or
+`build.zig` command. No connector is declared production-ready here.
 
-All connectors use tag `0` for "no error". Error variants start at tag `1`.
-This matches the C convention where `0` indicates success.
+== Related guidance
 
-== See Also
-
-* link:../docs/design/DESIGN-2026-03-01-connector-abi-ffi.md[Design document]
-* link:../ABI-FFI-README.md[ABI-FFI standard overview]
+* `../ABI-FFI-README.adoc` — interface evidence boundaries.
+* `../docs/design/DESIGN-2026-03-01-connector-abi-ffi.adoc` — dated design
+  note; inspect current source before relying on its assumptions.
+* `../.machine_readable/BINDINGS.a2ml` — conservative binding inventory.
+* `../READINESS.adoc` and `../PROOF-NEEDS.adoc` — current evidence and gaps.

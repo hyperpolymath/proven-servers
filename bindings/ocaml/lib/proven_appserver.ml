@@ -81,13 +81,20 @@ let error_category_of_tag = function
   | 0 -> Some ClientError | 1 -> Some ServerError | 2 -> Some Timeout
   | 3 -> Some CircuitOpen | 4 -> Some RateLimited | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_appserver_abi_version : unit -> int = "appserver_abi_version"
-external c_appserver_create_context : unit -> int = "appserver_create_context"
-external c_appserver_destroy_context : int -> unit = "appserver_destroy_context"
-external c_appserver_state : int -> int = "appserver_state"
-external c_appserver_can_transition : int -> int -> int = "appserver_can_transition"
+let c_appserver_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_appserver_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_appserver_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_appserver_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_appserver_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

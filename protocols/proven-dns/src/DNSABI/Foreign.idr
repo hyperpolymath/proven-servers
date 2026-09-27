@@ -3,8 +3,9 @@
 --
 -- DNSABI.Foreign: Foreign function declarations for the C bridge.
 --
--- Declares the opaque handle type and documents the complete FFI contract
--- that the Zig implementation must provide.
+-- Declares the opaque handle type and documents the FFI contract. DNSSEC key
+-- loading, signing, and validation fail closed until cryptographic backends are
+-- implemented; response construction rejects DNSSEC-enabled contexts.
 
 module DNSABI.Foreign
 
@@ -56,7 +57,10 @@ abiVersion = 1
 -- +-------------------------+---------------------------------------------+
 -- | dns_parse_query         | (slot: c_int, buf: *const u8,               |
 -- |                         |  len: u16) -> u8 (0=ok, 1=error)            |
--- |                         | Idle -> QueryReceived.                      |
+-- |                         | Exact 17-byte request: QR=0, OPCODE=QUERY;  |
+-- |                         | RD is the only set flag. One root QNAME, a   |
+-- |                         | recognized QTYPE/QCLASS, and zero other     |
+-- |                         | section counts are required.                |
 -- +-------------------------+---------------------------------------------+
 -- | dns_begin_lookup        | (slot: c_int) -> u8 (0=ok, 1=rejected)      |
 -- |                         | QueryReceived -> Lookup.                    |
@@ -67,7 +71,8 @@ abiVersion = 1
 -- | dns_add_answer          | (slot: c_int, rtype: u8, rclass: u8,        |
 -- |                         |  ttl: u32, rdata: *const u8,                |
 -- |                         |  rdlen: u16) -> u8 (0=ok, 1=rejected)       |
--- |                         | Only valid in ResponseBuilding state.       |
+-- |                         | Only in ResponseBuilding; RDATA <=256 bytes;|
+-- |                         | non-empty RDATA requires a valid pointer.  |
 -- +-------------------------+---------------------------------------------+
 -- | dns_add_authority       | (slot: c_int, rtype: u8, rclass: u8,        |
 -- |                         |  ttl: u32, rdata: *const u8,                |
@@ -82,20 +87,23 @@ abiVersion = 1
 -- +-------------------------+---------------------------------------------+
 -- | dns_build_response      | (slot: c_int, out: *u8, out_len: *u16)      |
 -- |                         | -> u8 (0=ok, 1=error)                       |
--- |                         | ResponseBuilding -> Sent.                   |
+-- |                         | No capacity argument: caller MUST provide  |
+-- |                         | >=512 writable bytes; larger wire messages  |
+-- |                         | are rejected before writing.                |
+-- |                         | DNSSEC-enabled contexts fail closed.        |
+-- |                         | ResponseBuilding -> Sent on success.        |
 -- +-------------------------+---------------------------------------------+
 -- | dns_enable_dnssec       | (slot: c_int) -> u8 (0=ok, 1=rejected)      |
 -- |                         | Disabled -> Enabled.                        |
 -- +-------------------------+---------------------------------------------+
 -- | dns_load_dnssec_key     | (slot: c_int, algo: u8) -> u8               |
--- |                         | Enabled -> KeyLoaded.                       |
+-- |                         | Always rejects: ABI has no private-key bytes.|
 -- +-------------------------+---------------------------------------------+
 -- | dns_sign_response       | (slot: c_int) -> u8 (0=ok, 1=rejected)      |
--- |                         | KeyLoaded -> Validated.  Only valid during  |
--- |                         | ResponseBuilding lifecycle state.           |
+-- |                         | Always rejects: no signing backend.         |
 -- +-------------------------+---------------------------------------------+
 -- | dns_validate_dnssec     | (slot: c_int) -> u8 (0=ok, 1=rejected)      |
--- |                         | Check DNSSEC validation result.             |
+-- |                         | Always rejects: no DNSSEC validator.        |
 -- +-------------------------+---------------------------------------------+
 -- | dns_answer_count        | (slot: c_int) -> u16                         |
 -- +-------------------------+---------------------------------------------+
@@ -115,5 +123,5 @@ abiVersion = 1
 -- |                         | Stateless lifecycle transition check.       |
 -- +-------------------------+---------------------------------------------+
 -- | dns_can_dnssec_transition | (from: u8, to: u8) -> u8 (1=yes, 0=no)    |
--- |                         | Stateless DNSSEC transition check.          |
+-- |                         | Abstract model transition check only.       |
 -- +-------------------------+---------------------------------------------+

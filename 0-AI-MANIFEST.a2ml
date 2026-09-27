@@ -1,195 +1,69 @@
-# ⚠️ STOP - CRITICAL READING REQUIRED
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+#
+# AI/automation entry point for the proven-servers source monorepo.
 
-**THIS FILE MUST BE READ FIRST BY ALL AI AGENTS**
+## Repository scope
 
-## WHAT IS THIS?
+`proven-servers` is a research/prototype source monorepo containing protocol
+models, Idris2 packages, Zig FFI prototypes, binding scaffolds, tests, and
+documentation. It is not a distribution of production-ready network servers.
+Directory names, source comments, generated-looking headers, inventories, and
+historical audits do not establish executable support, protocol conformance,
+ABI equivalence, security assurance, or deployment readiness.
 
-This is the AI manifest for **[YOUR-REPO-NAME]**. It declares:
-- Canonical file locations (where things MUST be, and nowhere else)
-- Critical invariants (rules that must NEVER be violated)
-- Repository structure and organization
+## Canonical project metadata
 
-## CANONICAL LOCATIONS (UNIVERSAL RULE)
+* Core state and guidance: `.machine_readable/6a2/`.
+* Canonical anchor: `.machine_readable/6a2/anchor/ANCHOR.a2ml`.
+* Maintenance policies: `.machine_readable/policies/`.
+* Bot directives: `.machine_readable/bot_directives/`.
+* Contractile policy/intent: `.machine_readable/contractiles/`.
+* Repository-specific task wrapper: root `contractile.just`, imported optionally
+  by the root `Justfile`.
+* Conservative RSR capability inventory: `.machine_readable/rsr-profile.a2ml`.
 
-### Machine-Readable Metadata: `.machine_readable/` ONLY
+Do not create duplicate core state documents at the repository root. The
+profile and local `validate-rsr` task are inventories/checks, not an RSR
+certification; the external capability applicability policy is a draft.
 
-These 6 a2ml files MUST exist in `.machine_readable/` directory ONLY:
-1. **STATE.a2ml** - Project state, progress, blockers
-2. **META.a2ml** - Architecture decisions, governance
-3. **ECOSYSTEM.a2ml** - Position in ecosystem, relationships
-4. **AGENTIC.a2ml** - AI agent interaction patterns
-5. **NEUROSYM.a2ml** - Neurosymbolic integration config
-6. **PLAYBOOK.a2ml** - Operational runbook
+## Evidence and claims
 
-**CRITICAL:** If ANY of these files exist in the root directory, this is an ERROR.
+1. Read `README.adoc`, `READINESS.adoc`, `PROOF-NEEDS.adoc`,
+   `.machine_readable/6a2/STATE.a2ml`, and the package-specific README before
+   making implementation or readiness claims.
+2. Record exact commit, toolchain versions, commands, and results for checks.
+3. Distinguish compiler builds, executable tests, source-pattern smoke checks,
+   formal proof, ABI conformance, protocol conformance, and deployment tests.
+4. An Idris2 type/proof declaration is not compiler-checked evidence until the
+   declared package builds. It does not prove independent Zig/C/binding parity.
+5. Binding directories and historical reports are not support/build evidence.
+   Follow `.machine_readable/BINDINGS.a2ml` and `READINESS.adoc`.
+6. Do not claim a security key, release artifact, benchmark result, service,
+   endpoint, external integration, or runtime capability that has not been
+   verified from the current checkout.
 
-### Anchor File: `.machine_readable/anchors/ANCHOR.a2ml` ONLY
+## Safe task execution
 
-Canonical authority and semantic-boundary declaration MUST exist at:
+* `Justfile` is the task entry point. Inspect recipe bodies before execution.
+* Build/test recipes may invoke local compilers and write build artifacts; they
+  fail if their required tools are missing.
+* Static smoke checks are explicitly heuristic and are not proofs or
+  conformance tests.
+* `setup.sh` is informational and non-mutating. It does not install packages.
+* There is no `just init`, `just setup`, `just install`, or automated rollback.
+* `just doctor` only reports local tool availability and Git state; it does not
+  repair or install anything. `just assail` invokes an optional external scan.
+* Root container/cloud deployment, package release, and Pages publishing are
+  not supported deliverables. Do not introduce publishing or cloud side
+  effects without an explicitly reviewed artifact and authorization.
+* Never run broad placeholder substitutions, firewall/SELinux changes, or
+  downloaded scripts piped to a shell as repository setup.
+* Do not commit, push, create a release, deploy, or alter credentials unless
+  explicitly requested by the user and permitted by the session environment.
 
-` .machine_readable/anchors/ANCHOR.a2ml `
+## Session handoff
 
-Do not place `ANCHOR.a2ml` at repository root.
-
-### Maintenance Policies: `.machine_readable/policies/` ONLY
-
-Canonical maintenance/governance files MUST exist under:
-
-` .machine_readable/policies/ `
-
-Minimum required files:
-- `MAINTENANCE-AXES.a2ml`
-- `MAINTENANCE-CHECKLIST.a2ml`
-- `SOFTWARE-DEVELOPMENT-APPROACH.a2ml`
-
-Do not place maintenance policy files in repository root.
-
-### Bot Directives: `.machine_readable/bot_directives/` ONLY
-
-Bot-specific instructions for your automated agents. Example roles:
-- git-ops-bot - Git operations
-- quality-bot - Code quality
-- deps-bot - Dependency updates
-- docs-bot - Documentation
-- integration-bot - Integration
-- completion-bot - Task completion
-
-### Contractiles: `.machine_readable/contractiles/` ONLY
-
-Policy enforcement contracts:
-- k9 - Operational constraints (Nickel)
-- dust - Rollback and recovery semantics
-- lust - Future intent and roadmap direction
-- must - Required invariants and validations
-- trust - Cryptographic verification (Haskell)
-
-### Agent Instructions
-
-- `.claude/CLAUDE.md` - Claude-specific patterns (if exists)
-- `0-AI-MANIFEST.a2ml` - THIS FILE (universal entry point)
-
-## CORE INVARIANTS
-
-1. **No state file duplication** - Root must NOT contain STATE.a2ml, META.a2ml, etc.
-2. **Single source of truth** - `.machine_readable/` is authoritative
-3. **No stale metadata** - If root state files exist, they are OUT OF DATE
-4. **License consistency** - All code MPL-2.0 unless platform requires MPL-2.0
-5. **Author attribution** - Always "Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>"
-6. **Container images** - MUST use Chainguard base (`cgr.dev/chainguard/wolfi-base:latest` or `cgr.dev/chainguard/static:latest`)
-7. **Container runtime** - Podman, never Docker. Files are `Containerfile`, never `Dockerfile`
-8. **Container orchestration** - `selur-compose`, never `docker-compose`
-
-## REPOSITORY STRUCTURE
-
-<!-- CUSTOMIZE THIS SECTION FOR YOUR REPO -->
-
-This repo contains:
-
-```
-[YOUR-REPO-NAME]/
-├── 0-AI-MANIFEST.a2ml         # THIS FILE (start here)
-├── README.md                   # Project overview
-├── [your source files]         # Main code
-├── container/                  # Stapeln container ecosystem templates
-│   ├── compose.toml            # selur-compose orchestration
-│   ├── compose.example.toml    # Concrete multi-service example
-│   ├── Containerfile           # Multi-stage OCI build
-│   ├── manifest.toml           # Cerro-torre bundle metadata
-│   ├── .gatekeeper.yaml        # Svalinn edge gateway policy
-│   ├── ct-build.sh             # Build/sign/verify pipeline
-│   ├── entrypoint.sh           # Container entrypoint
-│   ├── vordr.toml              # Runtime monitoring
-│   ├── deploy.k9.ncl           # k9-svc Hunt-level deployment
-│   ├── 0-AI-MANIFEST.a2ml      # AI manifest for container dir
-│   └── README.adoc             # Container directory documentation
-└── .machine_readable/          # ALL machine-readable content
-    ├── STATE.a2ml              # Project state, progress, blockers
-    ├── META.a2ml               # Architecture decisions, governance
-    ├── ECOSYSTEM.a2ml          # Ecosystem position, relationships
-    ├── AGENTIC.a2ml            # AI agent interaction patterns
-    ├── NEUROSYM.a2ml           # Neurosymbolic integration config
-    ├── PLAYBOOK.a2ml           # Operational runbook
-    ├── anchors/                # Canonical authority declarations
-    │   └── ANCHOR.a2ml         # Upstream anchor and policy boundary
-    ├── policies/               # Canonical governance policies
-    │   ├── MAINTENANCE-AXES.a2ml
-    │   ├── MAINTENANCE-CHECKLIST.a2ml
-    │   └── SOFTWARE-DEVELOPMENT-APPROACH.a2ml
-    ├── bot_directives/         # Per-bot rules and constraints
-    └── contractiles/           # Policy enforcement contracts (k9, dust, lust, must, trust)
-```
-
-## SESSION STARTUP CHECKLIST
-
-✅ Read THIS file (0-AI-MANIFEST.a2ml) first
-✅ Understand canonical location: `.machine_readable/` (state, anchors, bots, contractiles)
-✅ Know the invariants (no state file duplication, etc.)
-✅ Check for MCP enforcement (if applicable)
-✅ Read `.machine_readable/policies/MAINTENANCE-AXES.a2ml` for axis ordering and audit expectations
-✅ Read `.machine_readable/policies/MAINTENANCE-CHECKLIST.a2ml` for maintenance baseline controls
-✅ Read `.machine_readable/policies/SOFTWARE-DEVELOPMENT-APPROACH.a2ml` for execution sequence
-✅ Read `.machine_readable/6a2/STATE.a2ml` for current status
-✅ Read `.machine_readable/6a2/AGENTIC.a2ml` for interaction patterns
-
-## LIFECYCLE HOOKS
-
-### on-enter (Session Start)
-
-When starting a new session:
-
-1. Read and acknowledge this manifest
-2. Log session start (optional but recommended)
-   - Format: `[YYYY-MM-DD HH:MM:SS] Session started: [agent-name]`
-   - Location: `.machine_readable/session-log.txt`
-3. Read `.machine_readable/6a2/STATE.a2ml`
-4. Check for blockers
-5. State understanding of canonical locations
-
-### on-exit (Session End)
-
-When ending a session:
-
-1. Update `.machine_readable/6a2/STATE.a2ml` if changes made
-2. Log session end (optional but recommended)
-   - Format: `[YYYY-MM-DD HH:MM:SS] Session ended: [summary]`
-   - Location: `.machine_readable/session-log.txt`
-3. Document new blockers
-4. Summarize outcomes
-
-## Calling ECHIDNA via BoJ
-
-All ECHIDNA invocations go through the `echidna-llm-mcp` BoJ cartridge.
-**Never call ECHIDNA directly — always go through BoJ.**
-
-| Tool | Description |
-|------|-------------|
-| `echidna_list_provers` | Discover all 105 provers with tier/category/complexity |
-| `echidna_prove` | Invoke a prover on proof content (typed outcome) |
-| `echidna_verify` | Verify inline proof content (typed outcome) |
-| `echidna_verify_raw` | Direct binary invocation (EProver, CaDiCaL, SAT solvers) |
-| `echidna_suggest` | Neural tactic suggestions (Julia ML corpus-backed) |
-| `echidna_suggest_tactics` | Aspect-tag tactic suggestions — advisory only |
-| `echidna_search` | Keyword search over 66,674-proof corpus |
-| `echidna_session_create` | Start interactive tactic session |
-
-```json
-{ "tool": "echidna_list_provers", "args": {} }
-{ "tool": "echidna_prove", "args": { "prover": "Lean", "content": "theorem t : 1 + 1 = 2 := rfl" } }
-{ "tool": "echidna_suggest_tactics", "args": { "goal": "n + 0 = n", "prover": "Lean" } }
-```
-
-Full protocol: `boj-server/cartridges/echidna-llm-mcp/docs/CALL-PROTOCOL.adoc`
-
-## ATTESTATION PROOF
-
-After reading this file, demonstrate understanding by stating:
-
-**"I have read the AI manifest. All machine-readable content (state files, anchors, policies, bot directives, contractiles) is located in `.machine_readable/` ONLY, and I will not create duplicate files in the root directory."**
-
-## META
-
-- **Format Version:** 1.0.0
-- **Created:** [DATE]
-- **Maintained By:** [YOUR-NAME/ORG]
-- **License:** MPL-2.0
-- **Protocol:** https://github.com/hyperpolymath/0-ai-gatekeeper-protocol
+Update `.machine_readable/6a2/STATE.a2ml` when substantive verification status
+changes. Do not create ad-hoc provenance or session logs; use a repository tool
+only when its format and validation contract are defined.

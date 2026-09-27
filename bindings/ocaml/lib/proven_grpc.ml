@@ -55,31 +55,56 @@ let status_code_of_code = function
 let compression_to_tag = function
   | Comp_none -> 0 | Comp_gzip -> 1 | Comp_deflate -> 2
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_grpc_abi_version : unit -> int = "grpc_abi_version"
-external c_grpc_create : int -> int = "grpc_create"
-external c_grpc_destroy : int -> unit = "grpc_destroy"
-external c_grpc_stream_state : int -> int = "grpc_stream_state"
-external c_grpc_compression : int -> int = "grpc_compression"
-external c_grpc_status_code : int -> int = "grpc_status_code"
-external c_grpc_set_status : int -> int -> int = "grpc_set_status"
-external c_grpc_stream_id : int -> int = "grpc_stream_id"
-external c_grpc_send_headers : int -> int = "grpc_send_headers"
-external c_grpc_local_end_stream : int -> int = "grpc_local_end_stream"
-external c_grpc_remote_end_stream : int -> int = "grpc_remote_end_stream"
-external c_grpc_reset_stream : int -> int -> int = "grpc_reset_stream"
-external c_grpc_close_half_local : int -> int = "grpc_close_half_local"
-external c_grpc_close_half_remote : int -> int = "grpc_close_half_remote"
-external c_grpc_push_promise : int -> int = "grpc_push_promise"
-external c_grpc_reserved_to_half : int -> int = "grpc_reserved_to_half"
-external c_grpc_can_send : int -> int = "grpc_can_send"
-external c_grpc_can_receive : int -> int = "grpc_can_receive"
-external c_grpc_send_window : int -> int = "grpc_send_window"
-external c_grpc_recv_window : int -> int = "grpc_recv_window"
-external c_grpc_update_send_window : int -> int -> int = "grpc_update_send_window"
-external c_grpc_update_recv_window : int -> int -> int = "grpc_update_recv_window"
-external c_grpc_can_transition : int -> int -> int = "grpc_can_transition"
+let c_grpc_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_create : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_destroy : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_stream_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_compression : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_status_code : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_set_status : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_stream_id : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_send_headers : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_local_end_stream : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_remote_end_stream : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_reset_stream : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_close_half_local : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_close_half_remote : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_push_promise : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_reserved_to_half : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_can_send : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_can_receive : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_send_window : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_recv_window : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_update_send_window : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_update_recv_window : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_grpc_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

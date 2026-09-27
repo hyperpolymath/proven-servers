@@ -21,7 +21,7 @@
     "ghcr.io/nickel-lang/devcontainer-feature:0": {}
   },
 
-  "postCreateCommand": "just deps",
+  "postCreateCommand": "just info",
 
   "remoteUser": "nonroot",
 

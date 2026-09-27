@@ -6,14 +6,23 @@ Date: 2026-02-14
 
 Accepted
 
+=== Current applicability
+
+This is a historical decision record, not a current compliance inventory. The
+current repository shape and evidence limits are documented in
+`0-AI-MANIFEST.a2ml`, `README.adoc`, `.machine_readable/rsr-profile.a2ml`, and
+`READINESS.adoc`. Template features listed below are not assumed to exist or be
+enabled in this repository; action pinning and capability applicability must
+be checked against the current checkout.
+
 === Context
 
 Managing multiple repositories with an ad-hoc approach led to
 significant inconsistencies across the ecosystem. Common problems
 included:
 
-* Missing or incomplete configuration files (SECURITY.md,
-CONTRIBUTING.md, .editorconfig, etc.)
+* Missing or incomplete configuration files (security policy, contributing
+guidance, editor configuration, etc.)
 * State files (STATE.a2ml, META.a2ml, ECOSYSTEM.a2ml) placed in the
 repository root instead of the canonical `+.machine_readable/+`
 directory
@@ -45,11 +54,11 @@ all AI agents
 orchestration integration
 * *Contractiles* in `+.machine_readable/contractiles/+` (k9, dust, lust,
 must, trust) for policy enforcement
-* *Standardized workflows* (16+ GitHub Actions workflows, all
-SHA-pinned)
+* *Standardized workflow patterns* with action-version metadata; action
+  references and pinning must be verified for each consuming repository
 * *Justfile automation* with standard recipes for common tasks
-* *Security and governance files*: SECURITY.md, CONTRIBUTING.md,
-CODE_OF_CONDUCT.md, LICENSE (MPL-2.0)
+* *Security and governance guidance* in the formats and paths selected by each
+  repository, alongside a LICENSE
 * *Architecture Decision Records* in `+docs/decisions/+`
 
 New repositories are created by cloning the template:

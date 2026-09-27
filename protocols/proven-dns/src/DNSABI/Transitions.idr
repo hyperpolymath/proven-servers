@@ -1,7 +1,11 @@
 -- SPDX-License-Identifier: MPL-2.0
 -- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
 --
--- DNSABI.Transitions: Valid DNS query lifecycle state transitions.
+-- DNSABI.Transitions: Abstract DNS query lifecycle transitions.
+--
+-- These are pure state-machine witnesses, not evidence of a running DNS
+-- resolver or available DNSSEC backend. The current Zig FFI rejects DNSSEC
+-- key loading, signing, and validation.
 --
 -- Models the DNS query processing lifecycle (RFC 1035 Section 4):
 --
@@ -52,16 +56,16 @@ Eq DnsState where
 -- DNSSEC validation states
 ---------------------------------------------------------------------------
 
-||| DNSSEC operational state, orthogonal to query lifecycle.
+||| Abstract DNSSEC model state, orthogonal to the query lifecycle.
 public export
 data DnssecState : Type where
-  ||| DNSSEC is not enabled for this context.
+  ||| Abstract model state: DNSSEC is not enabled.
   DnssecDisabled  : DnssecState
-  ||| DNSSEC is enabled but no signing key is loaded.
+  ||| Abstract model state: DNSSEC is enabled but no key is loaded.
   DnssecEnabled   : DnssecState
-  ||| A DNSSEC signing key has been loaded.
+  ||| Abstract model state; the operational FFI cannot load a key.
   DnssecKeyLoaded : DnssecState
-  ||| DNSSEC validation has been performed on the response.
+  ||| Abstract model state; the operational FFI cannot validate DNSSEC.
   DnssecValidated : DnssecState
 
 public export
@@ -101,11 +105,11 @@ data ValidDnsTransition : DnsState -> DnsState -> Type where
 ||| Proof witness that a DNSSEC state transition is valid.
 public export
 data ValidDnssecTransition : DnssecState -> DnssecState -> Type where
-  ||| Disabled -> Enabled (enable DNSSEC on context).
+  ||| Abstract transition: Disabled -> Enabled (mark mode requested).
   EnableDnssec  : ValidDnssecTransition DnssecDisabled DnssecEnabled
-  ||| Enabled -> KeyLoaded (load a signing key).
+  ||| Abstract transition only; the FFI cannot load key material.
   LoadKey       : ValidDnssecTransition DnssecEnabled DnssecKeyLoaded
-  ||| KeyLoaded -> Validated (sign and validate response).
+  ||| Abstract transition only; the FFI cannot sign or validate.
   ValidateSig   : ValidDnssecTransition DnssecKeyLoaded DnssecValidated
 
 ---------------------------------------------------------------------------
@@ -117,7 +121,7 @@ public export
 data CanAddRecord : DnsState -> Type where
   BuildingCanAdd : CanAddRecord ResponseBuilding
 
-||| Proof that a context can perform DNSSEC signing.
+||| Pure model witness that signing would require a loaded-key state.
 public export
 data CanSign : DnssecState -> Type where
   KeyLoadedCanSign : CanSign DnssecKeyLoaded

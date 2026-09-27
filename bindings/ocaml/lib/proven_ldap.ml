@@ -72,12 +72,18 @@ let result_code_of_tag = function
   | 7 -> Some InvalidCredentials | 8 -> Some InsufficientAccessRights
   | 9 -> Some Busy | 10 -> Some Unavailable | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_ldap_abi_version : unit -> int = "ldap_abi_version"
-external c_ldap_create_context : unit -> int = "ldap_create_context"
-external c_ldap_destroy_context : int -> unit = "ldap_destroy_context"
-external c_ldap_can_transition : int -> int -> int = "ldap_can_transition"
+let c_ldap_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ldap_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ldap_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ldap_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

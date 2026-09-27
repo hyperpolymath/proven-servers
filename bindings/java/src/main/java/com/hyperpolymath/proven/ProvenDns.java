@@ -8,10 +8,12 @@
 package com.hyperpolymath.proven;
 
 /**
- * Java bindings for the proven DNS server protocol.
+ * Java bindings for the bounded proven DNS message-builder FFI.
  *
- * <p>Lifecycle: Idle -&gt; QueryReceived -&gt; Lookup -&gt; ResponseBuilding -&gt; Sent.
- * Supports DNSSEC signing and validation via a parallel state machine.</p>
+ * <p>This is a bounded message-builder, not a general resolver: it accepts only
+ * exact 17-byte standard queries with one root-name question and caps responses
+ * at 512 bytes. DNSSEC key loading, signing, and validation fail closed; the
+ * exposed DNSSEC state transitions are ABI/model tags only.</p>
  *
  * @author Jonathan D.A. Jewell
  */
@@ -136,13 +138,23 @@ public final class ProvenDns {
 
     public static int queryClass(int slot) { return nativeQueryClass(slot); }
 
+    private static int checkedRdataLength(byte[] rdata) {
+        if (rdata == null || rdata.length > 256) {
+            throw new IllegalArgumentException("DNS RDATA must be at most 256 bytes");
+        }
+        return rdata.length;
+    }
+
     /**
-     * Parse a DNS query. Transitions Idle -&gt; QueryReceived.
+     * Parse only the exact 17-byte standard root-question query subset.
      *
      * @throws ProvenError on parse failure or invalid state
      */
     public static void parseQuery(int slot, byte[] data) throws ProvenError {
-        ProvenError.checkStatus(nativeParseQuery(slot, data, data.length));
+        if (data == null || data.length != 17) {
+            throw new IllegalArgumentException("DNS query must be exactly 17 bytes");
+        }
+        ProvenError.checkStatus(nativeParseQuery(slot, data, 17));
     }
 
     /** Begin lookup. Transitions QueryReceived -&gt; Lookup. */
@@ -157,17 +169,17 @@ public final class ProvenDns {
 
     /** Add a resource record to the answer section. */
     public static void addAnswer(int slot, int rtype, int rclass, int ttl, byte[] rdata) throws ProvenError {
-        ProvenError.checkStatus(nativeAddAnswer(slot, rtype, rclass, ttl, rdata, rdata.length));
+        ProvenError.checkStatus(nativeAddAnswer(slot, rtype, rclass, ttl, rdata, checkedRdataLength(rdata)));
     }
 
     /** Add a resource record to the authority section. */
     public static void addAuthority(int slot, int rtype, int rclass, int ttl, byte[] rdata) throws ProvenError {
-        ProvenError.checkStatus(nativeAddAuthority(slot, rtype, rclass, ttl, rdata, rdata.length));
+        ProvenError.checkStatus(nativeAddAuthority(slot, rtype, rclass, ttl, rdata, checkedRdataLength(rdata)));
     }
 
     /** Add a resource record to the additional section. */
     public static void addAdditional(int slot, int rtype, int rclass, int ttl, byte[] rdata) throws ProvenError {
-        ProvenError.checkStatus(nativeAddAdditional(slot, rtype, rclass, ttl, rdata, rdata.length));
+        ProvenError.checkStatus(nativeAddAdditional(slot, rtype, rclass, ttl, rdata, checkedRdataLength(rdata)));
     }
 
     /** Set the response code. */
@@ -184,27 +196,30 @@ public final class ProvenDns {
      * @throws ProvenError on failure
      */
     public static int buildResponse(int slot, byte[] outBuf) throws ProvenError {
+        if (outBuf == null || outBuf.length < 512) {
+            throw new IllegalArgumentException("DNS response buffer must be at least 512 bytes");
+        }
         int[] outLen = new int[1];
         ProvenError.checkStatus(nativeBuildResponse(slot, outBuf, outLen));
         return outLen[0];
     }
 
-    /** Enable DNSSEC. Transitions Disabled -&gt; Enabled. */
+    /** Enable mode only; response construction then rejects because no signer exists. */
     public static void enableDnssec(int slot) throws ProvenError {
         ProvenError.checkStatus(nativeEnableDnssec(slot));
     }
 
-    /** Load a DNSSEC signing key. Transitions Enabled -&gt; KeyLoaded. */
+    /** Always fails closed: the ABI accepts no private-key material. */
     public static void loadDnssecKey(int slot, DnssecAlgorithm algo) throws ProvenError {
         ProvenError.checkStatus(nativeLoadDnssecKey(slot, algo.tag()));
     }
 
-    /** Sign the response. Transitions KeyLoaded -&gt; Validated. */
+    /** Always fails closed because no DNSSEC signing backend exists. */
     public static void signResponse(int slot) throws ProvenError {
         ProvenError.checkStatus(nativeSignResponse(slot));
     }
 
-    /** Check DNSSEC validation result. */
+    /** Always returns false because no DNSSEC validator exists. */
     public static boolean validateDnssec(int slot) {
         return nativeValidateDnssec(slot) == 0;
     }

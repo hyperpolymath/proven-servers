@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# proven-servers — Security Aspect Test Suite
+# proven-servers — Static Security-Heuristic Smoke Checks
 #
-# Tests security-specific properties of the proven-servers protocol
-# implementations.  These are aspect tests — they cut across all protocols
-# and verify that the security invariants established in the Idris2 ABI
-# specifications are preserved in the Zig FFI implementations.
+# This script uses grep/source-shape checks over a small sample. It does not
+# execute the FFI or establish security properties, and it is not a security
+# certification or proof that Idris specifications and Zig code conform.
 #
 # Security aspects covered
 # ────────────────────────
@@ -75,8 +74,17 @@ pass()      { green  "  PASS: $1"; PASS=$((PASS + 1)); }
 fail_test() { red    "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 skip_test() { yellow "  SKIP: $1 ($2)"; SKIP=$((SKIP + 1)); }
 
+exported_function_body() {
+    local function_name="$1" source_file="$2"
+    awk -v fn="$function_name" '
+        !capture && index($0, "pub export fn " fn "(") > 0 { capture=1 }
+        capture { print }
+        capture && /^}/ { exit }
+    ' "$source_file"
+}
+
 echo "═══════════════════════════════════════════════════════════════"
-echo "  proven-servers — Security Aspect Tests"
+echo "  proven-servers — Static Security-Heuristic Smoke Checks (not certification)"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 
@@ -93,7 +101,7 @@ echo ""
 #   MQTT: Idle(0) → Subscribed(2)  — skips Connected authentication
 #   DNS:  Idle(0) → ResponseBuilding(3) — skips query parsing
 # ─────────────────────────────────────────────────────────────────────────────
-bold "SA1 — State machine cannot skip handshake states"
+bold "SA1 — Selected transition bypass source checks"
 
 # Format: "proto  bypass_from  bypass_to  description"
 declare -a SA1_CASES=(
@@ -107,11 +115,7 @@ declare -a SA1_CASES=(
 )
 
 for entry in "${SA1_CASES[@]}"; do
-    # shellcheck disable=SC2086
-    proto=$(echo "$entry" | awk '{print $1}')
-    bypass_from=$(echo "$entry" | awk '{print $2}')
-    bypass_to=$(echo "$entry" | awk '{print $3}')
-    description=$(echo "$entry" | cut -d' ' -f4-)
+    read -r proto bypass_from bypass_to description <<< "$entry"
 
     SRC_FILE="protocols/proven-${proto}/ffi/zig/src/${proto}.zig"
     if [ ! -f "$SRC_FILE" ]; then
@@ -119,25 +123,28 @@ for entry in "${SA1_CASES[@]}"; do
         continue
     fi
 
-    # The bypass transition must NOT appear as an accepted edge (return 1).
+    transition_body="$(exported_function_body "${proto}_can_transition" "$SRC_FILE")"
+    if [ -z "$transition_body" ]; then
+        skip_test "SA1 proven-${proto}: ${description}" "transition function not found"
+        continue
+    fi
     BYPASS_PATTERN="from == ${bypass_from} and to == ${bypass_to}"
-    if grep "$BYPASS_PATTERN" "$SRC_FILE" 2>/dev/null | grep -q "return 1"; then
-        fail_test "SA1 proven-${proto}: BYPASS ACCEPTED — ${description}"
+    if grep "$BYPASS_PATTERN" <<<"$transition_body" | grep -q "return 1"; then
+        fail_test "SA1 proven-${proto}: selected edge appears accepted — ${description}"
     else
-        pass "SA1 proven-${proto}: bypass correctly rejected — ${description}"
+        pass "SA1 proven-${proto}: selected edge text not found in accepted branch — ${description}"
     fi
 done
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SA2 — Buffer overflow prevention: explicit length bounds before memory ops
+# SA2 — Coarse source scan for selected length-comparison patterns
 #
-# Security invariant: any function that receives a pointer + length pair must
-# validate the length against an upper bound BEFORE performing any array
-# access or memcpy-equivalent.  We verify that every protocol's create/parse
-# function contains an explicit length guard.
+# This only looks for at least one textual comparison in each selected source
+# file. It does not associate the comparison with every pointer or memory
+# operation, and it does not prove ordering, bounds safety, or runtime behavior.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "SA2 — Buffer overflow prevention: length bounds enforced"
+bold "SA2 — Presence of selected length-guard source patterns"
 
 declare -a SA2_PROTOCOLS=(
     "amqp" "dns" "mqtt" "smtp" "ftp" "cache" "ca"
@@ -155,7 +162,7 @@ for proto in "${SA2_PROTOCOLS[@]}"; do
     # Valid patterns: `> MAX_*`, `>= MAX_*`, `== 0`, or a named max constant check.
     # These are the guard patterns the Zig FFI code must contain.
     if grep -qE "([lg][te]|==)[[:space:]]*(MAX_[A-Z_]+|0)" "$SRC_FILE"; then
-        pass "SA2 proven-${proto}: explicit length/size guard present"
+        pass "SA2 proven-${proto}: at least one length-guard pattern is present"
     else
         fail_test "SA2 proven-${proto}: NO explicit length guard found — potential overflow"
     fi
@@ -173,7 +180,7 @@ echo ""
 # We verify that authenticated/operating states are only reachable through
 # the intermediate states by checking the transition table structure.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "SA3 — Authentication spoofing prevention (handshake ordering)"
+bold "SA3 — Selected handshake-edge source checks"
 
 # Format: "proto  auth_state  must_come_from  description"
 declare -a SA3_CASES=(
@@ -185,10 +192,7 @@ declare -a SA3_CASES=(
 )
 
 for entry in "${SA3_CASES[@]}"; do
-    proto=$(echo "$entry" | awk '{print $1}')
-    auth_state=$(echo "$entry" | awk '{print $2}')
-    must_come_from=$(echo "$entry" | awk '{print $3}')
-    description=$(echo "$entry" | cut -d' ' -f4-)
+    read -r proto auth_state must_come_from description <<< "$entry"
 
     SRC_FILE="protocols/proven-${proto}/ffi/zig/src/${proto}.zig"
     if [ ! -f "$SRC_FILE" ]; then
@@ -197,21 +201,24 @@ for entry in "${SA3_CASES[@]}"; do
     fi
 
     # The required transition (must_come_from → auth_state) must be accepted.
+    transition_body="$(exported_function_body "${proto}_can_transition" "$SRC_FILE")"
+    if [ -z "$transition_body" ]; then
+        skip_test "SA3 proven-${proto}: ${description}" "transition function not found"
+        continue
+    fi
     REQUIRED="from == ${must_come_from} and to == ${auth_state}"
-    if grep -q "$REQUIRED" "$SRC_FILE" && grep "$REQUIRED" "$SRC_FILE" | grep -q "return 1"; then
-        pass "SA3 proven-${proto}: ${description}"
+    if grep -q "$REQUIRED" <<<"$transition_body" && grep "$REQUIRED" <<<"$transition_body" | grep -q "return 1"; then
+        pass "SA3 proven-${proto}: selected required edge appears in source — ${description}"
     else
-        fail_test "SA3 proven-${proto}: required auth transition NOT present — ${description}"
+        fail_test "SA3 proven-${proto}: selected required edge not found — ${description}"
     fi
 
-    # Transitions to auth_state from state 0 (if different from must_come_from)
-    # must NOT be accepted, unless must_come_from == 0.
     if [ "$must_come_from" != "0" ]; then
         BYPASS="from == 0 and to == ${auth_state}"
-        if grep "$BYPASS" "$SRC_FILE" 2>/dev/null | grep -q "return 1"; then
-            fail_test "SA3 proven-${proto}: auth state ${auth_state} reachable directly from Idle — spoofing possible"
+        if grep "$BYPASS" <<<"$transition_body" | grep -q "return 1"; then
+            fail_test "SA3 proven-${proto}: selected bypass appears accepted — ${description}"
         else
-            pass "SA3 proven-${proto}: auth state ${auth_state} NOT reachable directly from Idle"
+            pass "SA3 proven-${proto}: selected bypass not accepted by source pattern"
         fi
     fi
 done
@@ -226,7 +233,7 @@ echo ""
 #      slot >= MAX_SESSIONS or the validSlot() wrapper).
 #   2. The validSlot (or equivalent) function short-circuits before indexing.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "SA4 — Invalid slot safety (out-of-bounds access handled)"
+bold "SA4 — Slot-validator source patterns (not per-call verification)"
 
 declare -a SA4_PROTOCOLS=(
     "amqp" "dns" "mqtt" "smtp" "ftp" "cache" "ca"
@@ -254,7 +261,7 @@ for proto in "${SA4_PROTOCOLS[@]}"; do
     fi
 
     if [ "$HAS_SLOT_GUARD" -eq 1 ]; then
-        pass "SA4 proven-${proto}: slot bounds guard present"
+        pass "SA4 proven-${proto}: a slot-guard pattern is present"
     else
         fail_test "SA4 proven-${proto}: NO slot bounds guard — invalid indices may be dereferenced"
     fi
@@ -268,7 +275,7 @@ echo ""
 # is therefore exploitable as a denial-of-service vector.  All error paths
 # in FFI production code must return error codes, not panic.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "SA5 — No @panic in FFI production code (DoS prevention)"
+bold "SA5 — Text scan for @panic in selected FFI source trees"
 
 PANIC_IN_PROD=0
 PROD_FILES_CHECKED=0
@@ -298,7 +305,7 @@ echo ""
 # Idris2 bypass the type checker and can introduce type-unsafe casts.  These
 # patterns in the ABI specification layer undermine the formal guarantees.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "SA6 — No dangerous Idris2 patterns in ABI specs"
+bold "SA6 — Text scan for selected Idris escape-hatch identifiers"
 
 DANGEROUS_COUNT=0
 IDRIS_FILES_CHECKED=0
@@ -309,10 +316,11 @@ for idr in protocols/proven-*/src/**/*.idr \
             connectors/proven-*/src/**/*.idr; do
     [ -f "$idr" ] || continue
     IDRIS_FILES_CHECKED=$((IDRIS_FILES_CHECKED + 1))
-    if grep -qE "believe_me|assert_total|really_believe_me" "$idr"; then
-        hit=$(grep -nE "believe_me|assert_total|really_believe_me" "$idr" | head -3)
-        fail_test "SA6 dangerous Idris2 pattern in: $idr
-    $hit"
+    hits="$(grep -nE 'believe_me|assert_total|really_believe_me' "$idr" \
+        | grep -vE '^[0-9]+:[[:space:]]*(--|\|\|\|)' || true)"
+    if [ -n "$hits" ]; then
+        fail_test "SA6 possible active Idris2 escape hatch in: $idr
+    $(printf '%s\n' "$hits" | head -3)"
         DANGEROUS_COUNT=$((DANGEROUS_COUNT + 1))
     fi
 done
@@ -331,7 +339,7 @@ echo ""
 # arise when multiple threads access the session pool without synchronisation.
 # Every protocol that maintains global session state must acquire a mutex.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "SA7 — Mutex protection: global session state is guarded"
+bold "SA7 — Mutex-related source patterns in selected modules"
 
 declare -a SA7_PROTOCOLS=(
     "amqp" "dns" "mqtt" "smtp" "cache" "ca" "bfd"
@@ -359,7 +367,7 @@ for proto in "${SA7_PROTOCOLS[@]}"; do
     fi
 
     if [ "$HAS_MUTEX" -eq 1 ] && [ "$HAS_LOCK" -eq 1 ] && [ "$HAS_UNLOCK" -eq 1 ]; then
-        pass "SA7 proven-${proto}: mutex declared, lock acquired, unlock deferred"
+        pass "SA7 proven-${proto}: mutex/lock/unlock text patterns are present"
     elif [ "$HAS_MUTEX" -eq 0 ]; then
         fail_test "SA7 proven-${proto}: NO mutex declaration — TOCTOU vulnerability"
     elif [ "$HAS_LOCK" -eq 0 ]; then
@@ -377,7 +385,7 @@ echo ""
 # are error-prone and likely to be misused.  Every protocol with name-based
 # lookups or string fields must declare named maximum length constants.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "SA8 — Maximum length constants defined (buffer overflow prevention)"
+bold "SA8 — MAX_* constants in selected modules"
 
 declare -a SA8_PROTOCOLS=(
     "amqp" "dns" "mqtt" "smtp" "ftp" "cache" "ca"
@@ -395,7 +403,7 @@ for proto in "${SA8_PROTOCOLS[@]}"; do
     if grep -qE "const MAX_[A-Z_]+(:[[:space:]]*usize)?[[:space:]]*=" "$SRC_FILE"; then
         # Count the number of MAX_ constants for information.
         max_count=$(grep -cE "const MAX_[A-Z_]+" "$SRC_FILE" || echo 0)
-        pass "SA8 proven-${proto}: ${max_count} MAX_* length constant(s) defined"
+        pass "SA8 proven-${proto}: ${max_count} MAX_* declaration(s) are present"
     else
         fail_test "SA8 proven-${proto}: NO MAX_* length constants — unbounded buffers possible"
     fi
@@ -409,7 +417,7 @@ echo ""
 # on repository clone.  We scan for common patterns: hardcoded passwords,
 # API keys, private key material, and base64-encoded secrets.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "SA9 — No hardcoded credentials or secrets in FFI source"
+bold "SA9 — Credential-shaped text scan in FFI source"
 
 SECRET_PATTERNS=(
     "password[[:space:]]*=[[:space:]]*\""
@@ -447,7 +455,7 @@ done
 if [ "$FILES_CHECKED" -eq 0 ]; then
     skip_test "SA9 credential scan" "no production FFI source files found"
 elif [ "$SECRETS_FOUND" -eq 0 ]; then
-    pass "SA9 no hardcoded credentials detected in ${FILES_CHECKED} production files"
+    pass "SA9 no credential-shaped matches found in ${FILES_CHECKED} scanned files"
 fi
 echo ""
 
@@ -458,7 +466,7 @@ echo ""
 # failure — downstream consumers cannot determine the license obligations of
 # the code they are incorporating.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "SA10 — SPDX license headers present in all FFI source files"
+bold "SA10 — SPDX header presence in enumerated FFI source files"
 
 MISSING_SPDX=0
 SPDX_CHECKED=0
@@ -477,7 +485,7 @@ done
 if [ "$SPDX_CHECKED" -eq 0 ]; then
     skip_test "SA10 SPDX check" "no production FFI source files found"
 elif [ "$MISSING_SPDX" -eq 0 ]; then
-    pass "SA10 SPDX headers present in all ${SPDX_CHECKED} production FFI source files"
+    pass "SA10 SPDX headers found in all ${SPDX_CHECKED} enumerated FFI source files"
 else
     fail_test "SA10 ${MISSING_SPDX}/${SPDX_CHECKED} production FFI files missing SPDX headers"
 fi

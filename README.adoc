@@ -1,142 +1,144 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= proven-servers — Formally Verified Server Cores
-image:https://img.shields.io/badge/OpenSSF-Best_Practices-green?logo=openssourcesecurity[OpenSSF Best Practices,link="https://www.bestpractices.dev/en/projects/new?repo_url=https://github.com/hyperpolymath/proven-servers"]
+= proven-servers — Protocol Models and FFI Prototypes
 
 :author: Jonathan D.A. Jewell
 :email: j.d.a.jewell@open.ac.uk
-:revdate: 2026-03-01
-:license: MPL-2.0
+:revdate: 2026-09-27
+:license: CC-BY-SA-4.0
+:toc:
+:toclevels: 2
 
-== What This Is
+[IMPORTANT]
+====
+*This repository is not a collection of production-ready or formally verified
+server implementations.* It contains protocol models, Idris2 source, Zig FFI
+prototypes, native-binding source, and scaffolding with varying levels of
+implementation and verification. Directory counts are inventory only. Do not
+infer security, interoperability, or release readiness from the name
+`proven-servers`, a type definition, or a source-level smoke check.
+====
 
-A catalog of **109 formally verified server components** written in Idris 2 with
-dependent types: **95 protocol skeletons**, **8 core primitives**, and **6 connector
-interfaces**.
+== What is in this repository
 
-Each component defines the *correct types* for its domain: message types, valid states,
-state transitions, error codes. Machine-checked. Proven safe at compile time.
+The repository is a monorepo of protocol and connector models, per-package
+FFI experiments, language-binding sources, documentation, and audit artefacts.
+As of 2026-09-27, its top-level directory inventory is:
 
-The 6 connector interfaces have a complete **ABI-FFI layer**: Idris2 ABI definitions
-with dependent-type proofs, generated C headers, and Zig FFI implementations with
-integration tests. Any language that can call C can use them.
+[cols="1,1,3"]
+|===
+|Area |Directories |What the count means
 
-**This is the core. Nothing else.** No frameworks. No opinions. No "batteries included."
-You get the verified bones. You build the rest.
+|`protocols/` |88 |Protocol-named package directories; not 88 working servers.
+|`core/` |5 |`audit`, `cli`, `compose`, `frame`, and `fsm` package directories.
+|`connectors/` |6 |`cacheconn`, `dbconn`, `nesy-solver-api`, `queueconn`, `resolverconn`, and `storageconn` directories.
+|`bindings/` |20 |Language-named source directories; not 20 supported or tested bindings.
+|===
 
-== Who This Is For
+The protocol directory names are:
 
-**If you want to learn Idris 2:** Read the source. It's clean, documented, and teaches you
-both the protocol and the language.
+`agentic` `airgap` `amqp` `apiserver` `appserver` `authserver` `backup` `bfd`
+`ca` `cache` `caldav` `carddav` `chat` `coap` `configmgmt` `ctlog` `dds`
+`deception` `diode` `doh` `doq` `dot` `epistemic` `federation` `fileserver`
+`ftp` `gameserver` `git` `graphdb` `graphql` `grpc` `hardened` `honeypot`
+`http3` `ids` `imap` `irc` `kerberos` `kms` `ldap` `ldp` `loadbalancer`
+`logcollector` `lpd` `mcp` `mdns` `media` `metrics` `modbus` `monitor` `mqtt`
+`nesy` `netconf` `neurosym` `objectstore` `ocsp` `odns` `opcua` `ospf` `pop3`
+`pqc` `proxy` `ptp` `quic` `radius` `rtsp` `sandbox` `sdn` `semweb` `siem`
+`smb` `smtp` `snmp` `socks` `sparql` `stun` `tacacs` `telnet` `timestamp`
+`triplestore` `virt` `voip` `vpn` `wasm` `webdav` `ws` `xmpp` `zerotrust`
 
-**If you never want to touch Idris 2:** Use the FFI bindings from Rust, Go, Python, Elixir, or
-any of the 20 supported languages. Your server core is still formally verified. You don't
-care how. It just is.
+== Verification boundary
 
-Either way, your server's protocol handling is *proven correct*.
+An Idris2 proof, when the relevant `.ipkg` builds successfully with the declared
+compiler, is a proof about the proposition encoded in that Idris2 model. It does
+*not* by itself prove that a separate Zig implementation, generated header,
+network service, or language binding conforms to the model. That relationship
+requires independently reproducible conformance tests and a verified bridge;
+there is no repository-wide machine-checked proof of that relationship here.
 
-== Structure
+Build and test evidence is package- and revision-specific. The recorded audits
+under `audits/` are dated snapshots, not evidence for later source changes. The
+shell checks under `tests/` are source-pattern heuristics or partial samples;
+they are not formal proofs, exhaustive protocol conformance suites, or security
+certifications. Several operations intentionally fail closed rather than claim
+functionality: for example, the OCaml native calls raise an unavailable error,
+Authserver authentication is rejected, PQC operations reject, and DNSSEC
+signing/validation are unavailable.
+
+Before treating any component as usable, inspect its own README and ABI, build
+it with the declared toolchain, run its implementation tests, verify generated
+artifacts, and assess its protocol/security requirements. Do not use this
+repository as a production server or cryptographic implementation on the
+strength of these sources alone.
+
+== Repository layout
 
 [source]
 ----
 proven-servers/
-├── core/              # 8 primitives (socket, frame, fsm, wire, compose,
-│                      #   tls, config, audit)
-├── protocols/         # 95 protocol skeletons
-│   ├── proven-dns/    #   Each with its own .ipkg and src/
-│   ├── proven-smtp/
-│   ├── proven-mqtt/
-│   └── ...
-├── connectors/        # 6 connector interfaces (with ABI-FFI)
-│   ├── proven-dbconn/       # Database connections
-│   ├── proven-authconn/     # Authentication lifecycle
-│   ├── proven-cacheconn/    # Cache connections
-│   ├── proven-queueconn/    # Message queue pub/sub
-│   ├── proven-resolverconn/ # DNS resolution
-│   └── proven-storageconn/  # Object storage
-├── abi/               # Idris2 ABI definitions (src/abi/*.idr)
-├── ffi/               # Zig FFI layer (ffi/zig/)
-└── bindings/          # 20 language bindings over the C ABI (Ada, C++, C#,
-                       #   Dart, Elixir, Gleam, Go, Haskell, Java, JavaScript,
-                       #   Julia, Kotlin, Lua, OCaml, PHP, Python, ReScript,
-                       #   Ruby, Rust, Swift)
+├── protocols/             # 88 protocol-named source packages
+├── core/                  # Shared model/FFI packages
+├── connectors/            # Connector and integration packages
+├── bindings/              # 20 language-named source directories
+├── not-proven/            # Explicitly non-proven examples/prototypes
+├── tests/                 # Sample runtime and source-pattern checks
+├── audits/                # Dated historical audit records
+├── generated/             # ABI/header artefacts; generation status varies
+├── ffi/                   # Root-level Zig FFI sources
+├── src/abi/               # Root-level Idris2 ABI sources
+└── .machine_readable/      # State, policies, registry, and agent guidance
 ----
 
-== Protocol Catalog (95 skeletons)
+Most protocol packages keep source, `.ipkg` files, Zig `build.zig` files,
+tests, and generated ABI artefacts under that package. Presence and coverage
+vary; there is no requirement that every directory provide every layer.
 
-=== Network Protocols
-`dns` `smtp` `httpd` `ftp` `imap` `pop3` `irc` `xmpp` `mqtt` `ldap`
-`radius` `snmp` `nfs` `smb` `syslog` `tftp` `dhcp` `mdns` `coap` `amqp`
-`grpc` `graphql` `modbus` `netconf` `opcua` `telnet` `rtsp` `voip` `stun`
-`bgp` `ospf` `bfd` `sdn` `ptp` `ntp` `nts` `ws`
+== Bindings status
 
-=== Security
-`firewall` `vpn` `ids` `siem` `honeypot` `deception` `ca` `ocsp` `kms`
-`pqc` `zerotrust` `ctlog` `airgap` `diode` `sandbox` `hardened`
-`authserver` `kerberos` `socks` `tacacs` `ssh-bastion` `epistemic`
+`bindings/` contains 20 language-named directories. This is an inventory, not a
+supported-language promise. Many directories contain only declarations or
+source wrappers, and their native linking and tests have not been re-established
+as a single cross-language matrix. The OCaml tree is explicitly unavailable
+until OCaml-compatible C stubs are implemented; Java/Kotlin native method
+declarations likewise do not establish that a JNI bridge exists. See
+`.machine_readable/BINDINGS.a2ml` and `bindings/ocaml/README.adoc` for the
+current qualifications.
 
-=== DNS Variants
-`doh` `dot` `doq` `odns`
+== Local checks
 
-=== Application / Data
-`proxy` `loadbalancer` `apiserver` `appserver` `fileserver` `dbserver`
-`objectstore` `cache` `webdav` `graphdb` `sparql` `triplestore` `semweb` `ldp`
+The top-level `Justfile` is the task entry point. `just build` and `just test`
+are intended to run real Idris2/Zig checks and fail if required tools are
+missing; they are not success-printing placeholders. `bash tests/e2e.sh` runs a
+selected Idris2/Zig package test sweep; it requires both compilers and does not
+establish cross-language conformance or a full E2E server.
+`bash tests/source_smoke_test.sh`, `bash tests/aspect/security_test.sh`, and
+`bash tests/binding_inventory.sh` are explicitly static/source-inventory checks;
+they do not execute language bindings or prove cross-language conformance.
 
-=== Operations
-`monitor` `metrics` `logcollector` `configmgmt` `backup` `container` `virt` `git`
+The 2026-06-23 audit reports are historical. In the current audit environment
+Idris2, Zig, OCaml, Dune, and Just were unavailable, so no build or test suite
+could be run here. See `READINESS.adoc` and `PROOF-NEEDS.adoc` for the present
+status and concrete evidence needed next.
 
-=== Media / Communication
-`media` `chat` `gameserver`
+== Release and deployment status
 
-=== AI / Neurosymbolic
-`neurosym` `agentic` `mcp` `federation`
+No validated executable server or release artifact is produced by this
+repository. Root container/cloud deployment, package release, and Pages
+publishing automation are disabled or removed; prototype source under
+`connectors/` is not a deployment target. Do not infer operational readiness
+from a `Containerfile`, endpoint name, deployment script, or workflow without
+reproducible package and runtime evidence.
 
-=== Other
-`cli` `wasm` `lpd`
+== Related documentation
 
-== Core Primitives (8)
-
-`socket` `frame` `fsm` `wire` `compose` `tls` `config` `audit`
-
-== Connector Interfaces (6, with ABI-FFI)
-
-[cols="1,2,1"]
-|===
-| Connector | Purpose | States
-
-| `dbconn` | Relational databases (query, transaction, prepare) | 5
-| `authconn` | Authentication lifecycle (MFA, tokens, lockout) | 6
-| `cacheconn` | Cache connections (TTL, eviction, degradation) | 4
-| `queueconn` | Message queues (subscribe, publish, ack/reject) | 5
-| `resolverconn` | DNS resolution (13 RR types, DNSSEC, caching) | 4
-| `storageconn` | Object storage (upload, download, integrity) | 5
-|===
-
-Each connector has a complete ABI-FFI layer: Idris2 proofs, C headers, Zig FFI,
-and integration tests. See `connectors/README.adoc` for details.
-
-== Design Principles
-
-1. **Secure by default.** If there is a secure and insecure version of something,
-   only the secure version exists here.
-2. **Minimal.** Only the types needed to define protocol correctness. No helpers,
-   no utilities, no extras.
-3. **Composable.** Protocols are atoms. Oblivious DNS is `odns` relay + `dns`.
-   An OIDC proxy is `proxy` + `authserver`. Compose them; don't create new skeletons.
-4. **Proven.** Every type is total. No `believe_me`. No `assert_total`. No escape hatches.
-5. **Permanent.** Protocol types don't change. DNS message types from 1987 are still
-   the same types today. This code is meant to last.
-
-== ABI / FFI Standard
-
-* **ABI** (Idris 2): Interface definitions with dependent type proofs → `abi/`
-* **FFI** (Zig): C-compatible implementation → `ffi/`
-* **Bindings**: Thin wrappers for 20 languages → `bindings/`
-
-See `ABI-FFI-README.md` for the full standard.
+* link:READINESS.adoc[Readiness and current evidence]
+* link:PROOF-NEEDS.adoc[Proof and verification gaps]
+* link:ABI-FFI-README.adoc[ABI/FFI status and build notes]
+* link:QUICKSTART-DEV.adoc[Developer quick start]
+* link:SECURITY.adoc[Security policy]
 
 == License
 
-This project is licensed under the Mozilla Public License, v. 2.0. See the `LICENSE` file for details.
-
-SPDX-License-Identifier: CC-BY-SA-4.0
+The software is licensed under the Mozilla Public License 2.0; see `LICENSE`.
+This README is licensed under CC-BY-SA-4.0 as indicated by its SPDX header.

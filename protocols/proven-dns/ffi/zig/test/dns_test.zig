@@ -130,7 +130,7 @@ test "destroy is safe with invalid slot" {
 }
 
 // =========================================================================
-// Full lifecycle — Idle -> QueryReceived -> Lookup -> Building -> Sent
+// Full lifecycle (minimal root-question packet) — Idle -> QueryReceived -> Lookup -> Building -> Sent
 // =========================================================================
 
 test "full lifecycle: Idle -> QueryReceived -> Lookup -> ResponseBuilding -> Sent" {
@@ -196,7 +196,26 @@ test "parse_query rejects short buffer" {
 test "parse_query rejects null buffer" {
     const slot = dns.dns_create_context();
     defer dns.dns_destroy_context(slot);
-    try std.testing.expectEqual(@as(u8, 1), dns.dns_parse_query(slot, null, 12));
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_parse_query(slot, null, 17));
+}
+
+test "parser rejects malformed and unsupported DNS query packets" {
+    const slot = dns.dns_create_context();
+    defer dns.dns_destroy_context(slot);
+
+    var no_question: [17]u8 = [_]u8{0} ** 17;
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_parse_query(slot, &no_question, 17));
+    try std.testing.expectEqual(@as(u8, 0), dns.dns_state(slot)); // still Idle
+
+    var named_query: [19]u8 = [_]u8{0} ** 19;
+    named_query[5] = 1; // QDCOUNT = 1
+    named_query[12] = 1; // unsupported non-root QNAME: one-byte label
+    named_query[13] = 'a';
+    named_query[14] = 0;
+    named_query[16] = 1; // QTYPE = A
+    named_query[18] = 1; // QCLASS = IN
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_parse_query(slot, &named_query, 19));
+    try std.testing.expectEqual(@as(u8, 0), dns.dns_state(slot)); // still Idle
 }
 
 // =========================================================================
@@ -208,8 +227,8 @@ test "set_rcode sets response code" {
     defer dns.dns_destroy_context(slot);
 
     // Advance to ResponseBuilding
-    var query_buf: [12]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    _ = dns.dns_parse_query(slot, &query_buf, 12);
+    var query_buf: [17]u8 = .{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 };
+    _ = dns.dns_parse_query(slot, &query_buf, 17);
     _ = dns.dns_begin_lookup(slot);
     _ = dns.dns_begin_response(slot);
 
@@ -226,8 +245,8 @@ test "set_rcode rejects invalid tag" {
     const slot = dns.dns_create_context();
     defer dns.dns_destroy_context(slot);
 
-    var query_buf: [12]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    _ = dns.dns_parse_query(slot, &query_buf, 12);
+    var query_buf: [17]u8 = .{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 };
+    _ = dns.dns_parse_query(slot, &query_buf, 17);
     _ = dns.dns_begin_lookup(slot);
     _ = dns.dns_begin_response(slot);
 
@@ -249,8 +268,8 @@ test "add all 15 record types as answers" {
     defer dns.dns_destroy_context(slot);
 
     // Advance to ResponseBuilding
-    var query_buf: [12]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    _ = dns.dns_parse_query(slot, &query_buf, 12);
+    var query_buf: [17]u8 = .{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 };
+    _ = dns.dns_parse_query(slot, &query_buf, 17);
     _ = dns.dns_begin_lookup(slot);
     _ = dns.dns_begin_response(slot);
 
@@ -266,14 +285,27 @@ test "add_answer rejects invalid record type" {
     const slot = dns.dns_create_context();
     defer dns.dns_destroy_context(slot);
 
-    var query_buf: [12]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    _ = dns.dns_parse_query(slot, &query_buf, 12);
+    var query_buf: [17]u8 = .{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 };
+    _ = dns.dns_parse_query(slot, &query_buf, 17);
     _ = dns.dns_begin_lookup(slot);
     _ = dns.dns_begin_response(slot);
 
     var rdata: [4]u8 = .{ 1, 2, 3, 4 };
     try std.testing.expectEqual(@as(u8, 1), dns.dns_add_answer(slot, 15, 0, 300, &rdata, 4));
     try std.testing.expectEqual(@as(u8, 1), dns.dns_add_answer(slot, 255, 0, 300, &rdata, 4));
+}
+
+test "add_record rejects null rdata when length is nonzero" {
+    const slot = dns.dns_create_context();
+    defer dns.dns_destroy_context(slot);
+
+    var query_buf: [17]u8 = .{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 };
+    _ = dns.dns_parse_query(slot, &query_buf, 17);
+    _ = dns.dns_begin_lookup(slot);
+    _ = dns.dns_begin_response(slot);
+
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_add_answer(slot, 0, 0, 300, null, 1));
+    try std.testing.expectEqual(@as(u16, 0), dns.dns_answer_count(slot));
 }
 
 // =========================================================================
@@ -284,8 +316,8 @@ test "add authority and additional records" {
     const slot = dns.dns_create_context();
     defer dns.dns_destroy_context(slot);
 
-    var query_buf: [12]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    _ = dns.dns_parse_query(slot, &query_buf, 12);
+    var query_buf: [17]u8 = .{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 };
+    _ = dns.dns_parse_query(slot, &query_buf, 17);
     _ = dns.dns_begin_lookup(slot);
     _ = dns.dns_begin_response(slot);
 
@@ -297,33 +329,34 @@ test "add authority and additional records" {
 }
 
 // =========================================================================
-// DNSSEC state machine
+// DNSSEC state machine (cryptographic operations unavailable)
 // =========================================================================
 
-test "DNSSEC enable, load key, sign" {
+test "DNSSEC fails closed without key material or signing backend" {
     const slot = dns.dns_create_context();
     defer dns.dns_destroy_context(slot);
 
-    // Advance to ResponseBuilding
-    var query_buf: [12]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    _ = dns.dns_parse_query(slot, &query_buf, 12);
+    // Advance to ResponseBuilding.
+    var query_buf: [17]u8 = .{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 };
+    _ = dns.dns_parse_query(slot, &query_buf, 17);
     _ = dns.dns_begin_lookup(slot);
     _ = dns.dns_begin_response(slot);
 
-    // Disabled -> Enabled
     try std.testing.expectEqual(@as(u8, 0), dns.dns_enable_dnssec(slot));
-    try std.testing.expectEqual(@as(u8, 1), dns.dns_dnssec_state(slot)); // enabled
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_dnssec_state(slot)); // enabled only
 
-    // Enabled -> KeyLoaded (Ed25519)
-    try std.testing.expectEqual(@as(u8, 0), dns.dns_load_dnssec_key(slot, 4));
-    try std.testing.expectEqual(@as(u8, 2), dns.dns_dnssec_state(slot)); // key_loaded
+    // The API supplies no private-key bytes; failed operations do not advance state.
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_load_dnssec_key(slot, 4));
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_dnssec_state(slot));
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_sign_response(slot));
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_validate_dnssec(slot));
 
-    // KeyLoaded -> Validated (sign response)
-    try std.testing.expectEqual(@as(u8, 0), dns.dns_sign_response(slot));
-    try std.testing.expectEqual(@as(u8, 3), dns.dns_dnssec_state(slot)); // validated
-
-    // Validate succeeds
-    try std.testing.expectEqual(@as(u8, 0), dns.dns_validate_dnssec(slot));
+    // DNSSEC-enabled output must not silently downgrade to an unsigned response.
+    var out_buf: [512]u8 = undefined;
+    var out_len: u16 = 77;
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_build_response(slot, &out_buf, &out_len));
+    try std.testing.expectEqual(@as(u16, 0), out_len);
+    try std.testing.expectEqual(@as(u8, 3), dns.dns_state(slot)); // still ResponseBuilding
 }
 
 test "DNSSEC enable rejects double enable" {
@@ -346,13 +379,14 @@ test "DNSSEC load key rejects invalid algorithm" {
     try std.testing.expectEqual(@as(u8, 1), dns.dns_load_dnssec_key(slot, 99));
 }
 
-test "DNSSEC sign requires ResponseBuilding state" {
+test "DNSSEC sign rejects outside ResponseBuilding state" {
     const slot = dns.dns_create_context();
     defer dns.dns_destroy_context(slot);
     _ = dns.dns_enable_dnssec(slot);
-    _ = dns.dns_load_dnssec_key(slot, 0);
-    // Still in Idle, not ResponseBuilding
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_load_dnssec_key(slot, 0));
+    // Still in Idle, not ResponseBuilding; missing signing backend also rejects.
     try std.testing.expectEqual(@as(u8, 1), dns.dns_sign_response(slot));
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_dnssec_state(slot));
 }
 
 test "DNSSEC validate fails when not validated" {
@@ -397,18 +431,18 @@ test "cannot parse query after Sent (terminal)" {
     defer dns.dns_destroy_context(slot);
 
     // Complete full lifecycle
-    var query_buf: [12]u8 = .{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    _ = dns.dns_parse_query(slot, &query_buf, 12);
+    var query_buf: [17]u8 = .{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 };
+    _ = dns.dns_parse_query(slot, &query_buf, 17);
     _ = dns.dns_begin_lookup(slot);
     _ = dns.dns_begin_response(slot);
 
     var out_buf: [4096]u8 = undefined;
     var out_len: u16 = 0;
-    _ = dns.dns_build_response(slot, &out_buf, &out_len);
+    try std.testing.expectEqual(@as(u8, 0), dns.dns_build_response(slot, &out_buf, &out_len));
 
     // Now in Sent state — cannot parse another query
     try std.testing.expectEqual(@as(u8, 4), dns.dns_state(slot)); // sent
-    try std.testing.expectEqual(@as(u8, 1), dns.dns_parse_query(slot, &query_buf, 12));
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_parse_query(slot, &query_buf, 17));
 }
 
 // =========================================================================
@@ -474,16 +508,16 @@ test "built response has correct header structure" {
 
     var out_buf: [4096]u8 = undefined;
     var out_len: u16 = 0;
-    _ = dns.dns_build_response(slot, &out_buf, &out_len);
+    try std.testing.expectEqual(@as(u8, 0), dns.dns_build_response(slot, &out_buf, &out_len));
 
     // Verify transaction ID
     try std.testing.expectEqual(@as(u8, 0xAB), out_buf[0]);
     try std.testing.expectEqual(@as(u8, 0xCD), out_buf[1]);
 
-    // Verify QR=1, AA=1, RD=1
-    try std.testing.expectEqual(@as(u8, 0x85), out_buf[2]);
-    // Verify RA=1, RCODE=0
-    try std.testing.expectEqual(@as(u8, 0x80), out_buf[3]);
+    // Verify QR=1 and RD echoed; AA is clear because this is not authoritative.
+    try std.testing.expectEqual(@as(u8, 0x81), out_buf[2]);
+    // Verify RA=0 and RCODE=0 (recursion is not implemented).
+    try std.testing.expectEqual(@as(u8, 0x00), out_buf[3]);
 
     // Verify QDCOUNT=1
     try std.testing.expectEqual(@as(u8, 0), out_buf[4]);
@@ -500,6 +534,27 @@ test "built response has correct header structure" {
     // Verify ARCOUNT=0
     try std.testing.expectEqual(@as(u8, 0), out_buf[10]);
     try std.testing.expectEqual(@as(u8, 0), out_buf[11]);
+}
+
+test "oversized response is rejected before touching the output buffer" {
+    const slot = dns.dns_create_context();
+    defer dns.dns_destroy_context(slot);
+
+    var query_buf: [17]u8 = .{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 };
+    _ = dns.dns_parse_query(slot, &query_buf, 17);
+    _ = dns.dns_begin_lookup(slot);
+    _ = dns.dns_begin_response(slot);
+
+    var rdata: [256]u8 = [_]u8{0x5A} ** 256;
+    try std.testing.expectEqual(@as(u8, 0), dns.dns_add_answer(slot, 0, 0, 60, &rdata, 256));
+    try std.testing.expectEqual(@as(u8, 0), dns.dns_add_answer(slot, 0, 0, 60, &rdata, 256));
+
+    var out_buf: [512]u8 = [_]u8{0xAA} ** 512;
+    var out_len: u16 = 77;
+    try std.testing.expectEqual(@as(u8, 1), dns.dns_build_response(slot, &out_buf, &out_len));
+    try std.testing.expectEqual(@as(u16, 0), out_len);
+    try std.testing.expectEqual(@as(u8, 3), dns.dns_state(slot)); // remains ResponseBuilding
+    for (out_buf) |byte| try std.testing.expectEqual(@as(u8, 0xAA), byte);
 }
 
 // =========================================================================

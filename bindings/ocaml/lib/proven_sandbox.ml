@@ -77,12 +77,18 @@ let syscall_policy_of_tag = function
   | 0 -> Some Allow | 1 -> Some Deny | 2 -> Some Log
   | 3 -> Some Trap | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_sandbox_abi_version : unit -> int = "sandbox_abi_version"
-external c_sandbox_create_context : unit -> int = "sandbox_create_context"
-external c_sandbox_destroy_context : int -> unit = "sandbox_destroy_context"
-external c_sandbox_can_transition : int -> int -> int = "sandbox_can_transition"
+let c_sandbox_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_sandbox_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_sandbox_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_sandbox_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

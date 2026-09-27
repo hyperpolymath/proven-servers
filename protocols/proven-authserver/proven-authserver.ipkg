@@ -5,7 +5,7 @@ package proven-authserver
 version = "0.1.0"
 authors = "Jonathan D.A. Jewell"
 license = "MPL-2.0"
-brief   = "Authentication server -- provably correct credential validation"
+brief   = "Authentication lifecycle model; credential, MFA, and token operations fail closed"
 
 sourcedir = "src"
 main = Main

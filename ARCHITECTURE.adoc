@@ -1,48 +1,73 @@
-== Architecture
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Architecture and Repository Layout
+:toc:
+:sectnums:
+:revdate: 2026-09-27
 
-=== Overview
+== Overview
 
-This repository follows a modular, maintainable architecture designed
-for clarity, scalability, and long-term sustainability.
+`proven-servers` is a source monorepo of protocol models, Idris2 packages, Zig
+FFI prototypes, connector code, language-binding sources, and documentation.
+Package boundaries and implementation layers vary. The repository does not
+provide a single executable server or a uniform cross-language ABI.
 
-=== Directory Structure
+== Top-level areas
 
-....
-.
-├── src/           # Source code
-├── tests/        # Test suites
-├── docs/         # Documentation
-├── scripts/      # Utility scripts
-├── config/       # Configuration files
-├── LICENSE       # License file
-├── LICENSES/     # Full license texts
-└── README.adoc   # Project documentation
-....
+[cols="1,3",options="header"]
+|===
+|Path |Role and limitation
 
-=== Design Principles
+|`protocols/`
+|Protocol-named packages; directory presence does not establish complete
+protocol implementation or conformance.
 
-* *Separation of Concerns*: Each module has a single responsibility
-* *Testability*: Code is written to be easily testable
-* *Documentation*: All public APIs are documented
-* *Configuration*: Environment-specific settings are externalized
+|`core/`
+|Shared package models and native code; each package has its own evidence.
 
-=== Dependencies
+|`connectors/`
+|Integration packages with varying Idris2/Zig/C coverage; no common tested
+connector contract is assumed.
 
-* External dependencies are minimized and clearly declared
-* Version pinning is used for reproducibility
+|`bindings/`
+|Language-specific wrappers and scaffolds; inventory is not operational support.
 
-=== Security Considerations
+|`ffi/`, `generated/`, `src/`
+|Root-level interface examples and ABI artifacts; generated/hand-maintained
+status varies by package.
 
-* Sensitive data is never committed to the repository
-* Secrets are managed through environment variables or secure vaults
-* Regular dependency audits are performed
+|`not-proven/`
+|Explicitly non-proven prototypes and examples.
 
-=== Maintainability
+|`tests/`
+|Selected source-pattern, inventory, and package test harnesses; not a full
+network interoperability suite.
 
-* Code follows consistent style guidelines
-* Pull requests require review and CI checks
-* Issues and discussions are tracked transparently
+|`.machine_readable/`
+|Current state, evidence limits, maintenance policy, capability profile, and
+agent guidance.
+|===
 
-'''''
+== Build and verification
 
-_Last updated: 2026-07-18_
+The root `Justfile` discovers Idris2 manifests and Zig build files under
+`protocols/`, `core/`, and `connectors/`, plus the root FFI example. Individual
+packages may require different compiler versions. The root `mise.toml` pins
+Just only; it does not yet define a reproducible Idris2/Zig matrix.
+
+A successful Idris2 build is evidence only for the checked model propositions.
+It does not prove an independently written FFI, generated header, language
+binding, or wire implementation equivalent. Static smoke checks are
+source-pattern heuristics, not proof or runtime tests. See `READINESS.adoc`,
+`PROOF-NEEDS.adoc`, and `TEST-NEEDS.adoc`.
+
+== Security and deployment
+
+Root container, release, Pages publishing, and cloud deployment workflows are
+not configured as product deliverables. The experimental NESY connector's
+Fly.io/container paths are disabled. No production image or network service is
+claimed.
+
+Security-related workflows and source checks are configuration, not passing
+results. See `SECURITY.adoc` and `docs/THREAT-MODEL.adoc` for the current
+reporting route and threat scope.

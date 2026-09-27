@@ -1,254 +1,133 @@
-== Threat Model: proven-servers
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Threat Model — proven-servers Source Monorepo
+:toc:
+:sectnums:
+:revdate: 2026-09-27
 
-=== Document Info
+[IMPORTANT]
+====
+This document is a scoped threat inventory, not a security audit or assurance
+claim. It was reconciled against repository configuration on 2026-09-27; no
+runtime, dependency, secret, or CI check was executed as part of that review.
+====
 
-[cols=",",options="header",]
+== Scope
+
+This model covers the public source monorepo, package/build/test configuration,
+maintainer workstations, and the GitHub/GitLab automation declared in the
+checkout. The project is a research/prototype collection of protocol models,
+Idris2 and Zig source, FFI experiments, and binding scaffolds.
+
+There is no validated production network service, root container image,
+release artifact, signing pipeline, or live deployment topology in scope. The
+experimental connector code and historical deployment configuration must not
+be treated as an authorized service.
+
+Out of scope are the security of GitHub/GitLab infrastructure, maintainer
+personal devices, external prover/database services, and any hypothetical
+deployment not represented by a reviewed, reproducible project configuration.
+
+== Assets and trust boundaries
+
+[cols="1,2,3",options="header"]
 |===
-|Field |Value
-|Project |proven-servers
-|Version |1.0
-|Last Reviewed |2026-03-02
-|Author |Jonathan D.A. Jewell
-|Methodology |STRIDE
-|===
+|Asset |Trust boundary |Current evidence/limitation
 
-=== Scope
+|Source and model code
+|Contributor changes enter through review and CI.
+|Public source; compiler/runtime status is package- and revision-specific.
 
-==== In Scope
+|Maintainer identities and repository settings
+|Account authentication, branch rules, GitHub/GitLab administration.
+|Not independently assessed by this repository review.
 
-* Application source code and build pipeline
-* CI/CD workflows (GitHub Actions)
-* Container images and runtime environment
-* Secrets and credential management
-* Dependencies (direct and transitive)
-* Deployment artifacts (binaries, containers, SBOM)
+|CI workflow definitions and third-party actions
+|Workflow code and fetched actions execute on hosted runners.
+|Some actions use version tags rather than commit SHAs. The central estate
+suite is pinned to the commit recorded in `.github/workflows/actions.lock`;
+that lock remains inventory metadata and does not by itself enforce integrity.
 
-==== Out of Scope
+|Package/compiler dependencies
+|Build manifests resolve tools and packages from external sources.
+|No complete lockfile/pinning or current vulnerability scan has been verified.
 
-* Physical security of hosting infrastructure
-* GitHub/GitLab platform-level vulnerabilities
-* End-user device security
-* Social engineering attacks against maintainers (handled by org policy)
+|Credentials
+|CI secrets and local environment variables are available only to the jobs or
+processes that receive them.
+|No release/deploy credential use is intended in the validated task set; audit
+workflow permissions and repository settings before enabling new secrets.
 
-=== System Overview
-
-Brief description of proven-servers and its architecture.
-
-____
-See link:../TOPOLOGY.md[TOPOLOGY.md] for the full architecture diagram
-and completion dashboard.
-____
-
-=== Assets
-
-[width="100%",cols="25%,16%,13%,46%",options="header",]
-|===
-|Asset |Classification |Owner |Notes
-|Source code |Internal |Maintainers |Public repos are still
-internal-integrity
-
-|Signing keys |Restricted |Release lead |Signing keys (e.g., Ed25519),
-GPG keys
-
-|CI/CD secrets |Restricted |Maintainers |GITHUB_TOKEN, deploy tokens,
-PATs
-
-|User/contributor data |Confidential |Org |Emails, contributor identity
-
-|Build artifacts |Internal |CI pipeline |Binaries, WASM bundles
-
-|Container images |Internal |CI pipeline |Chainguard-based, signed via
-image signing tool
-
-|SBOM / provenance |Public |CI pipeline |SLSA attestations
-
-|Dependencies |Public |Lockfile |Cargo.lock, deno.lock, gleam.toml
-
-|Infrastructure config |Confidential |Maintainers |Containerfiles,
-compose files, orchestration config
+|Build outputs
+|Local build directories and generated headers are source/build boundaries.
+|Generated ABI/header correspondence is not established repository-wide.
 |===
 
-=== Trust Boundaries
+== Principal threats
 
-[width="100%",cols="35%,32%,33%",options="header",]
+[cols="1,3,3",options="header"]
 |===
-|Boundary |From (Lower Trust) |To (Higher Trust)
-|Pull request submission |External contributor |Repository codebase
+|Threat |Potential impact |Review/mitigation action
 
-|CI/CD workflow execution |Workflow definition |Runner with secrets
-access
+|Malicious pull request or workflow edit
+|Execution of untrusted code on CI or compromise of repository contents.
+|Keep permissions minimal; review workflow changes; do not expose secrets to
+untrusted code; require appropriate protected-branch review.
 
-|Container build boundary |Build stage |Runtime stage
+|Mutable third-party action reference
+|Upstream ref changes can alter code executed in a privileged workflow.
+|Prefer full commit-SHA pins; verify action provenance; treat the action lock
+as informational unless a check enforces correspondence.
 
-|External API calls |Third-party service |Application internals
+|Dependency or toolchain substitution
+|A compromised package/compiler download can corrupt builds or local work.
+|Use package-specific immutable versions and lockfiles where supported; review
+install scripts before running; avoid `curl | sh` patterns.
 
-|User input (CLI/Web) |End user |Application logic
+|False verification/readiness claims
+|Users may deploy untested or incomplete cryptographic/network code.
+|Distinguish source inventory, compiler checks, executable tests, formal
+proofs, conformance, and deployment evidence. Keep unavailable operations
+fail-closed and document the exact tested revision.
 
-|Dependency resolution |Package registry |Build environment
+|Credential leakage in code, logs, or generated artifacts
+|Unauthorized access to external services or maintainer accounts.
+|Do not commit secrets; avoid logging tokens; scan before publishing; scope
+secrets narrowly and rotate them through the forge's approved process.
 
-|Forge mirroring |GitHub |GitLab / Bitbucket
-|===
-
-=== Threat Actors
-
-[width="100%",cols="39%,44%,17%",options="header",]
-|===
-|Actor |Motivation |Capability
-|Script kiddie |Vandalism, clout |Low
-|Disgruntled contributor |Sabotage, backdoor insertion |Medium
-|Supply chain attacker |Wide-impact compromise |High
-|Nation state |Espionage, disruption |Very High
-|Automated bot |Credential stuffing, spam PRs |Low-Medium
-|===
-
-=== STRIDE Analysis
-
-==== Spoofing
-
-[width="100%",cols="28%,14%,9%,6%,6%,37%",options="header",]
-|===
-|Threat |Affected Asset |Likelihood |Impact |Risk |Mitigation
-|Unsigned commits impersonate maintainer |Source code |Medium |High
-|High |Require GPG-signed commits; vigilant code review
-
-|Forged bot actions (automated agents) |CI/CD pipeline |Low |High
-|Medium |Bot tokens scoped minimally; audit bot activity
-
-|Spoofed package registry identity |Dependencies |Low |High |Medium |Pin
-dependencies by hash; verify provenance
+|Accidental external deployment or release
+|Cloud charges, data exposure, or publication of an unvalidated artifact.
+|Root container/cloud deployment, package release, and Pages publishing are
+not configured as product operations. Connector-specific experimental Fly.io
+deployment is explicitly disabled. Do not restore deployment automation without
+review and explicit authorization.
 |===
 
-==== Tampering
+== Existing controls and their limits
 
-[width="100%",cols="28%,14%,9%,6%,6%,37%",options="header",]
-|===
-|Threat |Affected Asset |Likelihood |Impact |Risk |Mitigation
-|Malicious pull request |Source code |Medium |High |High |Branch
-protection; required reviews; CodeQL
+* `.github/workflows/` contains CI, static-analysis, and security-related
+  workflow definitions. Their presence is not evidence that they ran or passed
+  on this revision.
+* `.github/workflows/actions.lock` records action references and resolved
+  metadata, but is not a runtime SHA pin unless a workflow enforces it.
+* `Justfile` has compiler-backed build/test tasks and explicitly scoped static
+  smoke checks. Missing toolchains cause required checks to fail rather than
+  print a success placeholder.
+* `setup.sh` is a non-mutating information helper; it does not install
+  packages, change firewall/SELinux state, or execute downloaded scripts.
+* Security contact and disclosure instructions live in `SECURITY.adoc` and
+  `.well-known/security.txt`. No verified OpenPGP key is currently published.
 
-|Dependency poisoning (typosquat) |Dependencies |Medium |High |High
-|Lockfiles; secret-scanner; security scans
+These controls have not been evaluated here for completeness, effectiveness,
+or passing status. No claim is made of SLSA provenance, signed container
+images, GPG-signed commits, a specific OpenSSF score, or a security
+certification.
 
-|Tampered container base image |Container images |Low |High |Medium
-|Chainguard images; image signing verification
+== Residual risks and next review
 
-|Workflow file modification |CI/CD pipeline |Low |High |Medium
-|CODEOWNERS on .github/; workflow-linter
-|===
-
-==== Repudiation
-
-[width="100%",cols="28%,14%,9%,6%,6%,37%",options="header",]
-|===
-|Threat |Affected Asset |Likelihood |Impact |Risk |Mitigation
-|Unlogged deployment |Build artifacts |Medium |Medium |Medium |SLSA
-provenance; deployment audit trail
-
-|Denied merge of vulnerable code |Source code |Low |Medium |Low |Git
-history is immutable; signed commits
-
-|Secret rotation without record |CI/CD secrets |Low |Low |Low |Secret
-rotation logged in STATE.a2ml
-|===
-
-==== Information Disclosure
-
-[width="100%",cols="28%,14%,9%,6%,6%,37%",options="header",]
-|===
-|Threat |Affected Asset |Likelihood |Impact |Risk |Mitigation
-|Secrets leaked in git history |CI/CD secrets |Medium |High |High
-|TruffleHog in CI; secret-scanner workflow
-
-|Verbose error messages in prod |Application logic |Medium |Medium
-|Medium |Sanitize outputs; structured logging
-
-|SBOM reveals internal structure |Infrastructure |Low |Low |Low
-|Accepted risk; SBOM is intentionally public
-|===
-
-==== Denial of Service
-
-[width="100%",cols="28%,14%,9%,6%,6%,37%",options="header",]
-|===
-|Threat |Affected Asset |Likelihood |Impact |Risk |Mitigation
-|CI resource exhaustion (fork bomb in PR) |CI/CD pipeline |Medium
-|Medium |Medium |Concurrency limits; timeout on workflows
-
-|Spam issues/PRs flooding triage |Maintainer time |Medium |Low |Low
-|GitHub rate limits; bot auto-close stale
-
-|Large binary commits bloating repo |Source code |Low |Medium |Low
-|.gitattributes LFS policy; pre-commit hooks
-|===
-
-==== Elevation of Privilege
-
-[width="100%",cols="28%,14%,9%,6%,6%,37%",options="header",]
-|===
-|Threat |Affected Asset |Likelihood |Impact |Risk |Mitigation
-|Workflow injection via PR title/body |CI/CD pipeline |Medium |High
-|High |Never interpolate PR fields in `+run:+`; use env vars
-
-|GITHUB_TOKEN over-scoped |CI/CD secrets |Medium |High |High
-|`+permissions: read-all+` default; per-job scoping
-
-|Container escape |Runtime environment |Low |High |Medium |Hardened
-container runtime; read-only rootfs; no-new-privileges
-
-|Compromised action dependency |CI/CD pipeline |Medium |High |High
-|SHA-pin all actions; never use `+@latest+` tags
-|===
-
-=== Mitigations in Place
-
-* *SLSA Provenance*: Build attestations via slsa-github-generator
-* *Secret Scanning*: TruffleHog + secret-scanner workflow on every push
-* *Static Analysis*: CodeQL on supported languages
-* *Supply Chain*: OpenSSF Scorecard (scorecard.yml +
-scorecard-enforcer.yml)
-* *Container Signing*: Ed25519 signatures on all published images
-(optional: use your signing tool)
-* *Container Runtime*: Hardened container runtime with formal
-verification (optional)
-* *Dependency Pinning*: All GitHub Actions SHA-pinned; lockfiles
-committed
-* *Workflow Validation*: workflow-linter.yml checks all workflow changes
-* *Security Scanning*: Neurosymbolic scanning (hypatia-scan.yml,
-optional)
-* *Bot Governance*: Bot orchestration with confidence thresholds
-(optional)
-* *Edge Security*: Gateway with policy enforcement (optional, where
-applicable)
-* *SBOM*: Generated and published with releases
-
-=== Residual Risks
-
-[width="100%",cols="39%,41%,20%",options="header",]
-|===
-|Risk |Accepted Because |Review Trigger
-|Zero-day in GitHub Actions runner |Platform responsibility; no feasible
-mitigation |GitHub advisory
-
-|Maintainer account compromise |Mitigated by 2FA requirement; residual
-remains |Any suspicious activity
-
-|Transitive dependency vulnerability (0-day) |Lockfiles limit blast
-radius; scanning catches known CVEs |CVE database update
-
-|SBOM exposes internal component names |Transparency is a design goal
-|Policy change
-|===
-
-=== Review Schedule
-
-This threat model should be reviewed:
-
-* *Quarterly* as a standing item
-* *When architecture changes* (new services, new trust boundaries, new
-deployment targets)
-* *Before major releases* (v1.0, v2.0, etc.)
-* *After any security incident* affecting this project or its
-dependencies
-
-Reviewer should update the "`Last Reviewed`" date and version in
-Document Info above.
+The main residual risks are unverified package/runtime behavior; incomplete
+binding and ABI conformance; mutable or insufficiently reviewed CI dependencies;
+and documentation drift. Revisit this model when workflow permissions,
+third-party action references, dependency resolution, credential use, or a
+real service/release/deployment target changes. Record actual scan and test
+results separately from this threat inventory.

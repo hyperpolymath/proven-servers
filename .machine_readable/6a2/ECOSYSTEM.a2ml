@@ -1,45 +1,39 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# ECOSYSTEM.a2ml — Ecosystem position for proven-servers.
+# ECOSYSTEM.a2ml — repository position and integration evidence boundary.
 
 [metadata]
-version = "0.3.0"
-last-updated = "2026-04-11"
+version = "0.4.0"
+last-updated = "2026-09-27"
 
 [project]
 name = "proven-servers"
-purpose = "Formally verified server component catalog — protocol types, core primitives, and connector interfaces with dependent-type proofs. ABI in Idris2, FFI in Zig, consumable from any language."
-role = "ffi-infrastructure"
+purpose = "Source monorepo of protocol models, FFI prototypes, binding sources, tests, and documentation."
+role = "research-and-prototype-source"
+not-a = ["production server distribution", "verified runtime integration bundle"]
 
 [position-in-ecosystem]
-tier = "infrastructure"
+tier = "infrastructure-source"
+status = "unreleased; runtime integrations not established by this checkout review"
 
 [related-projects]
 projects = [
-  { name = "panll", relationship = "dependent", notes = "VAB (Verified Assembly Building) panel consumes the component catalog for visual server composition" },
-  { name = "proven (original)", relationship = "predecessor", notes = "Replaced — original had 4566 believe_me instances and bulk AI-generated bindings. proven-servers is a clean rewrite with zero believe_me." },
-  { name = "language-bridges", relationship = "sibling-standard", notes = "Shares the Idris2-ABI / Zig-FFI / C-header pattern" },
-  { name = "rsr-template-repo", relationship = "template-source", notes = "Repository scaffolding, workflows, and governance structure sourced from RSR template" },
-  { name = "reasonably-good-token-vault", relationship = "active-integration", notes = "RGTV vault-broker deployed as rgtv-nesy on Fly.io; nesy-solver-api fetches NESY_INGEST_TOKEN via grant→redeem protocol. RGTV_URL + RGTV_AGENT_TOKEN configured in fly.toml." },
-  { name = "echidna", relationship = "active-integration", notes = "Prover dispatcher consumed by nesy-solver-api as echidna-nesy.flycast:8090; cold-start hardening applied (90s grace, HTTP health check)." },
-  { name = "verisimdb", relationship = "active-integration", notes = "Scan results, build metrics, and dependency graph emitted via hexad format. See integrations/verisimdb.a2ml." },
-  { name = "hypatia", relationship = "planned-integration", notes = "v1.2.0 milestone — Hypatia CI scan + feedback loop + automated ABI compliance check. See ROADMAP.adoc." },
-  { name = "stapeln", relationship = "potential-consumer", notes = "Container orchestration could use proven-servers for verified network stacks" },
-  { name = "gitbot-fleet", relationship = "potential-consumer", notes = "Automated maintenance bots could manage connector version updates" },
-  { name = "conative-gating", relationship = "planned-integration", notes = "v1.1.0 milestone — consent-aware HTTP gateway layer for nesy-solver-api." },
-  { name = "lithoglyph", relationship = "planned-integration", notes = "v1.3.0 milestone — VeriSimDB→Lithoglyph aqueduct (4-stage: sanitise → structure → lithoglyph_insert → verisim_ingest)." },
-  { name = "cadre-tea-router", relationship = "planned-integration", notes = "v1.4.0 milestone — ReScript TEA pattern refactor of echidna's 33 UI components." },
+  { name = "rsr-template-repo", relationship = "template-source", notes = "Provides repository structure and governance patterns; project-specific applicability is verified against actual paths." },
+  { name = "standards", relationship = "policy-source", notes = "Provides estate standards and capability applicability policy; draft specifications are not treated as ratified requirements." },
+  { name = "panll", relationship = "documented-association", notes = "Historical machine metadata references PanLL; no current runtime integration was verified." },
+  { name = "reasonably-good-token-vault", relationship = "documented-association", notes = "Historical machine metadata references RGTV; no current runtime integration was verified." },
+  { name = "echidna", relationship = "documented-association", notes = "Historical machine metadata references echidna; no current runtime integration was verified." },
+  { name = "verisimdb", relationship = "documented-association", notes = "Historical machine metadata references VeriSimDB; no current runtime integration was verified." },
 ]
 
-[integration-points]
-points = [
-  { system = "PanLL VAB", direction = "outbound", protocol = "static catalog data (108 components)" },
-  { system = "C ABI consumers", direction = "outbound", protocol = "libproven_*.so / libproven_*.a via standard C calling convention" },
-  { system = "Idris2 compiler", direction = "inbound", protocol = "dependent-type verification at compile time" },
-  { system = "Zig build system", direction = "inbound", protocol = "zig build / zig build test" },
-  { system = "RGTV (rgtv-nesy)", direction = "inbound", protocol = "HTTP grant→redeem over Fly.io private 6PN (.flycast)" },
-  { system = "echidna (echidna-nesy)", direction = "outbound", protocol = "HTTP POST /api/verify over Fly.io private 6PN (.flycast)" },
-  { system = "verisim-api", direction = "outbound", protocol = "HTTP POST /attempts over Fly.io private 6PN (.flycast)" },
-  { system = "panic-attack", direction = "inbound", protocol = "unified-api-adapter 16-surface CI scan via panic-attack-unified-api-adapter.yml" },
-]
+[integration-evidence]
+verified-runtime-integrations = []
+abi-ffi-status = "Package-specific; see BINDINGS.a2ml, READINESS.adoc, and PROOF-NEEDS.adoc."
+external-service-claims = "Historical metadata is not deployment or connectivity evidence."
+
+[tooling]
+task-runner = "Justfile"
+model-compiler = "Idris2"
+native-compiler = "Zig"
+version-policy = "Supported versions and reproducible build matrix still need to be recorded."

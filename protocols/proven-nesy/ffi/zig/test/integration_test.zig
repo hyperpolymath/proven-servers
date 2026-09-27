@@ -144,8 +144,8 @@ test "add_proof and verify_proof cycle" {
     ));
     try std.testing.expectEqual(@as(u32, 1), nesy.nesy_proof_count(slot));
 
-    // Verify the proof
-    try std.testing.expectEqual(@as(u8, 2), nesy.nesy_verify_proof(slot, 0)); // Proved
+    // No external proof checker is connected; the obligation stays untrusted.
+    try std.testing.expectEqual(@as(u8, 3), nesy.nesy_verify_proof(slot, 0)); // Failed/unavailable
 }
 
 test "add_proof rejects invalid constraint kind" {
@@ -162,11 +162,11 @@ test "add_proof rejects invalid constraint kind" {
 // Drift detection
 // =========================================================================
 
-test "detect_drift returns no_drift by default" {
+test "detect_drift reports unavailable rather than a false no-drift result" {
     const slot = nesy.nesy_create(0);
     defer nesy.nesy_destroy(slot);
 
-    try std.testing.expectEqual(@as(u8, 0), nesy.nesy_detect_drift(slot)); // NoDrift
+    try std.testing.expectEqual(@as(u8, 255), nesy.nesy_detect_drift(slot));
 }
 
 test "resolve_drift rejected from non-Drift state" {

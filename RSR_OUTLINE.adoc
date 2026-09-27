@@ -1,292 +1,75 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= RSR Template Repository
-
-image:[Palimpsest-MPL-1.0,link="https://github.com/hyperpolymath/palimpsest-license"] image:[Palimpsest,link="https://github.com/hyperpolymath/palimpsest-license"]
+= RSR Alignment Notes — proven-servers
 :toc:
 :sectnums:
-
-// Badges
-image:https://img.shields.io/badge/RSR-Infrastructure-cd7f32[RSR Infrastructure]
-image:https://img.shields.io/badge/Phase-Maintenance-brightgreen[Phase]
-image:https://img.shields.io/badge/Guix-Primary-purple?logo=gnu[Guix]
-
-== Overview
-
-**The canonical template for RSR (Rhodium Standard Repository) projects.**
-
-This repository provides the standardized structure, configuration, and tooling for all RSR-compliant repos. Use it to:
-
-* Bootstrap new projects with RSR compliance
-* Reference the standard directory structure
-* Copy configuration templates (Justfile, STATE.a2ml, etc.)
-
-== Quick Start
-
-[source,bash]
-----
-# Clone the template
-git clone https://github.com/hyperpolymath/RSR-template-repo my-project
-cd my-project
-
-# Remove template git history
-rm -rf .git
-git init
-
-# Interactive bootstrap — replaces all placeholders
-just init
-
-# Enter development environment
-guix shell -D -f build/guix.scm
-
-# Validate compliance
-just validate-rsr
-----
-
-== What's Included
-
-[cols="1,3"]
-|===
-|File/Directory |Purpose
-
-|`.editorconfig`
-|Editor configuration (indent, charset)
-
-|`.gitignore`
-|Standard ignore patterns
-
-|`.gitattributes`
-|Line endings, diff drivers, binary detection
-
-|`.guix-channel`
-|Guix channel definition
-
-|`.well-known/`
-|RFC-compliant metadata (security.txt, ai.txt, humans.txt)
-
-|`.machine_readable/`
-|All machine-readable content: state files (6 a2ml), `bot_directives/`, `contractiles/`
-
-|`docs/`
-|Documentation directory
-
-|`guix.scm`
-|Guix package definition
-
-|`Justfile`
-|Task runner with 40+ recipes
-
-|`Containerfile`
-|Container build (Wolfi base, Podman)
-
-|`LICENSE`
-|MPL-2.0 (Palimpsest MPL)
-
-|`EXHIBIT-A-ETHICAL-USE.txt`
-|Ethical use guidelines (LICENSE Exhibit A)
-
-|`EXHIBIT-B-QUANTUM-SAFE.txt`
-|Quantum-safe provenance spec (LICENSE Exhibit B)
-
-|`README.adoc`
-|Project overview
-
-|`TOPOLOGY.md`
-|Architecture diagram and completion dashboard
-
-|`PLACEHOLDERS.md`
-|Template variable reference and replacement guide
-
-|`0-AI-MANIFEST.a2ml`
-|Universal AI agent entry point
-
-|`AI.a2ml`
-|Claude-specific instructions
-
-|`src/abi/`
-|Idris2 ABI definitions (Types, Layout, Foreign)
-
-|`ffi/zig/`
-|Zig FFI implementation
-
-|`generated/abi/`
-|Auto-generated C headers from Idris2 ABI
-|===
-
-== Justfile Features
-
-The template Justfile provides:
-
-* **Combinatoric matrix recipes** for build, test, container, CI
-* **Cookbook generation**: `just cookbook` -> `docs/just-cookbook.adoc`
-* **Man page generation**: `just man` -> `docs/man/project.1`
-* **RSR validation**: `just validate-rsr`
-* **STATE.a2ml management**: `just state-touch`, `just state-phase`
-* **Container support**: `just container-build`, `just container-push`
-* **CI matrix**: `just ci-matrix [stage] [depth]`
-
-=== Key Recipes
-
-[source,bash]
-----
-just                # Show all recipes
-just help <recipe>  # Detailed help
-just info           # Project info
-just combinations   # Show matrix options
-
-just build          # Build (debug)
-just test           # Run tests
-just quality        # Format + lint + test
-just ci             # Full CI pipeline
-
-just validate       # RSR + STATE validation
-just docs           # Generate all docs
-just cookbook        # Generate Justfile docs
-
-just guix-shell     # Guix dev environment
-just container-build # Build container
-----
-
-== Directory Structure
-
-[source]
-----
-project/
-├── .editorconfig              # Editor settings
-├── .gitignore                 # Git ignore
-├── .gitattributes             # Line endings, diff drivers
-├── .guix-channel              # Guix channel
-├── .well-known/               # RFC metadata
-│   ├── ai.txt
-│   ├── humans.txt
-│   └── security.txt
-├── .machine_readable/         # ALL machine-readable content
-│   ├── STATE.a2ml             # Project state, progress, blockers
-│   ├── META.a2ml              # Architecture decisions, governance
-│   ├── ECOSYSTEM.a2ml         # Ecosystem position, relationships
-│   ├── AGENTIC.a2ml           # AI agent interaction patterns
-│   ├── NEUROSYM.a2ml          # Neurosymbolic integration config
-│   ├── PLAYBOOK.a2ml          # Operational runbook
-│   ├── bot_directives/        # Per-bot rules and constraints
-│   └── contractiles/          # Policy enforcement contracts
-│       ├── k9/                # Security levels (Kennel/Yard/Hunt)
-│       ├── dust/Dustfile      # Recovery and rollback
-│       ├── lust/Intentfile    # Future intent declarations
-│       ├── must/Mustfile      # Invariant checks
-│       └── trust/Trustfile.hs # Cryptographic verification
-├── docs/                      # Documentation
-│   ├── CITATIONS.adoc
-│   ├── TOPOLOGY-GUIDE.adoc
-│   ├── generated/
-│   └── man/
-├── src/abi/                   # Idris2 ABI definitions
-│   ├── Types.idr
-│   ├── Layout.idr
-│   └── Foreign.idr
-├── ffi/zig/                   # Zig FFI implementation
-│   ├── build.zig
-│   ├── src/main.zig
-│   └── test/integration_test.zig
-├── generated/abi/             # Auto-generated C headers
-├── examples/                  # Example code
-├── guix.scm                   # Guix package
-├── Justfile                   # Task runner
-├── Containerfile              # Container build
-├── LICENSE                    # MPL-2.0
-├── EXHIBIT-A-ETHICAL-USE.txt  # Ethical use guidelines
-├── EXHIBIT-B-QUANTUM-SAFE.txt # Quantum-safe provenance
-├── README.adoc                # Overview
-├── TOPOLOGY.md                # Architecture + completion
-├── PLACEHOLDERS.md            # Template variable guide
-├── 0-AI-MANIFEST.a2ml         # Universal AI entry point
-└── AI.a2ml                    # Claude-specific instructions
-----
-
-== RSR Compliance
-
-=== Language Tiers
-
-* **Tier 1** (Gold): Rust, Elixir, Zig, Ada, Haskell, ReScript, Gleam
-* **Tier 2** (Silver): Nickel, Guile Scheme, Nix, Idris2, OCaml
-* **Infrastructure**: Guix channels, derivations, Julia batch scripts
-
-=== Required Files
-
-* `.editorconfig`
-* `.gitignore`
-* `Justfile`
-* `README.adoc`
-* `LICENSE` (MPL-2.0)
-* `.machine_readable/STATE.a2ml`
-* `.well-known/security.txt`
-* `.well-known/ai.txt`
-* `.well-known/humans.txt`
-* `guix.scm` OR `flake.nix`
-
-=== Prohibited
-
-* Python outside `salt/` directory
-* TypeScript/JavaScript (use ReScript)
-* CUE (use Guile/Nickel)
-* `Dockerfile` (use `Containerfile`)
-* npm, Bun, pnpm, yarn (use Deno)
-* Go (use Rust)
-
-== STATE.a2ml
-
-The STATE.a2ml file tracks project state:
-
-[source]
-----
-# STATE — Project State Checkpoint
-# Format: a2ml (AI-readable markup)
-
-project: proven-servers
-version: 0.1.0
-last-updated: 2026-02-14
-status: active
-
-phase: implementation
-maturity: beta
-
-ecosystem:
-  part-of: RSR Framework
-  depends-on: []
-
-milestones:
-  - name: Initial setup
-    completion: 100
-  - name: Core implementation
-    completion: 0
-----
-
-== Badge Schema
-
-Generate badges from STATE.a2ml:
-
-[source,bash]
-----
-just badges standard
-----
-
-See `docs/BADGE_SCHEMA.adoc` for the full badge taxonomy.
-
-== Ecosystem Integration
-
-This template is part of:
-
-* **STATE.a2ml Ecosystem**: Conversation checkpoints
-* **RSR Framework**: Repository standards
-* **Consent-Aware-HTTP**: .well-known compliance
-* **Hypatia**: Neurosymbolic security scanning
-* **gitbot-fleet**: Bot orchestration
-
-== License
-
-SPDX-License-Identifier: CC-BY-SA-4.0
-
-== Links
-
-* https://github.com/hyperpolymath/elegant-STATE[elegant-STATE] - STATE tooling
-* https://github.com/hyperpolymath/conative-gating[conative-gating] - Policy enforcement
-* https://rhodium.sh[Rhodium Standard] - RSR documentation
+:revdate: 2026-09-27
+
+== Repository role
+
+`proven-servers` is a project-specific research/prototype source monorepo. It is
+not `rsr-template-repo`, a repository bootstrapper, or a distribution of
+production-ready servers. Template structure and standards are inputs to
+project-specific decisions; their maximal capability sets and example hashes
+must not be copied as this repository's own evidence.
+
+== Capability profile
+
+The local profile is `.machine_readable/rsr-profile.a2ml`. It declares only the
+source languages and non-trivial shell automation present here: `idris2`,
+`zig`, and `bash`.
+
+The profile deliberately does not claim `abi`, `ffi`, `formal-proofs`,
+`api-service`, `container`, `docs-site`, `published-package`,
+`reproducible-build`, or `benchmarks`. In particular:
+
+* per-package FFI sources do not match the standards draft's gated
+  `src/interface/ffi/` module path, and repository-wide ABI conformance is not
+  established;
+* Idris2 proof declarations alone do not satisfy the draft's
+  `verification/proofs/` gate or establish compiler-checked proof results;
+* experimental HTTP-server source does not establish a deployable service;
+* deployment/release/Pages scaffolding without a validated artifact is not a
+  shipping capability.
+
+These decisions follow the standards repository's capability taxonomy and
+path gates rather than assuming the template's maximal profile applies here.
+The external applicability policy is marked DRAFT; this file is a conservative
+project inventory, not a conformance certificate.
+
+== Repository-specific alignment
+
+* `Justfile` is the actual task entry point. Build and test tasks fail when
+  required tools are missing; static smoke checks are explicitly narrower.
+* `contractile.just` contains only bounded, non-destructive wrappers. No
+  automatic rollback or template bootstrap task is provided.
+* The machine-readable contractile task snapshot is checked against the root
+  `Justfile` by `just validate-rsr`.
+* Security and contribution guidance use actual repository contacts, paths,
+  and test-evidence limits; they do not assert an unpublished OpenPGP key or
+  unconfigured release process.
+* Container/cloud deployment, package release, and Pages publishing remain
+  disabled until package-specific artifacts and runtime behavior are
+  reproducibly verified.
+
+== Validation boundary
+
+`just validate-rsr` checks a selected set of metadata paths and the synchronized
+Justfile snapshot. It is not a full implementation of the standards reference
+checker and does not certify this repository against RSR. The current checkout
+has not had its Idris2 or Zig package matrix executed in the assessment
+workspace because those compilers and Just are unavailable.
+
+Before making stronger claims, run the current standards repository's
+`check-rsr-profile.sh` with its matching `template-capability-gates.toml`, then
+resolve every applicable violation based on actual project scope. Independently
+run the full package checks and document their exact tool versions, commit,
+commands, and results.
+
+== Reference material
+
+* link:https://github.com/hyperpolymath/rsr-template-repo[rsr-template-repo]
+* link:https://github.com/hyperpolymath/standards[standards]
+* `0-AI-MANIFEST.a2ml`
+* `.machine_readable/6a2/STATE.a2ml`
+* `.machine_readable/contractiles/README.adoc`

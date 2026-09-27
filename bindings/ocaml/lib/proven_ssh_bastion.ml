@@ -79,32 +79,58 @@ let disconnect_reason_of_tag = function
   | 4 -> Some Service_not_available | 5 -> Some By_application
   | 6 -> Some Too_many_connections | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_ssh_bastion_abi_version : unit -> int = "ssh_bastion_abi_version"
-external c_ssh_bastion_create : int -> int -> int = "ssh_bastion_create"
-external c_ssh_bastion_destroy : int -> unit = "ssh_bastion_destroy"
-external c_ssh_bastion_state : int -> int = "ssh_bastion_state"
-external c_ssh_bastion_kex_method : int -> int = "ssh_bastion_kex_method"
-external c_ssh_bastion_auth_method : int -> int = "ssh_bastion_auth_method"
-external c_ssh_bastion_can_transfer : int -> int = "ssh_bastion_can_transfer"
-external c_ssh_bastion_disconnect_reason : int -> int = "ssh_bastion_disconnect_reason"
-external c_ssh_bastion_auth_failures : int -> int = "ssh_bastion_auth_failures"
-external c_ssh_bastion_complete_kex : int -> int = "ssh_bastion_complete_kex"
-external c_ssh_bastion_authenticate : int -> int -> int = "ssh_bastion_authenticate"
-external c_ssh_bastion_record_auth_failure : int -> int = "ssh_bastion_record_auth_failure"
-external c_ssh_bastion_open_channel : int -> int -> int = "ssh_bastion_open_channel"
-external c_ssh_bastion_confirm_channel : int -> int -> int = "ssh_bastion_confirm_channel"
-external c_ssh_bastion_close_channel : int -> int -> int = "ssh_bastion_close_channel"
-external c_ssh_bastion_channel_state : int -> int -> int = "ssh_bastion_channel_state"
-external c_ssh_bastion_channel_type : int -> int -> int = "ssh_bastion_channel_type"
-external c_ssh_bastion_channel_count : int -> int = "ssh_bastion_channel_count"
-external c_ssh_bastion_rekey : int -> int = "ssh_bastion_rekey"
-external c_ssh_bastion_disconnect : int -> int -> int = "ssh_bastion_disconnect"
-external c_ssh_bastion_can_transition : int -> int -> int = "ssh_bastion_can_transition"
-external c_ssh_bastion_audit_count : int -> int = "ssh_bastion_audit_count"
-external c_ssh_bastion_set_recording : int -> int -> int = "ssh_bastion_set_recording"
-external c_ssh_bastion_is_recording : int -> int = "ssh_bastion_is_recording"
+let c_ssh_bastion_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_create : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_destroy : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_kex_method : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_auth_method : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_can_transfer : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_disconnect_reason : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_auth_failures : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_complete_kex : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_authenticate : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_record_auth_failure : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_open_channel : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_confirm_channel : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_close_channel : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_channel_state : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_channel_type : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_channel_count : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_rekey : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_disconnect : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_audit_count : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_set_recording : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ssh_bastion_is_recording : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

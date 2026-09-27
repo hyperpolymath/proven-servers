@@ -1,125 +1,56 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-// Template: QUICKSTART-USER.adoc — 5-minute path to working software
-// Replace proven-servers, Proven Servers — See README.adoc for details., just run, Proven Servers started successfully. with actuals
-= proven-servers — Quick Start for Users
+= proven-servers — Reader Quick Start
 :toc:
 :toclevels: 2
 
-== What is proven-servers?
+[IMPORTANT]
+====
+There is currently no end-user server or installable product to run. This
+repository contains research/prototype source, protocol models, FFI experiments,
+and binding scaffolds. Do not deploy these sources as a production server.
+====
 
-Proven Servers — See README.adoc for details.
-
-== Prerequisites
-
-Before you begin, ensure you have:
-
-* **just** — task runner (https://github.com/casey/just[install guide])
-* Platform-specific requirements listed below
-
-[cols="1,3"]
-|===
-| Platform | Additional Requirements
-
-| Linux
-| See README.adoc
-
-| macOS
-| See README.adoc
-
-| Windows
-| See README.adoc
-|===
-
-== Install
-
-=== Option 1: Standard Install (recommended)
+== Explore the source
 
 [source,bash]
 ----
-# Clone and set up
 git clone https://github.com/hyperpolymath/proven-servers.git
 cd proven-servers
-just setup
+less README.adoc
+less READINESS.adoc
+less PROOF-NEEDS.adoc
 ----
 
-The setup script will:
+Each package README describes its own scope and evidence limits. A directory
+named after a protocol does not imply a complete server or verified support.
 
-* Detect your platform and shell
-* Install missing dependencies (with your permission)
-* Configure the application
-* Offer install location choices
-* Run a self-diagnostic to verify everything works
+== Optional package checks
 
-=== Option 2: Container (via Stapeln)
+The task entry point is https://github.com/casey/just[Just]. Idris2 and Zig are
+required for compiler-backed checks; the root `mise.toml` pins Just only. The
+compiler versions and full package matrix are not yet reproducibly pinned.
 
 [source,bash]
 ----
-just stapeln-run
+just info
+just deps
+just build-idris
+just build-zig
+just test-zig
 ----
 
-=== Option 3: Portable (no system changes)
+`just deps` reports tool availability; it does not install anything. Missing
+compilers cause compiler-backed tasks to fail. See `QUICKSTART-DEV.adoc` before
+running checks, and do not interpret static smoke tests as proofs or protocol
+conformance.
 
-[source,bash]
-----
-just install --portable --prefix=./proven-servers-portable
-----
+== Not available
 
-== First Run
+There is no supported `just setup`, `just run`, `just install`, container
+build, deployment, or release flow. `just doctor` only reports local tool
+availability and Git state; it does not repair the environment. `setup.sh` is a
+non-mutating information helper. Package-specific experimental code is not an
+end-user service.
 
-[source,bash]
-----
-just run
-----
-
-Expected output:
-
-[source]
-----
-Proven Servers started successfully.
-----
-
-== Self-Diagnostic
-
-If something isn't working:
-
-[source,bash]
-----
-just doctor
-----
-
-This checks all dependencies, permissions, paths, and connectivity.
-If it finds issues, it will suggest fixes.
-
-To attempt automatic repair:
-
-[source,bash]
-----
-just heal
-----
-
-== Get Help
-
-* **In-app**: `just run --help`
-* **Guided tour**: `just tour`
-* **Report a problem**: `just help-me` (pre-fills diagnostic context)
-* **Wiki**: https://github.com/hyperpolymath/proven-servers/wiki
-
-== Uninstall
-
-[source,bash]
-----
-just uninstall
-----
-
-You will be asked:
-
-1. Which uninstall tier (Bennett reversible, parameter-based, standard, or secure)
-2. Whether to include or exclude your data
-3. Whether to clear caches and LLM models
-
-== Next Steps
-
-* Read the link:README.adoc[README] for full feature overview
-* Read the link:EXPLAINME.adoc[EXPLAINME] for architecture and design decisions
-* Try `just tour` for a guided walkthrough
+For vulnerability reports, see `SECURITY.adoc` and `.well-known/security.txt`.

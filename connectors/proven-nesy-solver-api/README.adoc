@@ -1,105 +1,85 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= proven-nesy-solver-api — Neurosymbolic Playground Backend
+= proven-nesy-solver-api — Experimental Connector
 :author: Jonathan D.A. Jewell
 :email: j.d.a.jewell@open.ac.uk
-:revdate: 2026-04-05
+:revdate: 2026-09-27
 :license: MPL-2.0
 
-== What This Is
+[IMPORTANT]
+====
+This directory contains research/prototype source, not a verified proof service
+or production-ready server. Compiler-backed builds and runtime/integration
+checks have not been run in the current assessment. Directory contents and
+source comments are not evidence that any endpoint, ABI, or external service
+contract works.
+====
 
-A type-safe backend interface for the nesy-solver.dev proof playground.
+== Scope
 
-Users submit proof obligations (SMT-LIB, Lean, Coq, Idris2, Agda); this
-connector dispatches them to echidna, records the outcome in verisim-api's
-`proof_attempts` table, and serves strategy recommendations back to the
-frontend — all through a single request model exposed over 16 protocol
-surfaces (REST, GraphQL, WebSocket, SSE, gRPC, JSON-RPC, MsgPack-RPC,
-CBOR, Flatbuffers, Cap'n Proto, Bebop, tRPC, MQTT, AMQP, SOAP, VerisimDB).
+The connector has an Idris2 package, a Zig C-ABI implementation, a hand-kept C
+header, and a separate Zig HTTP-server prototype. Its source describes models
+for prover kinds, input languages, obligation classes, outcomes, session state,
+and protocol-surface labels.
 
-== Architecture
+The `SurfaceKind` enum and the `/surfaces` response include sixteen names. That
+is an inventory of labels, *not* sixteen implemented or interoperable protocol
+transports. The HTTP prototype advertises REST-style routes in comments; their
+build, behaviour, authentication, upstream integration, and failure handling
+are not currently verified.
 
-[source]
-----
-src/                     Idris2 ABI (formally proven)
-├── NesySolverAPI.idr           top-level re-export
-├── NesySolverAPI/
-│   └── Types.idr               ProverKind, InputLanguage, ObligationClass,
-│                               ProveOutcome, SessionState, SurfaceKind
-├── NesySolverAPIABI.idr        ABI re-export
-├── NesySolverAPIABI/
-│   ├── Layout.idr              Bits8 tag encodings + 6 roundtrip proofs
-│   ├── Transitions.idr         ValidTransition GADT + decidability
-│   └── Foreign.idr             opaque handles + FFI function contract
-└── Main.idr                    demo executable
+The Idris2 `Layout.idr` source contains tag encoders/decoders and roundtrip
+lemmas. These are source-level proof declarations only until Idris2 accepts the
+package. They do not prove that the Zig implementation or hand-maintained C
+header agrees with Idris2. No repository-wide ABI generation or conformance
+check currently establishes that correspondence.
 
-generated/abi/
-└── nesy_solver_api.h           C header (hand-maintained, must match
-                                Layout.idr + nesy_solver_api.zig)
+The FFI Zig source explicitly describes dispatch and strategy functions as
+stubs. The separate HTTP server source includes experimental integration code;
+its presence does not establish that Echidna, VerisimDB/API, RGTV, or any other
+upstream is reachable or follows the assumed contract.
 
-ffi/zig/                        Zig FFI implementation
-├── build.zig                   zig build (shared + static libs)
-├── src/nesy_solver_api.zig     C-ABI functions + SHA-256 hasher
-└── test/integration_test.zig   cross-module integration tests
-
-zig/                            Zig HTTP service + deployment
-├── build.zig                   builds the nesy-server executable
-├── src/main.zig                REST + JSON proof-dispatch service
-├── src/rgtv.zig                RGTV grant-broker client
-├── Containerfile               podman/fly.io image
-├── fly.toml                    fly.io deployment config
-└── deploy-fly.sh               deploy script
-----
-
-== Type tag table (must stay synchronised)
-
-|===
-| Type             | Tags  | Source of truth
-
-| `ProverKind`       | 0–8   | `src/NesySolverAPIABI/Layout.idr`
-| `InputLanguage`    | 0–4   | `src/NesySolverAPIABI/Layout.idr`
-| `ObligationClass`  | 0–10  | mirrors verisimdb `proof_attempts` Enum8
-| `ProveOutcome`     | 0–3   | mirrors verisimdb `outcome` field
-| `SessionState`     | 0–3   | `src/NesySolverAPIABI/Transitions.idr`
-| `SurfaceKind`      | 0–15  | 16 zig unified-api-adapter protocol surfaces
-|===
-
-Any change to these tag values MUST update Layout.idr, nesy_solver_api.h,
-and nesy_solver_api.zig in the same commit.
-
-== State machine (proof-dispatch session)
+== Source inventory
 
 [source]
 ----
-Idle --Submit--> Dispatching --Verdict-->   Recording --RecordDone--> Idle
-  ^                   |
-  |                   +-- DispatchFail --> FailedS --Reset--> Idle
-  |                                                              |
-  +--------------------Reset-------------------------------------+
+src/                         Idris2 model and ABI declarations
+  NesySolverAPI/Types.idr     data types and surface labels
+  NesySolverAPIABI/Layout.idr hand-written tag maps and roundtrip lemmas
+generated/abi/                hand-maintained C header (not generated by a
+                               checked repository tool)
+ffi/zig/                      C-ABI implementation and package tests
+zig/                          experimental HTTP server and grant-broker code
 ----
 
-Every arrow corresponds to exactly one `ValidTransition` constructor.
-The Idris2 type checker rejects any transition not listed.
+The README deliberately does not reproduce all source tag values: consumers
+must inspect the current declarations, and cross-language correspondence must
+be established by a reproducible generated-header/ABI test rather than by this
+document.
 
-== Build
+== Available checks
+
+Run from this directory when the toolchains are installed:
 
 [source,bash]
 ----
-# Idris2 types + demo executable
 idris2 --build proven-nesy-solver-api.ipkg
-./build/exec/proven-nesy-solver-api
-
-# Zig FFI (produces libproven_nesy_solver_api.so + .a)
-cd ffi/zig && zig build test --summary all
+(cd ffi/zig && zig build test)
+(cd zig && zig build test)
 ----
 
-== Phase E status
+The current root task sweep and CI select only defined package targets; they do
+not demonstrate that this service is deployable. No result is claimed here:
+Idris2, Zig, and Just are unavailable in the current assessment workspace.
 
-* *E2 (this session)*: Scaffold complete — Idris2 types + proofs + Zig FFI
-  skeleton + zig adapter. All dispatch functions are typed stubs.
-* *E3 (next)*: Wire FFI to real echidna HTTP client (POST
-  `http://localhost:8090/api/verify`) and verisim-api persistence (POST
-  `http://localhost:8080/api/v1/proof_attempts`). Deploy adapter service
-  to fly.io.
-* *E4*: V4 PROVEN/SANCTIFY certificate badges via
-  `GET /api/v1/proof_attempts/certificates`.
+== Deployment status
+
+Deployment is intentionally disabled. `zig/deploy-fly.sh` exits before invoking
+Fly.io tools, `zig/fly.toml` contains no active app/build/service settings, and
+the Zig `Containerfile` fails with an explicit message. This avoids accidental
+cloud changes or publication of the currently mismatched, unverified image.
+
+Do not enable deployment until the package builds, the HTTP server is tested
+against contract fixtures, credential handling and authentication are reviewed,
+the C ABI is checked against the Idris2 model and header, upstream integrations
+are exercised, and a reproducible image/health-check pipeline is approved.

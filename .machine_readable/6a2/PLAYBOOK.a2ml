@@ -1,35 +1,40 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# PLAYBOOK.a2ml — Operational playbook
-# Runbooks, incident response, deployment procedures.
+# PLAYBOOK.a2ml — current local maintenance and evidence runbook.
 
 [metadata]
-version = "0.1.0"
-last-updated = "2026-03-02"
+version = "0.2.0"
+last-updated = "2026-09-27"
 
-[deployment]
-# method = "gitops"  # gitops | manual | ci-triggered
-# target = "container"  # container | binary | library | wasm
+[development]
+entrypoint = "QUICKSTART-DEV.adoc"
+task-runner = "Justfile"
+package-specific-instructions = "Read the package README, .ipkg, and build.zig before running a package command."
+
+[verification]
+source-smoke = "just test-static"
+model-builds = "just build-idris"
+native-builds = "just build-zig"
+native-tests = "just test-zig"
+quality = "just quality"
+missing-tool-behavior = "The configured build/test tasks fail explicitly when the required compiler is absent."
 
 [incident-response]
-# 1. Check .machine_readable/STATE.a2ml for current status
-# 2. Review recent commits and CI results
-# 3. Run `just validate` to check compliance
-# 4. Run `just security` to audit for vulnerabilities
+steps = [
+  "Read READINESS.adoc and PROOF-NEEDS.adoc for current evidence boundaries.",
+  "Identify the exact package, source revision, and toolchain versions.",
+  "Run the package-specific build and executable tests; preserve complete logs.",
+  "Do not publish or deploy container artifacts; deployment is disabled.",
+  "Update STATE.a2ml and the corresponding human-readable status only when evidence changes.",
+]
 
 [release-process]
-# 1. Update version in STATE.a2ml, META.a2ml, Justfile
-# 2. Run `just release-preflight` (validate + quality + security + maint-hard-pass)
-# 3. Optional local permission hardening: `just perms-snapshot && just perms-lock`
-# 4. Tag and push
-# 5. Restore local permissions if needed: `just perms-restore`
-# 6. Run `just container-push` if applicable
+status = "No production release process is configured for this source monorepo."
+forbidden-until-validated = ["release-tagging", "container-signing", "container-pushing", "deployment"]
 
 [maintenance-operations]
-# Baseline audit:
-#   just maint-audit
-# Hard release gate:
-#   just maint-hard-pass
-# Permission audit:
-#   just perms-audit
+metadata-validation = "just validate"
+static-smoke = "just test-static"
+full-quality = "just quality (requires Just, Idris2, and Zig)"
+rollback = "Use reviewed, path-scoped Git operations; no automatic working-tree rollback recipe is provided."

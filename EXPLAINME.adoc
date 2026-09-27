@@ -1,82 +1,88 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
 // Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= proven-servers — Formally Verified Server Cores — Show Me The Receipts
+= proven-servers — Evidence and Limitations
 :toc:
-:icons: font
+:sectnums:
+:revdate: 2026-09-27
 
-The README makes claims. This file backs them up with evidence from real code.
+[IMPORTANT]
+====
+This document does not claim that the repository's protocol packages are
+formally verified servers. It distinguishes what is present in source from
+what has actually been built, tested, or shown to conform.
+====
 
-== Core Claims & Evidence
+== What the repository contains
 
-=== Claim 1: "108 Formally Verified Server Components"
+The repository contains protocol-named package directories, selected Idris2
+models, Zig FFI prototypes, connector sources, and language-binding
+scaffolding. The counts in `README.adoc` are a directory inventory only. They
+do not establish that a directory builds, implements a complete protocol, or
+provides an operational server.
 
-**From README** (lines 9-11):
-____
-A catalog of **108 formally verified server components** written in Idris 2 with dependent types: **94 protocol skeletons**, **8 core primitives**, and **6 connector interfaces**.
-____
+== Model and proof evidence
 
-**Evidence**: `/var/mnt/eclipse/repos/proven-servers/protocols/` contains 94 protocol directories (dns, smtp, httpd, mqtt, amqp, etc.). Each protocol defines machine-checked type safety via Idris2 dependent types. No `believe_me` escape hatches permitted.
+Some Idris2 packages declare data types, transition relations, tag maps, or
+proof terms. Those declarations become compiler-checked evidence only when the
+relevant package builds with Idris2. The current assessment workspace does not
+have Idris2 installed, so no current-checkout Idris2 build result is claimed.
 
-**Caveat**: Verification scope is *type system correctness* (message formats, state transitions). Does not verify operational security properties (timing attacks, cryptographic algorithm strength, deployment configuration).
+Even a successful Idris2 build would establish only the propositions included
+in that package. It would not, by itself, prove correspondence with a Zig
+implementation, C header, binding, wire protocol, cryptographic operation, or
+running service. Package-specific evidence and gaps are tracked in
+`READINESS.adoc`, `PROOF-NEEDS.adoc`, and the package README files.
 
-=== Claim 2: "Every Type Is Total — No Escape Hatches"
+== Native interfaces and bindings
 
-**From README** (lines 120-122):
-____
-4. **Proven.** Every type is total. No `believe_me`. No `assert_total`. No escape hatches.
-5. **Permanent.** Protocol types don't change. DNS message types from 1987 are still the same types today. This code is meant to last.
-____
+`ffi/`, per-package `ffi/zig/` trees, `generated/abi/`, and `bindings/`
+contain code and declarations with varying scope. A header being stored under a
+`generated/` directory does not show that a reproducible generator produced
+it. Native linking and cross-language ABI equivalence have not been verified
+as a repository-wide matrix.
 
-**Evidence**: `/var/mnt/eclipse/repos/proven-servers/src/abi/Types.idr` defines protocol message types using Idris2 total functions. Proof that `rmdir(mkdir(p, fs)) = fs` (reverse operations) exists in `/var/mnt/eclipse/repos/proven-servers/src/abi/Proofs.idr`.
+The language-directory count in `README.adoc` is an inventory, not a support
+promise. See `.machine_readable/BINDINGS.a2ml` for conservative source-level
+status and `ABI-FFI-README.adoc` for the current interface evidence boundary.
+The OCaml native path is explicitly unavailable until compatible C stubs are
+implemented; Java/Kotlin declarations alone do not establish JNI
+implementations.
 
-**Caveat**: Proofs are about *abstract models* (memory-safe type structure). The Zig FFI implementation (`ffi/zig/src/main.zig`) is NOT formally connected to the ABI proofs via mechanized extraction—mapping is manual.
+== Tests and current execution status
 
-=== Claim 3: "ABI-FFI Standard: 20 Language Bindings"
+`Justfile` defines discovered Idris2 and Zig build/test loops plus explicitly
+labelled static smoke checks. The tests under `tests/` are partial executable
+samples or source-pattern checks; they are not an exhaustive protocol suite,
+security certification, or proof of conformance.
 
-**From README** (lines 124-130):
-____
-* **ABI** (Idris 2): Interface definitions with dependent type proofs → `abi/`
-* **FFI** (Zig): C-compatible implementation → `ffi/`
-* **Bindings**: Thin wrappers for 20 languages → `bindings/`
-____
+The assessment workspace used for this update did not have Just, Idris2, or Zig
+installed. Consequently, the configured compiler/test matrix has not been run
+on this checkout. Historical audit reports under `audits/` apply only to their
+recorded revisions and tools.
 
-**Evidence**: `bindings/` contains 20 language bindings — Ada, C++, C#, Dart, Elixir, Gleam, Go, Haskell, Java, JavaScript, Julia, Kotlin, Lua, OCaml, PHP, Python, ReScript, Ruby, Rust, Swift. Each calls the generated C ABI in `generated/abi/*.h` (per-protocol `libproven_<proto>`). Ada (`pragma Import (C, …)`) and Java (JNI) are fully FFI-wired reference bindings; Elixir, Gleam and ReScript are currently constants-only scaffolds with FFI wiring pending — their unproven reimplementations were removed (see `docs/decisions/0003-keep-bindings-thin-abi-wrappers.md`). Per-binding tiers: `.machine_readable/BINDINGS.a2ml`.
+== External services and deployment
 
-**Caveat**: Bindings are thin (mostly type mirrors). Language-specific type safety depends on that language's type system matching the C header contract—no formal proof of equivalence across language boundaries (yet).
+The repository does not establish that experimental connectors can reach their
+assumed upstreams, authenticate correctly, or persist data. Endpoint names,
+source comments, environment-variable lists, and integration stubs are not
+runtime evidence.
 
-== Dogfooded Across The Account
+Root container/cloud deployment, release, and Pages publishing operations are
+not configured as product deliverables. The NESY connector's old Fly.io and
+container paths are explicitly disabled. No production server, image, or
+release artifact should be inferred from this source tree.
 
-Uses the hyperpolymath ABI/FFI standard (Idris2 ABI + Zig FFI). Same architectural pattern deployed across:
-- https://github.com/hyperpolymath/burble[burble] — Elixir control plane with Zig NIFs
-- https://github.com/hyperpolymath/gossamer[gossamer] — Window management system with Zig FFI
-- https://github.com/hyperpolymath/stapeln[stapeln] — Container validation engine (upcoming Idris2 integration)
-- https://github.com/hyperpolymath/robodog-ecm[robodog-ecm] — ECM protocols with Idris2 ABI layer
+== Evidence to collect before stronger claims
 
-This standardization ensures verified components can be composed across projects.
+. Build the exact package manifests with recorded compiler versions.
+. Run package-specific executable tests and relevant negative/error-path tests.
+. Generate or independently compare C headers, symbols, layouts, and ABI
+  boundaries against the corresponding language declarations.
+. Exercise real wire encoders/decoders and protocol state machines against
+  independent fixtures or peer implementations.
+. Validate cryptographic operations with appropriate test vectors and review.
+. For any proposed service, test authentication, upstream behavior, resource
+  limits, health/readiness, and failure modes before packaging or deployment.
 
-== File Map
-
-[cols="1,3"]
-|===
-| Path | Contents & Purpose
-
-| `core/` | 8 core primitives: socket, frame, fsm, wire, compose, tls, config, audit — foundation types for all protocols
-
-| `protocols/` | 94 protocol skeleton directories (proven-dns/, proven-mqtt/, proven-amqp/, etc.) — each with complete Idris2 type definitions and integration tests
-
-| `connectors/` | 6 connector interface definitions (dbconn, authconn, cacheconn, queueconn, resolverconn, storageconn) — each with ABI proof + FFI implementation
-
-| `src/abi/` | Idris2 formal proof files: Types.idr (message/state definitions), Layout.idr (memory layout proofs), Foreign.idr (FFI boundary contracts), Proofs.idr (reversibility theorems)
-
-| `ffi/zig/` | Zig FFI implementation bridging Idris2 ABI to C: src/main.zig (runtime ops), test/integration_test.zig (ABI conformance tests)
-
-| `generated/abi/` | Auto-generated C headers (one per connector) — contracts that any language can call
-
-| `bindings/` | 20 language-specific thin wrappers over the C ABI (ada/, cpp/, csharp/, dart/, elixir/, gleam/, go/, haskell/, java/, javascript/, julia/, kotlin/, lua/, ocaml/, php/, python/, rescript/, ruby/, rust/, swift/). No safety logic in bindings — see ADR 0003 + `.machine_readable/BINDINGS.a2ml`
-
-| `test/` | Test suite verifying protocol type correctness across all 94 protocols
-|===
-
-== Questions?
-
-Open an issue or reach out at j.d.a.jewell@open.ac.uk — happy to explain the formal verification approach in detail.
+See `READINESS.adoc` and `PROOF-NEEDS.adoc` for the current project-wide
+verification plan.

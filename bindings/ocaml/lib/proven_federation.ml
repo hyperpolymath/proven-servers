@@ -174,13 +174,20 @@ let server_state_of_tag = function
   | 4 -> Some Shutdown
   | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_federation_abi_version : unit -> int = "federation_abi_version"
-external c_federation_create_context : unit -> int = "federation_create_context"
-external c_federation_destroy_context : int -> unit = "federation_destroy_context"
-external c_federation_state : int -> int = "federation_state"
-external c_federation_can_transition : int -> int -> int = "federation_can_transition"
+let c_federation_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_federation_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_federation_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_federation_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_federation_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

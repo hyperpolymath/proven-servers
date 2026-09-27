@@ -28,32 +28,58 @@ let phase_of_tag = function
 let op_type_to_tag = function
   | Query -> 0 | Mutation -> 1 | Subscription -> 2
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_graphql_abi_version : unit -> int = "graphql_abi_version"
-external c_graphql_create : int -> int = "graphql_create"
-external c_graphql_destroy : int -> unit = "graphql_destroy"
-external c_graphql_phase : int -> int = "graphql_phase"
-external c_graphql_operation_type : int -> int = "graphql_operation_type"
-external c_graphql_error_category : int -> int = "graphql_error_category"
-external c_graphql_advance : int -> int = "graphql_advance"
-external c_graphql_abort : int -> int -> int = "graphql_abort"
-external c_graphql_set_query_depth : int -> int -> int = "graphql_set_query_depth"
-external c_graphql_query_depth : int -> int = "graphql_query_depth"
-external c_graphql_set_complexity : int -> int -> int = "graphql_set_complexity"
-external c_graphql_complexity : int -> int = "graphql_complexity"
-external c_graphql_resolve_field : int -> int -> int -> int = "graphql_resolve_field"
-external c_graphql_fields_resolved : int -> int = "graphql_fields_resolved"
-external c_graphql_can_transition : int -> int -> int = "graphql_can_transition"
-external c_graphql_sub_create : int -> int = "graphql_sub_create"
-external c_graphql_sub_phase : int -> int = "graphql_sub_phase"
-external c_graphql_sub_advance : int -> int = "graphql_sub_advance"
-external c_graphql_sub_emit_event : int -> int = "graphql_sub_emit_event"
-external c_graphql_sub_abort : int -> int = "graphql_sub_abort"
-external c_graphql_sub_event_count : int -> int = "graphql_sub_event_count"
-external c_graphql_introspection_query : int -> int -> int = "graphql_introspection_query"
-external c_graphql_check_depth : int -> int -> int = "graphql_check_depth"
-external c_graphql_check_complexity : int -> int -> int = "graphql_check_complexity"
+let c_graphql_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_create : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_destroy : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_phase : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_operation_type : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_error_category : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_advance : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_abort : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_set_query_depth : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_query_depth : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_set_complexity : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_complexity : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_resolve_field : int -> int -> int -> int = fun _arg0 _arg1 _arg2 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_fields_resolved : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_sub_create : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_sub_phase : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_sub_advance : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_sub_emit_event : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_sub_abort : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_sub_event_count : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_introspection_query : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_check_depth : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_graphql_check_complexity : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

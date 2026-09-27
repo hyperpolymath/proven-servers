@@ -1,11 +1,11 @@
 (* SPDX-License-Identifier: MPL-2.0 *)
 (* Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk> *)
 
-(** Shared error types for all proven-servers FFI operations.
+(** Shared error types for the OCaml model scaffolds.
 
-    Every protocol FFI uses the same slot-based context pool pattern with
-    [int] return values (-1 = no slot, 0/1 = success/failure). This module
-    maps those patterns to a descriptive OCaml variant type. *)
+    The current native operations are disabled until OCaml-compatible C stubs
+    exist. These conversion helpers document the intended ABI conventions for
+    a future verified bridge; they do not make the current stubs callable. *)
 
 (** Unified error type for all proven-servers FFI operations. *)
 type t =

@@ -10,7 +10,7 @@ import ODNS
 covering
 main : IO ()
 main = do
-  putStrLn "proven-odns v0.1.0 -- Formally verified Oblivious DNS types (draft-pauly-dprive-oblivious-doh)"
+  putStrLn "proven-odns v0.1.0 -- Oblivious DNS session-state model (no HPKE backend)"
   putStrLn "Powered by proven (Idris 2 formal verification)"
   putStrLn ""
   putStrLn "Roles:"

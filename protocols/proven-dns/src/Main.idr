@@ -3,9 +3,9 @@
 --
 -- proven-dns: Main entry point
 --
--- A DNS resolver implementation that cannot crash on malformed queries.
--- Uses proven's type-safe approach to ensure all name parsing, query
--- construction, and response generation is total.
+-- A demonstration of the typed DNS model. The current Zig FFI is deliberately
+-- limited to one root-name question; it is not a general resolver, and DNSSEC
+-- key loading, signing, and validation are unavailable.
 --
 -- Usage:
 --   idris2 --build proven-dns.ipkg
@@ -183,7 +183,7 @@ demoZone = do
 covering
 main : IO ()
 main = do
-  putStrLn "proven-dns v0.1.0 -- DNS that cannot crash"
+  putStrLn "proven-dns v0.1.0 -- typed DNS message-model demonstration"
   putStrLn "Powered by proven (Idris 2 formal verification)"
   putStrLn ""
   putStrLn $ "DNS port: " ++ show (cast {to=Nat} dnsPort)

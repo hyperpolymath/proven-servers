@@ -1,65 +1,60 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-= Software Development Approach (General)
-:toc: left
-:toclevels: 2
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Software Development Approach — proven-servers
+:revdate: 2026-09-27
+:toc:
 
-This is the general operating policy for software development across repositories.
+This repository applies maintenance in a fixed order: scope, corrective/adaptive
+work, then audit. This is a process guide; it does not assert that external
+scanners, ecological analysis, or every package test are installed or have run.
+The machine-readable counterpart is
+`.machine_readable/policies/SOFTWARE-DEVELOPMENT-APPROACH.a2ml`.
 
-== Core Sequence
+== Axis 1: scope
 
-Always run work in this order:
+Priority: `must > intend > like`.
 
-1. Scope first (Axis 1)
-2. Maintenance second (Axis 2)
-3. Audit third (Axis 3)
+Build a scoped worklist from `README.adoc`, `ROADMAP.adoc`, `READINESS.adoc`,
+`PROOF-NEEDS.adoc`, package READMEs and manifests, CI/security documentation,
+and the source currently under review. Scan for unfinished markers and, where
+Idris2 is present, proof escape-hatch identifiers. Check whether declared intent
+matches actual implementations and tests.
 
-== Axis Definitions
+Output: a Must/Intend/Like assembly that records evidence, assumptions, skipped
+checks, and rationale.
 
-=== Axis 1: Scope
+== Axis 2: maintenance
 
-Priority order: `must > intend > like`
+Priority: `corrective > adaptive > perfective`.
 
-Axis 1 output is a scoped assembly of work based on:
+* *Corrective:* repair concrete defects, broken checks, unsafe success paths,
+  and unsupported user-facing claims.
+* *Adaptive:* reconcile changed scope, stale paths, obsolete tasks, machine and
+  human documentation, and explicit availability boundaries.
+* *Perfective:* improve quality only after corrective/adaptive work establishes
+  the current honest state.
 
-* README, roadmap, status, CI/security docs
-* marker scans (`TODO`, `FIXME`, `XXX`, `HACK`, `STUB`, `PARTIAL`)
-* Idris unsoundness scan when Idris exists (`believe_me`, `assert_total`)
-* docs honesty check (intent vs actual implementation)
+== Axis 3: audit
 
-=== Axis 2: Maintenance
+Priority: `systems > compliance > effects`.
 
-Priority order: `corrective > adaptive > perfective`
+* *Systems:* verify required mechanisms exist and actually operate.
+* *Compliance:* record applicable requirements and scoped exceptions; use
+  standards capability gates only when repository paths/evidence satisfy them.
+* *Effects:* capture benchmark and operational evidence when effects are
+  claimed, and review what changed, why, and remaining risks.
 
-* Corrective: fix defects, regressions, breakage, security/safety failures
-* Adaptive: reconcile scope changes, remove stale references, cull obsolete work
-* Perfective: improve quality/clarity/performance only from the honest Axis 1 state
+`panic-attack` and sustainabot-guided ecological checking are estate baselines
+where applicable. They are not substitutes for the current configured tests,
+and their results must not be claimed unless they were actually run.
 
-=== Axis 3: Audit
+== Finish-off
 
-Priority order: `systems > compliance > effects`
+At the end of a maintenance cycle:
 
-* Systems: required mechanisms exist and are operating
-* Compliance: seams/compromises/exceptions are explicit, bounded, and do not drift
-* Effects: benchmark and operational impact evidence is captured and reviewed
-
-Compliance scanner baseline: `panic-attack` +
-Effects/ecological baseline: sustainabot-guided ecological checking
-
-== Generic Cleanup And Finish-Off
-
-At cycle end:
-
-* reduce root clutter to required control/entry files
-* archive/remove stale or superseded work
-* synchronize human and machine docs
-* run compliance and effects audits with evidence capture
-* produce Must/Should/Could summary and immediate next-actions list
-
-== Collaboration Rule
-
-Effects review must include explicit maintainer dialogue:
-
-* what changed
-* why it changed
-* what risks remain
+* remove stale claims and unsafe or misleading no-op tasks;
+* keep state, registry, readiness, and proof-needs metadata synchronized;
+* run available checks and report tool-dependent checks that remain unrun;
+* avoid promoting a source inventory, smoke check, or historical audit into
+  build, proof, conformance, or deployment evidence;
+* record Must/Intend/Like and immediate corrective/adaptive/perfective actions.

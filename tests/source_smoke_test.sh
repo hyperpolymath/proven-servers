@@ -2,51 +2,34 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# proven-servers — Property-Based Test Suite
+# proven-servers — Static Source-Check Smoke Suite
 #
-# Verifies algebraic and structural invariants that must hold across ALL
-# protocol state machines in the proven-servers codebase.  These are
-# property tests in the shell tradition: we enumerate a representative set
-# of inputs, assert the invariant for every input, and report each failure
-# individually so the failing case is visible.
+# This script uses source-pattern checks over a small, explicitly listed
+# sample. It does not execute protocol functions and is not property-based
+# testing, proof evidence, or a substitute for Zig/Idris builds and tests.
 #
-# Properties tested
-# ─────────────────
-#   P1  Invalid transitions are universally rejected
-#         For every protocol that exposes a *_can_transition function, direct
-#         jumps that skip intermediate states must return 0.
+# Heuristics checked
+# ──────────────────
+#   P1  Selected transition-table source lines are present/absent
 #
-#   P2  Valid initial transitions are universally accepted
-#         Every protocol FSM must accept its designated start edge (e.g.
-#         Idle → first live state).
+#   P2  A selected initial-edge source line is present
 #
-#   P3  Enum tag roundtrip — ABI tag identity
-#         For each protocol the integer tag 0..N-1 for a known enum must
-#         survive encode/decode through the published transition table and
-#         state-query functions without corruption.
+#   P3  Selected Zig enum declarations have an expected number of tags
 #
-#   P4  Slot exhaustion returns a sentinel, not garbage
-#         Calling _create beyond the pool limit must return -1 (not a
-#         valid slot); behaviour after exhaustion must be deterministic.
+#   P4  Selected create functions contain a textual -1 exhaustion branch
 #
-#   P5  ABI version is non-zero (no uninitialised protocol)
-#         Every protocol with an *_abi_version() function must return >= 1.
+#   P5  Selected ABI version functions do not visibly return zero
 #
-#   P6  Transition predicate is boolean (returns only 0 or 1)
-#         can_transition must never return an arbitrary integer.
+#   P6  Selected transition functions contain only literal 0/1 return branches
 #
-#   P7  Representative protocol Zig FFI builds compile cleanly
+#   P7  Selected transition functions contain a literal rejecting fallback
 #
-#   P8  State machine quiescence (terminal state or idle-return)
-#         Every FSM must either loop back to state 0 or have a terminal sink.
-#
-#   P9  Invalid-slot guard present in all mutation functions
-#         Calling mutators with bad slot indices must not corrupt state.
+#   P8  Selected source files contain a slot-validator helper pattern
 #
 # Usage
 # ─────
-#   bash tests/property_test.sh
-#   just property-test
+#   bash tests/source_smoke_test.sh
+#   just source-smoke
 
 set -euo pipefail
 
@@ -67,23 +50,27 @@ pass()      { green  "  PASS: $1"; PASS=$((PASS + 1)); }
 fail_test() { red    "  FAIL: $1"; FAIL=$((FAIL + 1)); }
 skip_test() { yellow "  SKIP: $1 ($2)"; SKIP=$((SKIP + 1)); }
 
+# Extract one single-line-signature exported Zig function. The targeted
+# functions have their closing brace at column zero in this repository.
+exported_function_body() {
+    local function_name="$1" source_file="$2"
+    awk -v fn="$function_name" '
+        !capture && index($0, "pub export fn " fn "(") > 0 { capture=1 }
+        capture { print }
+        capture && /^}/ { exit }
+    ' "$source_file"
+}
+
 echo "═══════════════════════════════════════════════════════════════"
-echo "  proven-servers — Property-Based Tests"
+echo "  proven-servers — Source-Pattern Smoke Checks (not runtime tests)"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# P1 — Invalid-transition rejection property
-#
-# Strategy: for each protocol in our representative set, verify via source
-# inspection that the can_transition function returns 0 for canonical
-# skip-states cases:
-#   AMQP:  Idle(0) → Open(3)           must be 0
-#   MQTT:  Idle(0) → Subscribed(2)     must be 0
-#   DNS:   QueryReceived(1) → Sent(4)  must be 0 (skip ResponseBuilding)
-# We also confirm that the VALID counterpart edge IS present.
+# P1 — Selected source lines inside the named transition function.
+# These grep-based checks are neither exhaustive nor executable verification.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "P1 — Invalid-transition rejection (per-protocol FSM)"
+bold "P1 — Selected transition source lines (not runtime validation)"
 
 # Format: "proto_slug  invalid_from  invalid_to  valid_from  valid_to"
 declare -a P1_CASES=(
@@ -106,31 +93,33 @@ for entry in "${P1_CASES[@]}"; do
         continue
     fi
 
-    # The valid pair MUST appear in the transition table.
-    VALID_PATTERN="from == ${val_from} and to == ${val_to}"
-    if grep -q "$VALID_PATTERN" "$SRC_FILE"; then
-        pass "P1 proven-${proto}: valid edge ${val_from}→${val_to} present in table"
-    else
-        fail_test "P1 proven-${proto}: valid edge ${val_from}→${val_to} NOT found in table"
+    transition_body="$(exported_function_body "${proto}_can_transition" "$SRC_FILE")"
+    if [ -z "$transition_body" ]; then
+        skip_test "P1 proven-${proto} transition table" "exported function not found"
+        continue
     fi
 
-    # The invalid pair must NOT appear as an accepted transition (return 1).
-    INVALID_PATTERN="from == ${inv_from} and to == ${inv_to}"
-    if grep "$INVALID_PATTERN" "$SRC_FILE" 2>/dev/null | grep -q "return 1"; then
-        fail_test "P1 proven-${proto}: invalid edge ${inv_from}→${inv_to} is ACCEPTED (must be rejected)"
+    # These are source-text checks scoped to the broker/protocol transition function.
+    VALID_PATTERN="from == ${val_from} and to == ${val_to}"
+    if grep -q "$VALID_PATTERN" <<<"$transition_body"; then
+        pass "P1 proven-${proto}: selected valid edge ${val_from}→${val_to} appears in source"
     else
-        pass "P1 proven-${proto}: invalid edge ${inv_from}→${inv_to} correctly not accepted"
+        fail_test "P1 proven-${proto}: selected valid edge ${val_from}→${val_to} not found"
+    fi
+
+    INVALID_PATTERN="from == ${inv_from} and to == ${inv_to}"
+    if grep "$INVALID_PATTERN" <<<"$transition_body" | grep -q "return 1"; then
+        fail_test "P1 proven-${proto}: selected invalid edge ${inv_from}→${inv_to} appears accepted"
+    else
+        pass "P1 proven-${proto}: selected invalid edge ${inv_from}→${inv_to} not accepted by source pattern"
     fi
 done
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# P2 — Initial-transition acceptance property
-#
-# Every protocol's FSM must have at least one valid outgoing transition from
-# state 0 (the initial state).  A protocol with no exit from state 0 is broken.
+# P2 — Selected initial-transition source line.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "P2 — Initial-transition acceptance (every FSM can leave state 0)"
+bold "P2 — Selected initial-transition source line"
 
 declare -a P2_PROTOCOLS=(
     "amqp" "dns" "mqtt" "smtp" "ftp" "cache" "ca" "agentic"
@@ -144,23 +133,29 @@ for proto in "${P2_PROTOCOLS[@]}"; do
         continue
     fi
 
-    # Check for at least one accepted transition FROM state 0 to a non-zero state.
-    if grep -qE "from == 0 and to == [1-9]" "$SRC_FILE"; then
-        pass "P2 proven-${proto}: has valid initial outgoing transition from state 0"
+    transition_body="$(exported_function_body "${proto}_can_transition" "$SRC_FILE")"
+    if [ -z "$transition_body" ]; then
+        skip_test "P2 proven-${proto} initial transition" "exported function not found"
+    elif grep -qE "from == 0 and to == [1-9]" <<<"$transition_body"; then
+        pass "P2 proven-${proto}: initial edge appears in transition-function source"
+    elif grep -q 'canTransitionCheck(' <<<"$transition_body"; then
+        helper_body="$(awk '/^fn canTransitionCheck[(]/ {capture=1} capture {print} capture && /^}/ {exit}' "$SRC_FILE")"
+        if grep -qE 'from == 0 and to == [1-9]' <<<"$helper_body"; then
+            pass "P2 proven-${proto}: initial edge appears in delegated transition-check source"
+        else
+            fail_test "P2 proven-${proto}: no initial edge found in delegated source"
+        fi
     else
-        fail_test "P2 proven-${proto}: NO valid transition from initial state 0"
+        skip_test "P2 proven-${proto} initial transition" "implementation is not a recognized literal transition table"
     fi
 done
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# P3 — Enum tag count correctness
-#
-# Property: every published enum must have the exact number of tags declared
-# in the ABI spec.  Extra or missing tags break the ABI contract.
-# We count tag assignments (lines with '= N') in each enum block.
+# P3 — Count literal enum assignments in selected Zig source declarations.
+# Expected counts are local test data, not generated from Idris proofs.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "P3 — Enum tag count matches ABI spec"
+bold "P3 — Selected Zig enum assignment counts (source heuristic)"
 
 # Format: "proto_slug  enum_name  expected_tag_count"
 declare -a P3_CASES=(
@@ -208,11 +203,7 @@ done
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# P4 — Slot exhaustion returns -1 sentinel
-#
-# Property: create() functions must validate pool capacity and return -1 when
-# full.  We verify this by inspecting that the source contains a '-1' return
-# path in the create function body.
+# P4 — Search the selected create function for a literal -1 return branch.
 # ─────────────────────────────────────────────────────────────────────────────
 bold "P4 — Slot exhaustion: create() returns -1 on pool full"
 
@@ -228,63 +219,53 @@ for proto in "${P4_PROTOCOLS[@]}"; do
         continue
     fi
 
-    if grep -q "return -1" "$SRC_FILE" || grep -q "return @as(c_int, -1)" "$SRC_FILE"; then
-        pass "P4 proven-${proto}: create() has -1 exhaustion return path"
+    create_body="$(exported_function_body "${proto}_create" "$SRC_FILE")"
+    if [ -z "$create_body" ]; then
+        skip_test "P4 proven-${proto} create() exhaustion" "exported function not found"
+    elif grep -qE 'return (-1|@as\(c_int, -1\));' <<<"$create_body"; then
+        pass "P4 proven-${proto}: create() contains a textual -1 return branch"
     else
-        fail_test "P4 proven-${proto}: create() missing -1 exhaustion return path"
+        fail_test "P4 proven-${proto}: create() has no textual -1 return branch"
     fi
 done
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# P5 — ABI version is non-zero
-#
-# Property: every protocol with an *_abi_version() function must return >= 1.
-# ABI version 0 indicates an uninitialised or placeholder implementation.
+# P5 — Look for a visible zero or positive return in ABI-version functions.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "P5 — ABI version >= 1 (no uninitialised protocols)"
+bold "P5 — ABI-version return-expression source heuristic"
 
 ABI_VERSION_ZERO_COUNT=0
 ABI_VERSION_POSITIVE_COUNT=0
 
 for src in protocols/proven-*/ffi/zig/src/*.zig; do
     [ -f "$src" ] || continue
-    version=$(awk '
-        /export fn.*_abi_version/ { in_fn=1 }
-        in_fn && /return [0-9]+;/ {
-            match($0, /return ([0-9]+);/, arr)
-            print arr[1]
-            in_fn=0
-        }
-    ' "$src")
+    function_name="$(basename "$src" .zig)_abi_version"
+    version_body="$(exported_function_body "$function_name" "$src")"
+    [ -z "$version_body" ] && continue
 
-    [ -z "$version" ] && continue
-
-    proto_name=$(basename "$(dirname "$(dirname "$(dirname "$src")")")")
-    if [ "$version" -ge 1 ]; then
+    proto_name="$(basename "$(dirname "$(dirname "$(dirname "$(dirname "$src")")")")")"
+    if grep -Eq 'return[[:space:]]+0;' <<<"$version_body"; then
+        fail_test "P5 ${proto_name}: abi_version visibly returns zero"
+        ABI_VERSION_ZERO_COUNT=$((ABI_VERSION_ZERO_COUNT + 1))
+    elif grep -Eq 'return[[:space:]]+([1-9][0-9]*|ABI_VERSION);' <<<"$version_body"; then
         ABI_VERSION_POSITIVE_COUNT=$((ABI_VERSION_POSITIVE_COUNT + 1))
     else
-        fail_test "P5 ${proto_name}: abi_version returns ${version} (must be >= 1)"
-        ABI_VERSION_ZERO_COUNT=$((ABI_VERSION_ZERO_COUNT + 1))
+        skip_test "P5 ${proto_name} ABI version" "return expression is not recognized by this source heuristic"
     fi
 done
 
 if [ "$ABI_VERSION_POSITIVE_COUNT" -gt 0 ] && [ "$ABI_VERSION_ZERO_COUNT" -eq 0 ]; then
-    pass "P5 all ${ABI_VERSION_POSITIVE_COUNT} detectable ABI versions are >= 1"
+    pass "P5 ${ABI_VERSION_POSITIVE_COUNT} ABI-version functions have a recognized nonzero return expression"
 elif [ "$ABI_VERSION_POSITIVE_COUNT" -eq 0 ]; then
     skip_test "P5 ABI version check" "no parseable abi_version functions found"
 fi
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# P6 — can_transition is a boolean predicate (returns only 0 or 1)
-#
-# Property: the can_transition predicate must be total and boolean — it must
-# return only 0 or 1, never an arbitrary integer.  We verify statically that
-# all 'return' statements inside *_can_transition bodies are 'return 0;' or
-# 'return 1;'.
+# P6 — Check literal return lines inside selected transition functions.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "P6 — can_transition is a boolean predicate (returns only 0 or 1)"
+bold "P6 — Literal return lines in selected transition functions"
 
 declare -a P6_PROTOCOLS=("amqp" "dns" "mqtt" "ca" "bfd" "smtp")
 
@@ -295,102 +276,73 @@ for proto in "${P6_PROTOCOLS[@]}"; do
         continue
     fi
 
-    bad_returns=$(awk '
-        /export fn.*_can_transition/ { in_fn=1; depth=0 }
-        in_fn && /\{/ { depth++ }
-        in_fn && /\}/ {
-            depth--
-            if (depth == 0) { in_fn=0 }
-        }
-        in_fn && depth > 0 && /return[[:space:]]/ {
-            if ($0 !~ /return (0|1);/) { print NR": "$0 }
-        }
-    ' "$SRC_FILE")
+    transition_body="$(exported_function_body "${proto}_can_transition" "$SRC_FILE")"
+    if [ -z "$transition_body" ]; then
+        skip_test "P6 proven-${proto} transition predicate" "exported function not found"
+        continue
+    fi
+    bad_returns="$(grep -E 'return[[:space:]]' <<<"$transition_body" | grep -vE 'return[[:space:]]+(0|1);|return if .* 1 else 0;' || true)"
 
     if [ -z "$bad_returns" ]; then
-        pass "P6 proven-${proto}: can_transition returns only 0 or 1"
+        pass "P6 proven-${proto}: transition function has only literal 0/1 return lines"
     else
-        fail_test "P6 proven-${proto}: can_transition has non-boolean returns: $(echo "$bad_returns" | head -2)"
+        fail_test "P6 proven-${proto}: transition function has unrecognized returns: $(echo "$bad_returns" | head -2)"
     fi
 done
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# P7 — Representative protocol Zig FFI builds compile cleanly
-#
-# Property: every protocol in the representative set must build without errors.
-# Build failure is a property violation — the FFI code is broken.
+# P7 — Presence of a rejecting fallback in selected transition functions.
+# This textual check does not establish liveness, reachability, or quiescence.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "P7 — Zig FFI build property: representative protocols compile"
+bold "P7 — Transition functions contain a rejecting fallback (source heuristic)"
 
-declare -a P7_PROTOCOLS=("amqp" "dns" "mqtt")
+declare -a P7_PROTOCOLS=("amqp" "dns" "mqtt" "smtp" "ca" "cache" "bfd")
 
 for proto in "${P7_PROTOCOLS[@]}"; do
-    FFI_DIR="protocols/proven-${proto}/ffi/zig"
-    if [ ! -f "$FFI_DIR/build.zig" ]; then
-        skip_test "P7 proven-${proto} build" "no build.zig"
+    SRC_FILE="protocols/proven-${proto}/ffi/zig/src/${proto}.zig"
+    if [ ! -f "$SRC_FILE" ]; then
+        skip_test "P7 proven-${proto} rejecting fallback" "no src file"
         continue
     fi
 
-    if (cd "$FFI_DIR" && zig build 2>/dev/null); then
-        pass "P7 proven-${proto}: FFI build succeeds"
+    transition_body="$(exported_function_body "${proto}_can_transition" "$SRC_FILE")"
+    if [ -z "$transition_body" ]; then
+        skip_test "P7 proven-${proto} rejecting fallback" "exported function not found"
+    elif grep -qE '^[[:space:]]*return 0;' <<<"$transition_body"; then
+        pass "P7 proven-${proto}: transition function contains a rejecting fallback"
+    elif grep -q 'canTransitionCheck(' <<<"$transition_body"; then
+        helper_body="$(awk '/^fn canTransitionCheck[(]/ {capture=1} capture {print} capture && /^}/ {exit}' "$SRC_FILE")"
+        if grep -qE '^[[:space:]]*return false;' <<<"$helper_body"; then
+            pass "P7 proven-${proto}: delegated transition helper contains a false fallback"
+        else
+            fail_test "P7 proven-${proto}: delegated transition helper has no false fallback"
+        fi
     else
-        fail_test "P7 proven-${proto}: FFI build FAILED"
+        skip_test "P7 proven-${proto} rejecting fallback" "implementation is not a recognized literal transition table"
     fi
 done
 echo ""
 
 # ─────────────────────────────────────────────────────────────────────────────
-# P8 — State machine quiescence property (terminal state or idle-return)
-#
-# Property: every FSM must either include a transition back to state 0
-# (idle reset) or have an unconditional 'return 0' fallback indicating a
-# terminal sink.  This prevents infinite protocol loops.
+# P8 — A slot-validation helper pattern is present in selected source files.
+# This does not prove every exported operation calls the helper correctly.
 # ─────────────────────────────────────────────────────────────────────────────
-bold "P8 — State machine quiescence (terminal or idle-return)"
+bold "P8 — Slot-validation helper pattern is present (source heuristic)"
 
-declare -a P8_PROTOCOLS=("amqp" "dns" "mqtt" "smtp" "ca" "cache" "bfd")
+declare -a P8_PROTOCOLS=("amqp" "dns" "mqtt")
 
 for proto in "${P8_PROTOCOLS[@]}"; do
     SRC_FILE="protocols/proven-${proto}/ffi/zig/src/${proto}.zig"
     if [ ! -f "$SRC_FILE" ]; then
-        skip_test "P8 proven-${proto} quiescence" "no src file"
+        skip_test "P8 proven-${proto} slot guard" "no src file"
         continue
     fi
 
-    # Check for a transition TO state 0 (return to idle) anywhere in the table.
-    if grep -q "and to == 0) return 1" "$SRC_FILE"; then
-        pass "P8 proven-${proto}: FSM has idle-return path (quiesces to state 0)"
-    elif grep -q "^[[:space:]]*return 0;" "$SRC_FILE"; then
-        pass "P8 proven-${proto}: FSM has unconditional reject fallback (terminal safety)"
+    if grep -qE 'fn validSlot|slot[[:space:]]*<[[:space:]]*0' "$SRC_FILE"; then
+        pass "P8 proven-${proto}: slot-validator source pattern is present"
     else
-        fail_test "P8 proven-${proto}: FSM missing idle-return AND unconditional reject fallback"
-    fi
-done
-echo ""
-
-# ─────────────────────────────────────────────────────────────────────────────
-# P9 — Invalid-slot guard present in all mutation functions
-#
-# Property: calling a state-mutation function with an invalid slot index must
-# NOT corrupt any session state.  The validSlot() guard pattern must be present.
-# ─────────────────────────────────────────────────────────────────────────────
-bold "P9 — Invalid-slot guard present in mutation functions"
-
-declare -a P9_PROTOCOLS=("amqp" "dns" "mqtt")
-
-for proto in "${P9_PROTOCOLS[@]}"; do
-    SRC_FILE="protocols/proven-${proto}/ffi/zig/src/${proto}.zig"
-    if [ ! -f "$SRC_FILE" ]; then
-        skip_test "P9 proven-${proto} slot guard" "no src file"
-        continue
-    fi
-
-    # Acceptable guard patterns: validSlot, orelse return, or slot < 0 check.
-    if grep -q "validSlot\|orelse return\|slot < 0" "$SRC_FILE"; then
-        pass "P9 proven-${proto}: slot validation guard is present"
-    else
-        fail_test "P9 proven-${proto}: NO slot validation guard found"
+        fail_test "P8 proven-${proto}: no slot-validator source pattern found"
     fi
 done
 echo ""

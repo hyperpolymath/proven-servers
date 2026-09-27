@@ -43,30 +43,54 @@ let auth_mech_of_tag = function
   | 0 -> Some Plain | 1 -> Some Login | 2 -> Some Cram_md5
   | 3 -> Some Xoauth2 | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_smtp_abi_version : unit -> int = "smtp_abi_version"
-external c_smtp_create_context : unit -> int = "smtp_create_context"
-external c_smtp_destroy_context : int -> unit = "smtp_destroy_context"
-external c_smtp_get_state : int -> int = "smtp_get_state"
-external c_smtp_get_reply_code : int -> int = "smtp_get_reply_code"
-external c_smtp_get_recipient_count : int -> int = "smtp_get_recipient_count"
-external c_smtp_get_data_size : int -> int = "smtp_get_data_size"
-external c_smtp_get_auth_mechanism : int -> int = "smtp_get_auth_mechanism"
-external c_smtp_is_authenticated : int -> int = "smtp_is_authenticated"
-external c_smtp_is_tls_active : int -> int = "smtp_is_tls_active"
-external c_smtp_greet : int -> int -> int = "smtp_greet"
-external c_smtp_authenticate : int -> int -> int = "smtp_authenticate"
-external c_smtp_auth_complete : int -> int -> int = "smtp_auth_complete"
-external c_smtp_set_sender : int -> int = "smtp_set_sender"
-external c_smtp_add_recipient : int -> int = "smtp_add_recipient"
-external c_smtp_start_data : int -> int = "smtp_start_data"
-external c_smtp_append_data : int -> int -> int = "smtp_append_data"
-external c_smtp_finish_data : int -> int = "smtp_finish_data"
-external c_smtp_reset : int -> int = "smtp_reset"
-external c_smtp_quit : int -> int = "smtp_quit"
-external c_smtp_enable_tls : int -> int = "smtp_enable_tls"
-external c_smtp_can_transition : int -> int -> int = "smtp_can_transition"
+let c_smtp_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_get_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_get_reply_code : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_get_recipient_count : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_get_data_size : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_get_auth_mechanism : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_is_authenticated : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_is_tls_active : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_greet : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_authenticate : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_auth_complete : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_set_sender : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_add_recipient : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_start_data : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_append_data : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_finish_data : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_reset : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_quit : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_enable_tls : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_smtp_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

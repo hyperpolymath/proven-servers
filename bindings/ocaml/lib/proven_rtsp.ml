@@ -91,12 +91,18 @@ let rtsp_error_of_tag = function
   | 3 -> Some Invalid_transition | 4 -> Some Rtsp_method_not_allowed
   | 5 -> Some Transport_error | 6 -> Some Session_expired | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_rtsp_abi_version : unit -> int = "rtsp_abi_version"
-external c_rtsp_create_context : unit -> int = "rtsp_create_context"
-external c_rtsp_destroy_context : int -> unit = "rtsp_destroy_context"
-external c_rtsp_can_transition : int -> int -> int = "rtsp_can_transition"
+let c_rtsp_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_rtsp_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_rtsp_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_rtsp_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

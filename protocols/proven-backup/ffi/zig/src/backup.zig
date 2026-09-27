@@ -259,8 +259,9 @@ pub export fn backup_start(slot: c_int) callconv(.c) u8 {
     return 0;
 }
 
-/// Begin verification. Returns 0 on success, 1 on rejection.
-/// Transitions: Running -> Verifying.
+/// Verify backup contents. There is no backup artifact/verifier in this
+/// state-machine-only implementation, so verification always rejects and a
+/// running job is marked Failed rather than advancing to a false success.
 pub export fn backup_verify(slot: c_int) callconv(.c) u8 {
     mutex.lock();
     defer mutex.unlock();
@@ -268,8 +269,8 @@ pub export fn backup_verify(slot: c_int) callconv(.c) u8 {
     const idx = validSlot(slot) orelse return 1;
     if (jobs[idx].state != .running) return 1;
 
-    jobs[idx].state = .verifying;
-    return 0;
+    jobs[idx].state = .failed;
+    return 1;
 }
 
 /// Complete the backup. Returns 0 on success, 1 on rejection.

@@ -1,28 +1,34 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# Canonical maintenance governance model
+# MAINTENANCE-AXES.a2ml — repository maintenance governance model.
 
 [metadata]
-version = "1.0.0"
-last-updated = "2026-03-02"
+version = "1.1.0"
+last-updated = "2026-09-27"
 scope = "repo"
 
 [discovery]
 human-entrypoints = [
   "README.adoc",
-  "docs/maintenance/MAINTENANCE-CHECKLIST.md",
+  "ROADMAP.adoc",
+  "READINESS.adoc",
+  "PROOF-NEEDS.adoc",
+  "docs/maintenance/MAINTENANCE-CHECKLIST.adoc",
   "docs/practice/SOFTWARE-DEVELOPMENT-APPROACH.adoc",
+  "SECURITY.adoc",
 ]
 machine-entrypoints = [
+  ".machine_readable/6a2/STATE.a2ml",
+  ".machine_readable/6a2/META.a2ml",
+  ".machine_readable/6a2/ECOSYSTEM.a2ml",
+  ".machine_readable/6a2/AGENTIC.a2ml",
+  ".machine_readable/6a2/anchor/ANCHOR.a2ml",
   ".machine_readable/policies/MAINTENANCE-AXES.a2ml",
   ".machine_readable/policies/MAINTENANCE-CHECKLIST.a2ml",
   ".machine_readable/policies/SOFTWARE-DEVELOPMENT-APPROACH.a2ml",
-  ".machine_readable/META.a2ml",
-  ".machine_readable/ai/README.adoc",
-  ".machine_readable/bot_directives/README.scm",
+  ".machine_readable/BINDINGS.a2ml",
 ]
-bots = ["hypatia", "gitbot-fleet", "repo visitors"]
 
 [axes]
 axis-1 = "must > intend > like"
@@ -32,23 +38,48 @@ execution-order = "axis-1 > axis-2 > axis-3"
 
 [axis-1-scoping]
 required = true
-sources = "README, roadmap, status docs, maintenance checklist, CI/security docs"
-markers = "TODO/FIXME/XXX/HACK/STUB/PARTIAL"
-idris-unsound-markers = "believe_me/assert_total"
-output = "scoped work assembly in must/intend/like buckets"
+sources = "README, roadmap, readiness/proof-needs, package manifests and READMEs, CI/security policy, and current source"
+markers = ["TODO", "FIXME", "XXX", "HACK", "STUB", "PARTIAL"]
+idris-unsound-markers = ["believe_me", "assert_total"]
+output = "scoped-work-assembly under must/intend/like with explicit evidence and skips"
 
 [axis-2-maintenance]
 corrective-first = true
+corrective = "Fix defects, regressions, broken checks, and safety/security issues."
 adaptive-second = true
-adaptive-focus = "scope changes, stale references, obsolete work culling"
+adaptive-focus = "Reconcile stale claims and paths; remove obsolete work; align source and docs."
 perfective-third = true
-perfective-source = "honest state from axis-1 after corrective/adaptive updates"
+perfective-source = "Only after the current honest state is established."
 
 [axis-3-audit]
 systems-check = true
-compliance-check = true
-effects-check = true
-compliance-focus = "seams/compromises/exception register and anti-drift"
-compliance-tooling = "panic-attack"
-effects-tooling = "ecological checking with sustainabot guidance"
-effects-evidence = "benchmark evidence and maintainer dialogue/status review"
+documentation-honesty-check = true
+safety-security-accounted-check = true
+compliance-seams-check = true
+effects-review-check = true
+benchmark-evidence-required-when-performance-is-claimed = true
+maintainer-dialogue-review-required = true
+compliance-tooling-baseline = "panic-attack; optional external tool, must report unavailable rather than silently pass"
+effects-tooling-baseline = "sustainabot-guided ecological checking when applicable; not run or claimed without evidence"
+
+[generic-cleanup-finish-off]
+root-cleanup-required = true
+stale-work-cull-required = true
+docs-parity-required = true
+machine-human-sync-required = true
+release-prep-summary-required = true
+next-actions-required = ["corrective", "adaptive", "perfective"]
+
+[repo-specific-controls]
+root-toolchain-config = "mise.toml"
+root-task-runner = "Justfile"
+security-policy = "SECURITY.adoc"
+security-contact = ".well-known/security.txt"
+maintainer-list = "MAINTAINERS"
+source-smoke-command = "just test-static"
+compiler-backed-command = "just test (requires Idris2 and Zig)"
+container-deployment = "disabled until an executable service and runtime tests exist"
+
+[maintenance-status]
+latest-assessment = "2026-09-27"
+current-compiler-verification = "not run in the assessment workspace; see READINESS.adoc"

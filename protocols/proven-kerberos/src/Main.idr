@@ -36,7 +36,7 @@ allTicketFlags =
 
 main : IO ()
 main = do
-  putStrLn "proven-kerberos: RFC 4120 Kerberos V5"
+  putStrLn "proven-kerberos: Kerberos principal/enctype model (no KDC or ticket backend)"
   putStrLn $ "  KDC port:            " ++ show kdcPort
   putStrLn $ "  kpasswd port:        " ++ show kpasswdPort
   putStrLn $ "  Ticket lifetime:     " ++ show defaultTicketLifetime ++ "s"

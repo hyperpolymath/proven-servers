@@ -3,13 +3,13 @@
 //
 // pqc.zig -- Zig FFI implementation of proven-pqc.
 //
-// Implements verified Post-Quantum Cryptography key lifecycle with:
+// Implements a PQC lifecycle and negotiation model, not cryptography:
 //   - Slot-based context management (up to 64 concurrent)
 //   - Key lifecycle state machine matching Idris2 Transitions.idr
 //   - Hybrid negotiation state machine (classical + PQC selection)
-//   - Algorithm/NIST-level validation per Layout.idr tables
-//   - Category-aware operation validation (KEM vs Signature)
-//   - Thread-safe via mutex
+//   - Algorithm/NIST-level metadata validation per Layout.idr tables
+//   - Cryptographic operations fail closed until a reviewed backend exists
+//   - Thread-safe lifecycle state via mutex
 
 const std = @import("std");
 
@@ -314,67 +314,53 @@ pub export fn pqc_compromise_key(slot: c_int) callconv(.c) u8 {
     return 0;
 }
 
-// -- Crypto operations (simulated) --------------------------------------------
+// -- Cryptographic operations -------------------------------------------------
+// No reviewed PQC implementation is linked into this FFI. These entry points
+// fail closed: they never claim success, never write fabricated output, and
+// clear any caller-provided output length before returning.
 
-/// Encapsulate. Requires Active key state and KEM algorithm.
-/// Returns 0=ok, 1=rejected.
+/// Encapsulation is unavailable until a reviewed KEM backend is integrated.
+/// Returns 1 (rejected/unavailable); output lengths are always reset to zero.
 pub export fn pqc_encapsulate(slot: c_int, ct: ?[*]u8, ct_len: ?*u32, ss: ?[*]u8, ss_len: ?*u32) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-    const idx = validSlot(slot) orelse return 1;
-    if (contexts[idx].key_state != .active) return 1;
-    if (algorithmCategoryFromTag(contexts[idx].algorithm) != 0) return 1; // Not KEM
+    _ = slot;
     _ = ct;
     _ = ss;
-    // Simulated: write placeholder lengths.
-    if (ct_len) |p| p.* = 32;
-    if (ss_len) |p| p.* = 32;
-    return 0;
+    if (ct_len) |p| p.* = 0;
+    if (ss_len) |p| p.* = 0;
+    return 1;
 }
 
-/// Decapsulate. Requires Active key state and KEM algorithm.
-/// Returns 0=ok, 1=rejected.
+/// Decapsulation is unavailable until a reviewed KEM backend is integrated.
+/// Returns 1 (rejected/unavailable); the output length is reset to zero.
 pub export fn pqc_decapsulate(slot: c_int, ct: ?[*]const u8, ct_len: u32, ss: ?[*]u8, ss_len: ?*u32) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-    const idx = validSlot(slot) orelse return 1;
-    if (contexts[idx].key_state != .active) return 1;
-    if (algorithmCategoryFromTag(contexts[idx].algorithm) != 0) return 1;
+    _ = slot;
     _ = ct;
     _ = ct_len;
     _ = ss;
-    if (ss_len) |p| p.* = 32;
-    return 0;
+    if (ss_len) |p| p.* = 0;
+    return 1;
 }
 
-/// Sign. Requires Active key state and Signature algorithm.
-/// Returns 0=ok, 1=rejected.
+/// Signing is unavailable until a reviewed signature backend is integrated.
+/// Returns 1 (rejected/unavailable); the output length is reset to zero.
 pub export fn pqc_sign(slot: c_int, msg: ?[*]const u8, msg_len: u32, sig: ?[*]u8, sig_len: ?*u32) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-    const idx = validSlot(slot) orelse return 1;
-    if (contexts[idx].key_state != .active) return 1;
-    if (algorithmCategoryFromTag(contexts[idx].algorithm) != 1) return 1; // Not Signature
+    _ = slot;
     _ = msg;
     _ = msg_len;
     _ = sig;
-    if (sig_len) |p| p.* = 64;
-    return 0;
+    if (sig_len) |p| p.* = 0;
+    return 1;
 }
 
-/// Verify. Requires Active key state and Signature algorithm.
-/// Returns 0=ok, 1=rejected.
+/// Verification is unavailable until a reviewed signature backend is integrated.
+/// Always returns 1 (rejected/unavailable); no signature is accepted.
 pub export fn pqc_verify(slot: c_int, msg: ?[*]const u8, msg_len: u32, sig: ?[*]const u8, sig_len: u32) callconv(.c) u8 {
-    mutex.lock();
-    defer mutex.unlock();
-    const idx = validSlot(slot) orelse return 1;
-    if (contexts[idx].key_state != .active) return 1;
-    if (algorithmCategoryFromTag(contexts[idx].algorithm) != 1) return 1;
+    _ = slot;
     _ = msg;
     _ = msg_len;
     _ = sig;
     _ = sig_len;
-    return 0;
+    return 1;
 }
 
 // -- Hybrid negotiation -------------------------------------------------------

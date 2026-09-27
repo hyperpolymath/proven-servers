@@ -1,54 +1,106 @@
-== PROOF-NEEDS.md — proven-servers
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= Proof and Verification Needs — proven-servers
 
-=== Current State
+:revdate: 2026-09-27
+:toc:
 
-* **src/abi/*.idr**: YES — `+Types.idr+`, `+Layout.idr+`,
-`+Foreign.idr+`
-* *Dangerous patterns*: 0 in own code (1 reference in NeSy/Types.idr is
-a documentation comment about neurosymbolic equivalent of believe_me)
-* *LOC*: ~21,700 (Idris2 + Rust + Gleam + Go + Haskell)
-* *ABI layer*: Complete Idris2 ABI; proven-dns and proven-nesy protocol
-definitions in Idris2
+== Current answer
 
-=== What Needs Proving
+There is no current repository-wide proof or test claim established by this
+assessment. The source tree contains Idris2 models, Zig implementations, C headers and ABI
+artefacts with varying generation status, and language-binding directories,
+but their presence does not establish that they compile or conform to one
+another. Current build
+status is *unknown*: Idris2 and Zig were not available in the audit workspace.
 
-[width="100%",cols="51%,27%,22%",options="header",]
+The `audits/` directory contains older, date-stamped reports. Treat them as
+historical evidence for the revisions they examined, not as verification of the
+current working tree.
+
+== Verification boundary
+
+A successful Idris2 totality/type-checking run validates the theorem statements
+and definitions included in the specific package build. It does not prove that
+an independently written Zig FFI implements those definitions, that a C header
+matches both, or that an external network protocol is implemented correctly.
+Likewise, a Zig test suite only supports the behaviors it actually executes; it
+does not establish general RFC compliance, cryptographic correctness, or
+production suitability.
+
+The shell scripts in `tests/` primarily perform source-pattern checks and
+partial package sweeps. They must not be described as exhaustive property tests,
+formal proofs, full cross-language conformance tests, or security certification.
+
+== Priority verification work
+
+[cols="1,3,3"]
 |===
-|Component |What |Why
-|DNS name validation |DNS name parser accepts only valid names per RFC
-|Invalid DNS names cause resolution failures
+|Priority |Required evidence |Why it matters
 
-|DNS protocol correctness |DNS query/response handling is correct |Wrong
-DNS responses break name resolution
+|1 — Reproducible builds
+|Build each tracked Idris2 `.ipkg` and Zig `build.zig` with pinned toolchain
+versions. Record the exact commit, versions, commands, and outcomes; make every
+failure visible.
+|A type-correct model or source file is not build evidence for the current
+revision.
 
-|NeSy type safety |Neurosymbolic type system is sound |NeSy Types.idr
-defines the neurosymbolic bridge — must be correct
+|2 — ABI/FFI correspondence
+|For each claimed bridge, regenerate or verify headers from the ABI source,
+check tags/layouts/symbol signatures, and execute boundary tests against the
+compiled native library.
+|The Idris model and separately maintained Zig/C implementation can diverge.
 
-|Rust FFI bindings |All 9 FFI modules (dns, firewall, ftp, graphql,
-grpc, httpd, mqtt, smtp, ssh) correctly implement Idris2 ABI |FFI
-boundary bugs defeat proven guarantees
+|3 — Fail-closed behavior
+|Add executable negative tests for unavailable crypto, authentication,
+policy, storage, and backend operations; verify output buffers, status codes,
+and state are reset on rejection.
+|A function that rejects safely must not be documented as successful
+functionality or an operational security control.
 
-|Server protocol compliance |Each protocol server (httpd, smtp, ssh,
-etc.) adheres to its RFC |Protocol violations cause interoperability
-failures
+|4 — Language bindings
+|Compile, link, and run each binding that is claimed as supported against the
+exact library and ABI. Record unimplemented JNI/NIF/C-stub bridges as
+unavailable rather than wired.
+|A directory of declarations can compile independently while failing at link
+or runtime.
 
-|Firewall rule evaluation |Firewall rules evaluate correctly and
-completely |Missed rules create security gaps
-
-|NeSy believe_me-equivalent tracking |Track and minimize neurosymbolic
-escape hatches |The documented "`believe_me equivalent`" must be
-minimized
+|5 — Protocol/security behavior
+|Use authoritative protocol test vectors, malformed-input cases, fuzzing, and
+external interoperability/security review for any implementation intended for
+real traffic.
+|Model-level state transitions do not supply a complete parser, transport,
+cryptographic backend, or server.
 |===
 
-=== Recommended Prover
+== Current evidence ledger
 
-*Idris2* — ABI layer complete. DNS and NeSy protocol proofs are natural
-extensions. Server protocol RFC compliance could use *Lean4* for the
-specification-level proofs.
+[cols="2,2,3"]
+|===
+|Question |Current status |Next evidence
 
-=== Priority
+|Do all Idris2 packages build on this revision?
+|Unknown; compiler unavailable in the audit environment.
+|Run `just build-idris` with a pinned Idris2 release and record results.
 
-*HIGH* — Server protocol implementations with security implications
-(firewall, SSH, SMTP, DNS). Incorrect protocol handling is a security
-vulnerability. The 9 Rust FFI modules are the critical boundary where
-proven guarantees could be lost.
+|Do all Zig FFI packages build and pass tests on this revision?
+|Unknown; compiler unavailable in the audit environment.
+|Run `just build-zig` and `just test-zig` using supported package-specific Zig
+versions; the repository does not yet define a complete version matrix.
+
+|Are all language bindings operational?
+|No such claim is supported. The OCaml tree is explicitly disabled; Java and
+Kotlin declarations require their JNI implementation; other source wrappers
+also require package-specific link/runtime verification.
+|Maintain `.machine_readable/BINDINGS.a2ml` and revalidate each claimed binding.
+
+|Are the current shell smoke checks formal properties?
+|No. They inspect source patterns and sample paths.
+|Keep their scope explicit; replace them with executable tests and generated
+conformance checks where a property is claimed.
+
+|Are production services or cryptographic backends present?
+|Not established. Some operations explicitly fail closed.
+|Implement and independently audit concrete backends before making service,
+security, or cryptographic claims.
+|===

@@ -1,30 +1,22 @@
 // SPDX-License-Identifier: CC-BY-SA-4.0
-// Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
-# A2ML 6a2 Directory
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= 6a2 Metadata Directory
+:toc:
 
-This directory contains the 6 core A2ML machine-readable metadata files for this repository.
+This directory contains the six core A2ML metadata documents for this
+repository:
 
-## Files
+* `AGENTIC.a2ml` — agent scope, safety, and evidence constraints
+* `ECOSYSTEM.a2ml` — repository position and integration evidence boundary
+* `META.a2ml` — architecture and development metadata
+* `NEUROSYM.a2ml` — automated/symbolic analysis status
+* `PLAYBOOK.a2ml` — maintenance and verification runbook
+* `STATE.a2ml` — current project status
 
-- `AGENTIC.a2ml` - AI agent operational gating, safety controls
-- `ECOSYSTEM.a2ml` - Project ecosystem position, relationships, explicit boundaries
-- `META.a2ml` - Architecture decisions (ADRs), development practices, design rationale
-- `NEUROSYM.a2ml` - Symbolic semantics, composition algebra
-- `PLAYBOOK.a2ml` - Executable plans, operational runbooks
-- `STATE.a2ml` - Project state, phase, milestones, session history
+The repository anchor is stored under `anchor/ANCHOR.a2ml`. Additional
+registries, policies, contractiles, integrations, and bot directives are kept
+in their named sibling directories under `.machine_readable/`.
 
-## Standards Compliance
-
-These files follow the A2ML Format Family specification from:
-https://github.com/hyperpolymath/standards/tree/main/a2ml
-
-## Generation
-
-These files may be generated from .scm source files using transpilation tools.
-Source .scm files should be removed after successful transpilation.
-
-## See Also
-
-- [A2ML Repository Template](https://github.com/hyperpolymath/standards/blob/main/A2ML-REPO-TEMPLATE.adoc)
-- [6A2 Format Family](https://github.com/hyperpolymath/standards#a2ml-format-family-7-formats)
-
+A2ML metadata is maintained as source text. No generation or validation tool
+is configured here to prove its syntax or semantic consistency; the Justfile's
+metadata checks validate selected required paths and fields only.

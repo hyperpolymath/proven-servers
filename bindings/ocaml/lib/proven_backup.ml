@@ -99,13 +99,20 @@ let retention_policy_of_tag = function
   | 0 -> Some KeepAll | 1 -> Some KeepLast | 2 -> Some KeepDaily
   | 3 -> Some KeepWeekly | 4 -> Some KeepMonthly | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_backup_abi_version : unit -> int = "backup_abi_version"
-external c_backup_create_context : unit -> int = "backup_create_context"
-external c_backup_destroy_context : int -> unit = "backup_destroy_context"
-external c_backup_state : int -> int = "backup_state"
-external c_backup_can_transition : int -> int -> int = "backup_can_transition"
+let c_backup_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_backup_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_backup_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_backup_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_backup_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

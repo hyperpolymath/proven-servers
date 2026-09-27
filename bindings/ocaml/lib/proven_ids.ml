@@ -91,12 +91,18 @@ let threat_level_of_tag = function
   | 0 -> Some Info | 1 -> Some ThreatLevel_Low | 2 -> Some ThreatLevel_Medium
   | 3 -> Some ThreatLevel_High | 4 -> Some ThreatLevel_Critical | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_ids_abi_version : unit -> int = "ids_abi_version"
-external c_ids_create_context : unit -> int = "ids_create_context"
-external c_ids_destroy_context : int -> unit = "ids_destroy_context"
-external c_ids_can_transition : int -> int -> int = "ids_can_transition"
+let c_ids_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ids_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ids_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ids_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

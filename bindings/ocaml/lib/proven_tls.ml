@@ -53,20 +53,34 @@ let cipher_suite_of_tag = function
   | 2 -> Some Chacha20_poly1305_sha256 | 3 -> Some Aes_ccm_128_sha256
   | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_tls_abi_version : unit -> int = "tls_abi_version"
-external c_tls_create_context : int -> int -> int = "tls_create_context"
-external c_tls_destroy_context : int -> unit = "tls_destroy_context"
-external c_tls_state : int -> int = "tls_state"
-external c_tls_version : int -> int = "tls_version"
-external c_tls_cipher_suite : int -> int = "tls_cipher_suite"
-external c_tls_is_handshake_complete : int -> int = "tls_is_handshake_complete"
-external c_tls_begin_handshake : int -> int = "tls_begin_handshake"
-external c_tls_complete_handshake : int -> int = "tls_complete_handshake"
-external c_tls_renegotiate : int -> int = "tls_renegotiate"
-external c_tls_shutdown : int -> int = "tls_shutdown"
-external c_tls_can_transition : int -> int -> int = "tls_can_transition"
+let c_tls_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_create_context : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_version : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_cipher_suite : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_is_handshake_complete : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_begin_handshake : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_complete_handshake : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_renegotiate : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_shutdown : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_tls_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

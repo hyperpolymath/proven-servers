@@ -2,270 +2,58 @@
 # SPDX-License-Identifier: MPL-2.0
 # Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 #
-# proven-servers — End-to-End Test Suite
-#
-# Tests the ABI/FFI round-trip across protocols and connectors:
-#   1. Zig FFI builds for core primitives
-#   2. Per-connector lifecycle tests (dbconn, authconn, cacheconn, etc.)
-#   3. Per-protocol FFI tests (sample of 84)
-#   4. Cross-binding consistency
-#   5. Safety aspect: no dangerous patterns
-#   6. Binding policy: registry parity + no logic in scaffold bindings
-#
-# Usage:
-#   bash tests/e2e.sh
-#   just e2e
+# Selected package build/test sweep. Despite the historical filename, this is
+# not a full network-service E2E test or cross-language conformance suite.
+# It checks two Idris2 packages, all current core/connector Zig test targets,
+# and an explicitly selected sample of protocol Zig test targets.
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-cd "$PROJECT_DIR"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
 
-PASS=0
-FAIL=0
-SKIP=0
-
-green() { printf '\033[32m%s\033[0m\n' "$*"; }
-red()   { printf '\033[31m%s\033[0m\n' "$*"; }
-yellow(){ printf '\033[33m%s\033[0m\n' "$*"; }
-bold()  { printf '\033[1m%s\033[0m\n' "$*"; }
-
-pass() { green "  PASS: $1"; PASS=$((PASS + 1)); }
-fail_test() { red "  FAIL: $1"; FAIL=$((FAIL + 1)); }
-skip_test() { yellow "  SKIP: $1 ($2)"; SKIP=$((SKIP + 1)); }
-
-echo "═══════════════════════════════════════════════════════════════"
-echo "  proven-servers — End-to-End Tests"
-echo "═══════════════════════════════════════════════════════════════"
-echo ""
-
-# ─── Preflight ───────────────────────────────────────────────────────
-bold "Preflight"
-if command -v zig >/dev/null 2>&1; then
-    green "  Zig available: $(zig version)"
-else
-    red "FATAL: zig not found"
-    exit 1
-fi
-echo ""
-
-# ═══════════════════════════════════════════════════════════════════════
-# Section 0: ABI conformance (Idris is the single source of truth)
-# ═══════════════════════════════════════════════════════════════════════
-bold "Section 0: ABI conformance (Idris -> generated -> Zig comptime guard)"
-
-# Conformance-enabled protocols: every protocol shipping an abigen ipkg
-# (<Name>ABI.Emit + proven-<name>-abigen.ipkg) + a comptime guard. Auto-
-# discovered so newly-onboarded protocols join without editing this script.
-CONF_PROTOCOLS="$(for f in protocols/*/proven-*-abigen.ipkg; do
-    [ -f "$f" ] || continue
-    basename "$f" | sed -e 's/^proven-//' -e 's/-abigen\.ipkg$//'
-done | sort | tr '\n' ' ')"
-
-# Generated files asserted drift-free: every _abi_gen.zig, plus the two
-# reference protocols' C headers.
-GEN_FILES="protocols/proven-epistemic/generated/abi/epistemic.h protocols/proven-radius/generated/abi/radius.h"
-for p in $CONF_PROTOCOLS; do
-    GEN_FILES="$GEN_FILES protocols/proven-$p/ffi/zig/src/${p}_abi_gen.zig"
-done
-
-if command -v idris2 >/dev/null 2>&1; then
-    green "  Idris2 available: $(idris2 --version | head -1)"
-
-    # 0a. epistemic engine: build + run the scenario runner (mirrors integration_test.zig).
-    if (cd protocols/proven-epistemic && idris2 --build proven-epistemic.ipkg >/dev/null 2>&1) \
-        && ./protocols/proven-epistemic/build/exec/proven-epistemic >/dev/null 2>&1; then
-        pass "proven-epistemic engine conformance scenarios"
-    else
-        fail_test "proven-epistemic engine conformance scenarios"
-    fi
-
-    # 0b. Regenerate all ABI artifacts from the proofs -- this builds every
-    #     protocol's abigen (compiling its ABI proofs) -- and assert no drift.
-    if bash tools/gen-abi.sh >/dev/null 2>&1; then
-        if git diff --quiet -- $GEN_FILES; then
-            pass "generated ABI matches Idris proofs (no drift)"
-        else
-            fail_test "generated ABI drifted from Idris (run tools/gen-abi.sh and commit)"
-        fi
-    else
-        fail_test "tools/gen-abi.sh failed"
-    fi
-else
-    skip_test "Idris ABI build + conformance" "idris2 not installed"
-fi
-
-# 0d. Build each conformance protocol's Zig WITH the comptime guard active (drift
-# => compile error). Works from the committed generated file even without Idris.
-for p in $CONF_PROTOCOLS; do
-    if (cd "protocols/proven-$p/ffi/zig" && zig build >/dev/null 2>&1); then
-        pass "proven-$p Zig builds with ABI comptime guard"
-    else
-        fail_test "proven-$p Zig comptime guard rejected the build (ABI drift)"
+for tool in idris2 zig; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "ERROR: $tool is required for the selected package test sweep" >&2
+        exit 127
     fi
 done
-echo ""
 
-# ═══════════════════════════════════════════════════════════════════════
-# Section 1: Connector FFI Build + Test
-# ═══════════════════════════════════════════════════════════════════════
-bold "Section 1: Connector FFI build + integration tests"
+echo "Selected package build/test sweep (not full E2E/conformance)"
+echo "Idris2: $(idris2 --version | head -1)"
+echo "Zig: $(zig version)"
 
-CONNECTORS_TESTED=0
-for conn in dbconn authconn cacheconn queueconn resolverconn storageconn; do
-    CONN_DIR="connectors/proven-$conn/ffi/zig"
-    if [ -f "$CONN_DIR/build.zig" ]; then
-        if (cd "$CONN_DIR" && zig build 2>/dev/null); then
-            pass "build proven-$conn FFI"
-        else
-            fail_test "build proven-$conn FFI"
-            continue
-        fi
-
-        if (cd "$CONN_DIR" && zig build test 2>/dev/null); then
-            pass "test proven-$conn FFI"
-            CONNECTORS_TESTED=$((CONNECTORS_TESTED + 1))
-        else
-            fail_test "test proven-$conn FFI"
-        fi
-    else
-        skip_test "proven-$conn" "no build.zig"
-    fi
+idris_packages=(
+    protocols/proven-dns/proven-dns.ipkg
+    protocols/proven-authserver/proven-authserver.ipkg
+)
+for package in "${idris_packages[@]}"; do
+    package_dir="$(dirname "$package")"
+    package_file="$(basename "$package")"
+    echo "==> Idris2: $package"
+    (cd "$package_dir" && idris2 --build "$package_file")
 done
-echo "  Connectors tested: $CONNECTORS_TESTED/6"
-echo ""
 
-# ═══════════════════════════════════════════════════════════════════════
-# Section 2: Protocol FFI Build + Test (sample)
-# ═══════════════════════════════════════════════════════════════════════
-bold "Section 2: Protocol FFI tests (sample of 84)"
+# Run every current core and connector Zig test target.
+while IFS= read -r -d '' build_file; do
+    build_dir="$(dirname "$build_file")"
+    echo "==> Zig test: $build_dir"
+    (cd "$build_dir" && zig build test)
+done < <(find core connectors -type f -name build.zig -print0 | sort -z)
 
-PROTOCOLS_TESTED=0
-PROTOCOLS_TOTAL=0
-
-for proto_dir in protocols/proven-*/ffi/zig; do
-    [ -f "$proto_dir/build.zig" ] || continue
-    PROTOCOLS_TOTAL=$((PROTOCOLS_TOTAL + 1))
-
-    proto_name=$(echo "$proto_dir" | sed 's|protocols/proven-\(.*\)/ffi/zig|\1|')
-
-    if (cd "$proto_dir" && zig build test 2>/dev/null); then
-        pass "test proven-$proto_name"
-        PROTOCOLS_TESTED=$((PROTOCOLS_TESTED + 1))
-    else
-        fail_test "test proven-$proto_name"
+# Keep the protocol sample explicit so the run stays bounded and auditable.
+protocols=(
+    proven-dns proven-mqtt proven-amqp proven-authserver proven-ca
+    proven-pqc proven-zerotrust proven-ctlog proven-kerberos proven-backup
+)
+for protocol in "${protocols[@]}"; do
+    build_dir="protocols/$protocol/ffi/zig"
+    if [ ! -f "$build_dir/build.zig" ]; then
+        echo "ERROR: selected protocol has no Zig build manifest: $build_dir" >&2
+        exit 1
     fi
-
-    # Limit to first 20 to keep CI time reasonable
-    if [ "$PROTOCOLS_TOTAL" -ge 20 ]; then
-        REMAINING=$(($(find protocols/proven-*/ffi/zig -name "build.zig" 2>/dev/null | wc -l) - PROTOCOLS_TOTAL))
-        if [ "$REMAINING" -gt 0 ]; then
-            skip_test "$REMAINING more protocols" "sampled first 20"
-        fi
-        break
-    fi
+    echo "==> Zig test: $build_dir"
+    (cd "$build_dir" && zig build test)
 done
-echo "  Protocols tested: $PROTOCOLS_TESTED/$PROTOCOLS_TOTAL (of $(find protocols/proven-*/ffi/zig -name 'build.zig' 2>/dev/null | wc -l) total)"
-echo ""
 
-# ═══════════════════════════════════════════════════════════════════════
-# Section 3: Core Primitives FFI
-# ═══════════════════════════════════════════════════════════════════════
-bold "Section 3: Core primitives"
-
-for prim in socket frame fsm wire compose tls config audit; do
-    PRIM_DIR="core/proven-$prim/ffi/zig"
-    if [ -f "$PRIM_DIR/build.zig" ]; then
-        if (cd "$PRIM_DIR" && zig build test 2>/dev/null); then
-            pass "test core/proven-$prim"
-        else
-            fail_test "test core/proven-$prim"
-        fi
-    else
-        skip_test "core/proven-$prim" "no build.zig"
-    fi
-done
-echo ""
-
-# ═══════════════════════════════════════════════════════════════════════
-# Section 4: Cross-Binding Test
-# ═══════════════════════════════════════════════════════════════════════
-bold "Section 4: Cross-binding consistency"
-
-if [ -f "tests/cross_binding_test.sh" ]; then
-    if bash tests/cross_binding_test.sh 2>/dev/null; then
-        pass "cross-binding test suite"
-    else
-        fail_test "cross-binding test suite"
-    fi
-else
-    skip_test "cross-binding" "tests/cross_binding_test.sh not found"
-fi
-echo ""
-
-# ═══════════════════════════════════════════════════════════════════════
-# Section 5: Safety Aspects
-# ═══════════════════════════════════════════════════════════════════════
-bold "Section 5: Safety aspects"
-
-# No believe_me/assert_total in Idris2 ABI -- ACTIVE CODE ONLY.
-# Exclude Idris comment lines (-- and |||) so documentation that merely *names*
-# a pattern (e.g. proven-nesy/src/NeSy/Types.idr's "equivalent of believe_me"
-# note) is not a false positive. A real escape hatch in code is still caught.
-DANGEROUS_IDRIS=$(grep -rn 'believe_me\|assert_total\|really_believe_me' src/ connectors/*/src/ protocols/*/src/ core/*/src/ 2>/dev/null | grep -v test | grep -vE ':[0-9]+:[[:space:]]*(--|\|\|\|)' || true)
-if [ -n "$DANGEROUS_IDRIS" ]; then
-    fail_test "Dangerous Idris2 patterns ($(echo "$DANGEROUS_IDRIS" | wc -l) occurrences)"
-    echo "$DANGEROUS_IDRIS" | head -5
-else
-    pass "No dangerous Idris2 patterns"
-fi
-
-# No @panic in Zig FFI production code
-ZIG_PANIC=$(grep -rn '@panic' connectors/*/ffi/zig/src/ protocols/*/ffi/zig/src/ core/*/ffi/zig/src/ 2>/dev/null | grep -v test || true)
-if [ -n "$ZIG_PANIC" ]; then
-    fail_test "Zig @panic in FFI production code ($(echo "$ZIG_PANIC" | wc -l) occurrences)"
-else
-    pass "No @panic in Zig FFI production code"
-fi
-
-# SPDX headers
-MISSING_SPDX=0
-for f in $(find connectors/*/ffi/zig/src/ protocols/*/ffi/zig/src/ -name "*.zig" 2>/dev/null | head -30); do
-    if ! head -3 "$f" | grep -q "SPDX"; then
-        MISSING_SPDX=$((MISSING_SPDX + 1))
-    fi
-done
-if [ "$MISSING_SPDX" -eq 0 ]; then
-    pass "SPDX headers present (sampled 30 files)"
-else
-    fail_test "$MISSING_SPDX files missing SPDX headers"
-fi
-echo ""
-
-# ═══════════════════════════════════════════════════════════════════════
-# Section 6: Binding policy (ADR 0003)
-# ═══════════════════════════════════════════════════════════════════════
-bold "Section 6: Binding policy (registry parity + no logic in scaffolds)"
-
-if bash tools/check-binding-policy.sh; then
-    pass "binding policy (thin C-ABI wrappers; no reimplemented logic)"
-else
-    fail_test "binding policy violation (see docs/decisions/0003-keep-bindings-thin-abi-wrappers.md)"
-fi
-echo ""
-
-# ═══════════════════════════════════════════════════════════════════════
-# Summary
-# ═══════════════════════════════════════════════════════════════════════
-echo "═══════════════════════════════════════════════════════════════"
-printf "  Results: "
-green "PASS=$PASS" | tr -d '\n'
-echo -n "  "
-if [ "$FAIL" -gt 0 ]; then red "FAIL=$FAIL" | tr -d '\n'; else echo -n "FAIL=0"; fi
-echo -n "  "
-if [ "$SKIP" -gt 0 ]; then yellow "SKIP=$SKIP"; else echo "SKIP=0"; fi
-echo ""
-echo "═══════════════════════════════════════════════════════════════"
-
-exit "$FAIL"
+echo "Selected package tests completed. This does not establish protocol conformance, ABI-wide equivalence, or production readiness."

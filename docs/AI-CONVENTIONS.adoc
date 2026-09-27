@@ -1,99 +1,67 @@
-== AI Conventions (Authoritative Source)
+// SPDX-License-Identifier: CC-BY-SA-4.0
+// Copyright (c) 2026 Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
+= AI Conventions for proven-servers
+:toc:
 
-All AI coding agents working in this repository MUST follow these rules.
-Per-tool config files (.cursorrules, .clinerules, etc.) reference this
-document.
+These conventions apply to AI-assisted changes in this repository. They are
+project guidance, not a substitute for package-level documentation, executed
+checks, or maintainer review.
 
-=== Session Startup
+== Session Startup
 
-[arabic]
-. Read `+0-AI-MANIFEST.a2ml+` FIRST (mandatory gatekeeper).
-. Read `+.machine_readable/STATE.a2ml+` for current status and blockers.
-. Read `+.machine_readable/anchors/ANCHOR.a2ml+` for canonical authority
-boundaries.
-. Read `+.machine_readable/policies/MAINTENANCE-AXES.a2ml+` for
-maintenance/audit sequencing.
-. Read `+.machine_readable/policies/MAINTENANCE-CHECKLIST.a2ml+` for
-baseline controls.
-. Read `+.machine_readable/policies/SOFTWARE-DEVELOPMENT-APPROACH.a2ml+`
-for execution order.
-. Read `+.machine_readable/AGENTIC.a2ml+` for agent constraints.
+. Read `0-AI-MANIFEST.a2ml`.
+. Read `.machine_readable/6a2/STATE.a2ml` and
+  `.machine_readable/6a2/anchor/ANCHOR.a2ml`.
+. Read `.machine_readable/policies/MAINTENANCE-AXES.a2ml` and the package-local
+  README for the code being changed.
+. Inspect the current diff and run relevant checks; do not inherit historical
+  build/test results as evidence for modified sources.
 
-=== License
+== Evidence and Scope
 
-* All original code: *MPL-2.0*
-* Fallback (platform-required only): MPL-2.0 with comment explaining
-why.
-* NEVER use AGPL-3.0.
-* Preserve third-party licenses verbatim.
-* Every source file needs `+# SPDX-License-Identifier: CC-BY-SA-4.0+`.
+* Distinguish Idris2 model checks from Zig implementation tests, generated ABI
+  checks, binding link tests, and protocol interoperability tests.
+* Treat shell smoke checks as source-pattern heuristics only.
+* Never claim a language binding is supported from directory presence or
+  declarations alone; update `.machine_readable/BINDINGS.a2ml` only when current
+  build/link/runtime evidence supports the status.
+* Keep authentication, cryptographic, and other security-sensitive operations
+  fail-closed when required credentials, key material, challenge bytes, or
+  reviewed backends are absent.
+* Container and deployment recipes are disabled until this source monorepo has a
+  real executable service target and verified runtime image.
+* Report missing tools and skipped checks explicitly. Re-run the relevant check
+  after changing its implementation or test harness.
 
-=== Author Attribution
+== Languages and FFI
 
-* Name: *Jonathan D.A. Jewell*
-* Email: *j.d.a.jewell@open.ac.uk*
-* Copyright:
-`+Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>+`
+Idris2 appears in selected model/ABI packages; Zig appears in selected native
+FFI packages. The existing `bindings/` tree contains sources in many languages,
+but that inventory does not imply operational support. There is no blanket ban
+on languages already used in this repository; document scope and toolchain
+rationale before introducing another runtime or language.
 
-=== State Files
+Never use known proof escape hatches such as `believe_me`, `assert_total`,
+`unsafeCoerce`, `Obj.magic`, `Admitted`, or `sorry` to support a verification
+claim. Source scans are heuristic and do not establish the absence of all
+unsound assumptions.
 
-State/metadata files, anchors, and policies (.a2ml) belong in
-`+.machine_readable/+` ONLY. NEVER create STATE.a2ml, META.a2ml,
-ECOSYSTEM.a2ml, AGENTIC.a2ml, NEUROSYM.a2ml, PLAYBOOK.a2ml, ANCHOR.a2ml,
-MAINTENANCE-AXES.a2ml, MAINTENANCE-CHECKLIST.a2ml, or
-SOFTWARE-DEVELOPMENT-APPROACH.a2ml in the repository root.
+== Licensing and Attribution
 
-=== Banned Patterns
+* Preserve file-level SPDX identifiers and third-party notices.
+* Original project source is generally MPL-2.0; follow the existing file and
+  directory license policy rather than mass-changing headers.
+* Copyright attribution, where required, uses Jonathan D.A. Jewell and
+  `j.d.a.jewell@open.ac.uk`.
 
-[width="100%",cols="14%,50%,36%",options="header",]
-|===
-|Language |Banned |Reason
-|Idris2 |`+believe_me+`, `+assert_total+` |Unsound escape hatches
-|Haskell |`+unsafeCoerce+`, `+unsafePerformIO+` |Breaks type safety
-|OCaml |`+Obj.magic+`, `+Obj.repr+`, `+Obj.obj+` |Unsafe casting
-|Coq |`+Admitted+` |Unproven assumption
-|Lean |`+sorry+` |Unproven assumption
-|Rust |`+transmute+` (unless FFI + SAFETY:) |Unsound reinterpret
-|===
+== Configured Commands
 
-=== Banned Languages
+* `just test-static` — source-pattern and inventory smoke checks.
+* `just build-idris` — discovered Idris2 packages; requires `idris2`.
+* `just build-zig` / `just test-zig` — discovered Zig packages; require `zig`.
+* `just quality` — configured checks including compiler-backed tasks; requires
+  Just, Idris2, and Zig.
+* `just fmt-check` — Git whitespace checks only; it is not a formatter.
 
-[cols=",",options="header",]
-|===
-|Banned |Use Instead
-|TypeScript |ReScript
-|Node.js / npm / bun |Deno
-|Go |Rust
-|Python |Julia / Rust
-|===
-
-=== Container Standard
-
-* Runtime: *Podman* (never Docker).
-* File: *Containerfile* (never Dockerfile).
-* Base images: `+cgr.dev/chainguard/wolfi-base:latest+` or
-`+cgr.dev/chainguard/static:latest+`.
-
-=== ABI/FFI Standard
-
-* ABI definitions: *Idris2* with dependent types (`+src/abi/+`).
-* FFI implementation: *Zig* with C ABI compatibility (`+ffi/zig/+`).
-* Generated C headers: `+generated/abi/+`.
-
-=== Build System
-
-Use `+just+` (Justfile) for all build, test, lint, and format tasks.
-
-=== References
-
-* `+0-AI-MANIFEST.a2ml+` – universal AI entry point
-* `+.machine_readable/AGENTIC.a2ml+` – agent permissions and constraints
-* `+.machine_readable/STATE.a2ml+` – current project state
-* `+.machine_readable/anchors/ANCHOR.a2ml+` – canonical authority and
-policy boundary
-* `+.machine_readable/policies/MAINTENANCE-AXES.a2ml+` – canonical axis
-sequencing and audit requirements
-* `+.machine_readable/policies/MAINTENANCE-CHECKLIST.a2ml+` – baseline
-maintenance checklist policy
-* `+.machine_readable/policies/SOFTWARE-DEVELOPMENT-APPROACH.a2ml+` –
-axis execution approach policy
+No repository-wide language formatter, full binding conformance matrix, or
+production release/deployment workflow is currently configured.

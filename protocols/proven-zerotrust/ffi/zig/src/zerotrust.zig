@@ -3,7 +3,8 @@
 //
 // zerotrust.zig -- Zig FFI implementation of proven-zerotrust.
 //
-// Implements verified Zero Trust access evaluation pipeline with:
+// Implements a Zero Trust policy state machine. Identity and device evidence
+// backends are not present; caller-supplied scores cannot grant access.
 //   - Slot-based session management (up to 64 concurrent)
 //   - Evaluation phase state machine matching Idris2 Transitions.idr
 //   - Identity confidence tracking (Unverified -> ContinuousAuth)
@@ -278,9 +279,10 @@ pub export fn zt_access_decision(slot: c_int) callconv(.c) u8 {
 
 // -- Evaluation pipeline transitions ------------------------------------------
 
-/// Verify identity with given confidence level.
-/// RequestReceived -> IdentityVerified (confidence > 0) or AccessDenied (confidence == 0).
-/// Returns 0=ok, 1=rejected.
+/// Reject caller-supplied identity confidence: no authentication backend or
+/// verifiable identity evidence is available. Validly tagged claims move the
+/// session to terminal AccessDenied without storing the claimed confidence.
+/// Returns 0=verified operation, 1=rejected/unavailable.
 pub export fn zt_verify_identity(slot: c_int, confidence: u8) callconv(.c) u8 {
     mutex.lock();
     defer mutex.unlock();
@@ -288,15 +290,10 @@ pub export fn zt_verify_identity(slot: c_int, confidence: u8) callconv(.c) u8 {
     if (contexts[idx].phase != .request_received) return 1;
     if (confidence > 4) return 1;
 
-    contexts[idx].identity_confidence = confidence;
-    if (confidence == 0) {
-        // Unverified -> AccessDenied (DenyFromRequest)
-        contexts[idx].phase = .access_denied;
-        contexts[idx].access_decision = 1; // Deny
-    } else {
-        contexts[idx].phase = .identity_verified;
-    }
-    return 0;
+    contexts[idx].identity_confidence = 0; // Never trust an unverified caller score.
+    contexts[idx].access_decision = 1; // Deny.
+    contexts[idx].phase = .access_denied;
+    return 1;
 }
 
 /// Check device with given trust score.

@@ -4,34 +4,9 @@
 (library
  (name proven_servers)
  (public_name proven_servers)
- (c_library_flags
-  (-lproven_agentic -lproven_airgap -lproven_amqp -lproven_apiserver
-   -lproven_appserver -lproven_authserver -lproven_backup -lproven_bfd
-   -lproven_bgp -lproven_ca -lproven_cache -lproven_caldav
-   -lproven_carddav -lproven_chat -lproven_coap -lproven_configmgmt
-   -lproven_container -lproven_ctlog -lproven_dbserver -lproven_dds
-   -lproven_deception -lproven_dhcp -lproven_diode -lproven_dns
-   -lproven_doh -lproven_doq -lproven_dot -lproven_federation
-   -lproven_fileserver -lproven_firewall -lproven_ftp -lproven_gameserver
-   -lproven_git -lproven_graphdb -lproven_graphql -lproven_grpc
-   -lproven_hardened -lproven_honeypot -lproven_http -lproven_httpd
-   -lproven_ids -lproven_imap -lproven_irc -lproven_kerberos
-   -lproven_kms -lproven_ldap -lproven_ldp -lproven_loadbalancer
-   -lproven_logcollector -lproven_lpd -lproven_mcp -lproven_mdns
-   -lproven_media -lproven_metrics -lproven_modbus -lproven_monitor
-   -lproven_mqtt -lproven_nesy -lproven_netconf -lproven_neurosym
-   -lproven_nfs -lproven_ntp -lproven_nts -lproven_objectstore
-   -lproven_ocsp -lproven_odns -lproven_opcua -lproven_ospf
-   -lproven_pop3 -lproven_pqc -lproven_proxy -lproven_ptp
-   -lproven_radius -lproven_rtsp -lproven_sandbox -lproven_sdn
-   -lproven_semweb -lproven_siem -lproven_smb -lproven_smtp
-   -lproven_snmp -lproven_socks -lproven_sparql -lproven_ssh
-   -lproven_ssh_bastion -lproven_stun -lproven_syslog -lproven_tacacs
-   -lproven_telnet -lproven_tftp -lproven_tls -lproven_triplestore
-   -lproven_virt -lproven_voip -lproven_vpn -lproven_wasm
-   -lproven_webdav -lproven_websocket -lproven_xmpp -lproven_zerotrust))
+
  (modules
-  proven_servers proven_error
+  proven_servers proven_error proven_unavailable
   proven_agentic proven_airgap proven_amqp proven_apiserver
   proven_appserver proven_authserver proven_backup proven_bfd
   proven_bgp proven_ca proven_cache proven_caldav

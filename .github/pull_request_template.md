@@ -1,47 +1,48 @@
-<!--
-SPDX-License-Identifier: CC-BY-SA-4.0
-Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk>
--->
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- Copyright (c) Jonathan D.A. Jewell <j.d.a.jewell@open.ac.uk> -->
+
 ## Summary
 
-<!-- Briefly describe what this PR does and why. Link to related issues with "Closes #N". -->
+<!-- What changed and why? Link related issues with `Closes #N` where applicable. -->
 
-## Changes
+## Scope and evidence
 
-<!-- List the key changes introduced by this PR. -->
+- [ ] I reviewed the package-local README and manifest(s).
+- [ ] I distinguish model checks, native tests, ABI checks, binding tests, and source-pattern smoke checks.
+- [ ] I have not promoted directory counts, historical audits, or source greps into current build/conformance claims.
+- [ ] Any readiness/binding claims are backed by current, reproducible evidence.
 
--
+## Checks
 
-## RSR Quality Checklist
+List exact commands, tool versions, and outcomes. Mark unavailable checks explicitly.
 
-<!-- Check all that apply. PRs that fail required checks will not be merged. -->
+- [ ] `just validate`
+- [ ] `just test-static` (heuristic/inventory checks only)
+- [ ] Applicable Idris2 build(s):
+- [ ] Applicable Zig build/test(s):
+- [ ] Binding build/link/runtime checks, if a binding changed:
+- [ ] `git diff --check`
 
-### Required
+**Skipped checks and reason:**
 
-- [ ] Tests pass (`just test` or equivalent)
-- [ ] Code is formatted (`just fmt` or equivalent)
-- [ ] Linter is clean (no new warnings or errors)
-- [ ] No banned language patterns (no TypeScript, no npm/bun, no Go/Python)
-- [ ] No `unsafe` blocks without `// SAFETY:` comments
-- [ ] No banned functions (`believe_me`, `unsafeCoerce`, `Obj.magic`, `Admitted`, `sorry`)
-- [ ] SPDX license headers present on all new/modified source files
-- [ ] No secrets, credentials, or `.env` files included
+<!-- Include tool versions and complete failure/skipped output where useful. -->
 
-### As Applicable
+## Safety and compatibility
 
-- [ ] `.machine_readable/STATE.a2ml` updated (if project state changed)
-- [ ] `.machine_readable/ECOSYSTEM.a2ml` updated (if integrations changed)
-- [ ] `.machine_readable/META.a2ml` updated (if architectural decisions changed)
-- [ ] Documentation updated for user-facing changes
-- [ ] `TOPOLOGY.md` updated (if architecture changed)
-- [ ] `CHANGELOG` or release notes updated
-- [ ] New dependencies reviewed for license compatibility (MPL-2.0 / MPL-2.0)
-- [ ] ABI/FFI changes validated (`src/abi/` and `ffi/zig/` consistent)
+- [ ] Unavailable authentication/cryptographic operations remain fail-closed.
+- [ ] Native ABI declarations and buffer/length boundaries were reviewed.
+- [ ] No secrets or credentials are included.
+- [ ] File-level SPDX identifiers and third-party license notices are preserved.
+- [ ] No container image is built, signed, pushed, or deployed by this change.
 
-## Testing
+## Documentation and metadata
 
-<!-- Describe how you tested these changes. -->
+- [ ] Human-readable docs match the implementation and test scope.
+- [ ] `.machine_readable/6a2/STATE.a2ml`, `META.a2ml`, or `ECOSYSTEM.a2ml` updated if relevant.
+- [ ] `.machine_readable/BINDINGS.a2ml` and readiness docs updated only where new evidence supports it.
+- [ ] Root `Justfile` and `.machine_readable/contractiles/Justfile` remain synchronized.
+- [ ] `TOPOLOGY.adoc` or `CHANGELOG.adoc` updated if relevant.
 
-## Screenshots
+## Remaining risks / follow-up
 
-<!-- If applicable, add screenshots or terminal output demonstrating the change. -->
+<!-- State limitations plainly. A source smoke pass is not a proof, conformance result, or security certification. -->

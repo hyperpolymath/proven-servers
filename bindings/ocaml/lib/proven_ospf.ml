@@ -82,12 +82,18 @@ let ospf_error_of_tag = function
   | 3 -> Some Invalid_transition | 4 -> Some Invalid_packet
   | 5 -> Some Area_error | 6 -> Some Flood_limit | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_ospf_abi_version : unit -> int = "ospf_abi_version"
-external c_ospf_create_context : unit -> int = "ospf_create_context"
-external c_ospf_destroy_context : int -> unit = "ospf_destroy_context"
-external c_ospf_can_transition : int -> int -> int = "ospf_can_transition"
+let c_ospf_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ospf_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_ospf_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_ospf_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

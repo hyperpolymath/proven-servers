@@ -103,13 +103,20 @@ let health_status_of_tag = function
   | 0 -> Some Starting | 1 -> Some Healthy | 2 -> Some Unhealthy
   | 3 -> Some NoCheck | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_container_abi_version : unit -> int = "container_abi_version"
-external c_container_create_context : unit -> int = "container_create_context"
-external c_container_destroy_context : int -> unit = "container_destroy_context"
-external c_container_state : int -> int = "container_state"
-external c_container_can_transition : int -> int -> int = "container_can_transition"
+let c_container_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_container_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_container_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_container_state : int -> int = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_container_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

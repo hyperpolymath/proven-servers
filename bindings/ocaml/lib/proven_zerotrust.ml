@@ -89,12 +89,18 @@ let auth_factor_of_tag = function
   | 0 -> Some Certificate | 1 -> Some Token | 2 -> Some Biometric
   | 3 -> Some Fido2 | 4 -> Some Totp | 5 -> Some Push | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_zerotrust_abi_version : unit -> int = "zerotrust_abi_version"
-external c_zerotrust_create_context : unit -> int = "zerotrust_create_context"
-external c_zerotrust_destroy_context : int -> unit = "zerotrust_destroy_context"
-external c_zerotrust_can_transition : int -> int -> int = "zerotrust_can_transition"
+let c_zerotrust_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_zerotrust_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_zerotrust_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_zerotrust_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

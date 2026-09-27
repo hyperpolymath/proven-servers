@@ -125,33 +125,23 @@ test "destroy is safe with invalid slot" {
 // Full authentication lifecycle: Initial -> TGT -> ServiceTicket -> Auth
 // =========================================================================
 
-test "full lifecycle: Initial -> TGTObtained -> ServiceTicketObtained -> Authenticated" {
+test "AS, TGS, and AP exchanges fail closed without Kerberos backends" {
     const realm = "EXAMPLE.COM";
     const slot = krb.krb_create(realm.ptr, realm.len);
     defer krb.krb_destroy(slot);
 
-    // Set client principal
     const client = "alice";
     try std.testing.expectEqual(@as(u8, 0), krb.krb_set_client_principal(slot, client.ptr, client.len, 1));
+    try std.testing.expectEqual(@as(u8, 1), krb.krb_obtain_tgt(slot));
+    try std.testing.expectEqual(@as(u8, 0), krb.krb_auth_state(slot)); // Initial
+    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_tgt(slot));
 
-    // Initial -> TGTObtained (AS exchange)
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_obtain_tgt(slot));
-    try std.testing.expectEqual(@as(u8, 1), krb.krb_auth_state(slot)); // TGTObtained
-    try std.testing.expectEqual(@as(u8, 1), krb.krb_has_tgt(slot));
-
-    // Set service principal
-    const service = "krbtgt/EXAMPLE.COM";
+    const service = "http/server.example.com";
     try std.testing.expectEqual(@as(u8, 0), krb.krb_set_service_principal(slot, service.ptr, service.len, 2));
-
-    // TGTObtained -> ServiceTicketObtained (TGS exchange)
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_obtain_service_ticket(slot));
-    try std.testing.expectEqual(@as(u8, 2), krb.krb_auth_state(slot)); // ServiceTicketObtained
-    try std.testing.expectEqual(@as(u8, 1), krb.krb_has_service_ticket(slot));
-
-    // ServiceTicketObtained -> Authenticated (AP exchange)
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_authenticate(slot));
-    try std.testing.expectEqual(@as(u8, 3), krb.krb_auth_state(slot)); // Authenticated
-    try std.testing.expectEqual(@as(u8, 1), krb.krb_has_access(slot));
+    try std.testing.expectEqual(@as(u8, 1), krb.krb_obtain_service_ticket(slot));
+    try std.testing.expectEqual(@as(u8, 1), krb.krb_authenticate(slot));
+    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_service_ticket(slot));
+    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_access(slot));
 }
 
 // =========================================================================
@@ -223,7 +213,7 @@ test "retry rejects if not in AuthFailed" {
 // Re-authentication
 // =========================================================================
 
-test "reauth from Authenticated returns to Initial" {
+test "reauth rejects because no authenticated exchange can be established" {
     const realm = "EXAMPLE.COM";
     const slot = krb.krb_create(realm.ptr, realm.len);
     defer krb.krb_destroy(slot);
@@ -236,11 +226,11 @@ test "reauth from Authenticated returns to Initial" {
     _ = krb.krb_obtain_service_ticket(slot);
     _ = krb.krb_authenticate(slot);
 
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_reauth(slot));
+    try std.testing.expectEqual(@as(u8, 1), krb.krb_reauth(slot));
     try std.testing.expectEqual(@as(u8, 0), krb.krb_auth_state(slot)); // Initial
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_tgt(slot)); // cleared
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_service_ticket(slot)); // cleared
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_access(slot)); // no longer
+    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_tgt(slot));
+    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_service_ticket(slot));
+    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_access(slot));
 }
 
 test "reauth rejects if not Authenticated" {
@@ -255,7 +245,7 @@ test "reauth rejects if not Authenticated" {
 // TGT renewal
 // =========================================================================
 
-test "renew TGT succeeds from TGTObtained" {
+test "renew TGT fails closed without an obtained ticket" {
     const realm = "EXAMPLE.COM";
     const slot = krb.krb_create(realm.ptr, realm.len);
     defer krb.krb_destroy(slot);
@@ -264,8 +254,8 @@ test "renew TGT succeeds from TGTObtained" {
     _ = krb.krb_set_client_principal(slot, client.ptr, client.len, 1);
     _ = krb.krb_obtain_tgt(slot);
 
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_renew_tgt(slot));
-    try std.testing.expectEqual(@as(u8, 1), krb.krb_auth_state(slot)); // still TGTObtained
+    try std.testing.expectEqual(@as(u8, 1), krb.krb_renew_tgt(slot));
+    try std.testing.expectEqual(@as(u8, 0), krb.krb_auth_state(slot)); // remains Initial
 }
 
 test "renew TGT rejects if not TGTObtained" {
@@ -391,26 +381,21 @@ test "selected_enctype returns 255 before negotiation" {
 // Ticket flag management
 // =========================================================================
 
-test "add and query ticket flags" {
+test "ticket flags cannot be added without an obtained TGT" {
     const realm = "EXAMPLE.COM";
     const slot = krb.krb_create(realm.ptr, realm.len);
     defer krb.krb_destroy(slot);
 
     const client = "alice";
     _ = krb.krb_set_client_principal(slot, client.ptr, client.len, 1);
-    _ = krb.krb_obtain_tgt(slot);
+    _ = krb.krb_obtain_tgt(slot); // fails closed
 
-    // No flags initially
     try std.testing.expectEqual(@as(u32, 0), krb.krb_ticket_flags_count(slot));
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_ticket_flag(slot, 0)); // Forwardable
-
-    // Add Forwardable (0) and Renewable (4)
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_add_ticket_flag(slot, 0));
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_add_ticket_flag(slot, 4));
-    try std.testing.expectEqual(@as(u32, 2), krb.krb_ticket_flags_count(slot));
-    try std.testing.expectEqual(@as(u8, 1), krb.krb_has_ticket_flag(slot, 0)); // Forwardable set
-    try std.testing.expectEqual(@as(u8, 1), krb.krb_has_ticket_flag(slot, 4)); // Renewable set
-    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_ticket_flag(slot, 1)); // Forwarded not set
+    try std.testing.expectEqual(@as(u8, 1), krb.krb_add_ticket_flag(slot, 0));
+    try std.testing.expectEqual(@as(u8, 1), krb.krb_add_ticket_flag(slot, 4));
+    try std.testing.expectEqual(@as(u32, 0), krb.krb_ticket_flags_count(slot));
+    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_ticket_flag(slot, 0));
+    try std.testing.expectEqual(@as(u8, 0), krb.krb_has_ticket_flag(slot, 4));
 }
 
 test "add_ticket_flag rejects invalid flag tag" {

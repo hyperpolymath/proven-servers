@@ -3,14 +3,10 @@
 --
 -- KerberosABI.Foreign: Foreign function declarations for the C bridge.
 --
--- Declares the opaque handle type and documents the complete FFI contract
--- that the Zig implementation (ffi/zig/src/kerberos.zig) must provide.
---
--- The Zig FFI manages:
---   - 64-slot mutex-protected authentication session pool
---   - Ticket cache (TGTs and service tickets per session)
---   - Encryption type negotiation (strongest-common-cipher selection)
---   - Principal name storage and validation
+-- Declares the opaque handle type and documents the Kerberos model.
+-- The Zig FFI stores principal/enctype metadata only. It has no KDC, ticket
+-- issuance or validation, encryption, or authenticator backend; AS, TGS, and
+-- AP exchange operations fail closed.
 --
 -- All functions use C calling convention and communicate state via
 -- Bits8 tags matching KerberosABI.Layout exactly.
@@ -80,8 +76,8 @@ abiVersion = 1
 -- | krb_negotiate_enctype         | (slot: c_int, server_types_ptr: ptr,      |
 -- |                               |  count: u32)                              |
 -- |                               |  -> u8 (selected enc tag, 255=failure)    |
--- |                               | Server selects strongest common cipher    |
--- |                               | from client proposal vs server list.      |
+-- |                               | Selects an enctype metadata tag only;      |
+-- |                               | no encryption or KDC exchange occurs.     |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_negotiation_state         | (slot: c_int) -> u8 (NegotiationState)    |
 -- |                               | Returns current negotiation state.        |
@@ -92,18 +88,15 @@ abiVersion = 1
 -- |                               | or 255 if not yet selected.               |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_obtain_tgt                | (slot: c_int) -> u8 (0=ok, 1=rejected)   |
--- |                               | Simulates AS exchange: Initial ->         |
--- |                               | TGTObtained. Requires client principal    |
--- |                               | and realm to be set.                      |
+-- |                               | Always rejects: no KDC, credentials,      |
+-- |                               | pre-authentication, or ticket backend.    |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_obtain_service_ticket     | (slot: c_int) -> u8 (0=ok, 1=rejected)   |
--- |                               | Simulates TGS exchange: TGTObtained ->   |
--- |                               | ServiceTicketObtained. Requires service   |
--- |                               | principal to be set.                      |
+-- |                               | Always rejects: no validated TGT or KDC. |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_authenticate              | (slot: c_int) -> u8 (0=ok, 1=rejected)   |
--- |                               | Simulates AP exchange:                    |
--- |                               | ServiceTicketObtained -> Authenticated.   |
+-- |                               | Always rejects: no service ticket or      |
+-- |                               | authenticator is verified.                |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_fail                      | (slot: c_int, error_code: u8)             |
 -- |                               |  -> u8 (0=ok, 1=rejected)                |
@@ -116,23 +109,20 @@ abiVersion = 1
 -- |                               | Clears tickets and negotiation state.     |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_renew_tgt                 | (slot: c_int) -> u8 (0=ok, 1=rejected)   |
--- |                               | Renews TGT: TGTObtained -> TGTObtained.  |
--- |                               | Resets ticket lifetime.                   |
+-- |                               | Always rejects: no real TGT is issued.    |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_reauth                    | (slot: c_int) -> u8 (0=ok, 1=rejected)   |
--- |                               | Re-authenticate: Authenticated ->         |
--- |                               | Initial. Clears all tickets.              |
+-- |                               | Requires modeled Authenticated state,     |
+-- |                               | unreachable without a KDC backend.        |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_has_tgt                   | (slot: c_int) -> u8 (1=yes, 0=no)        |
--- |                               | Whether the session holds a valid TGT.    |
+-- |                               | Model flag only; always false without a KDC. |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_has_service_ticket        | (slot: c_int) -> u8 (1=yes, 0=no)        |
--- |                               | Whether the session holds a service       |
--- |                               | ticket.                                   |
+-- |                               | Model flag only; always false without TGS. |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_has_access                | (slot: c_int) -> u8 (1=yes, 0=no)        |
--- |                               | Whether the session is fully              |
--- |                               | authenticated.                            |
+-- |                               | Model flag only; always false without AP verification. |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_last_error                | (slot: c_int) -> u8 (ErrorCode tag)       |
 -- |                               | Returns the last error code set by        |
@@ -144,11 +134,11 @@ abiVersion = 1
 -- +-------------------------------+-------------------------------------------+
 -- | krb_add_ticket_flag           | (slot: c_int, flag: u8)                   |
 -- |                               |  -> u8 (0=ok, 1=rejected)                |
--- |                               | Adds a flag to the TGT. Requires          |
--- |                               | TGTObtained state.                        |
+-- |                               | Adds modeled flag metadata only;          |
+-- |                               | TGTObtained is unreachable in this FFI.   |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_has_ticket_flag           | (slot: c_int, flag: u8) -> u8 (1/0)      |
--- |                               | Whether the TGT has a specific flag.      |
+-- |                               | Whether the model contains this flag.     |
 -- +-------------------------------+-------------------------------------------+
 -- | krb_can_transition            | (from: u8, to: u8) -> u8 (1=yes, 0=no)   |
 -- |                               | Stateless: checks if an auth state        |

@@ -1,9 +1,8 @@
 ; SPDX-License-Identifier: MPL-2.0
 ; Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
 ;
-; Dune project file for proven-servers OCaml bindings.
-; Provides type-safe wrappers around the Zig FFI C exports for all
-; 10 core proven-servers protocols.
+; Dune project file for the current OCaml model/tag scaffolds.
+; Native operations fail closed until OCaml-compatible C stubs are implemented.
 
 (lang dune 3.0)
 
@@ -18,11 +17,11 @@
 
 (package
  (name proven_servers)
- (synopsis "OCaml bindings for proven-servers formally verified protocol ABI")
+ (synopsis "proven-servers OCaml model scaffolds (native FFI unavailable)")
  (description
-  "Type-safe OCaml bindings for the proven-servers project. Wraps the \
-   Zig FFI C exports for 10 core protocols (HTTP, DNS, SMTP, FTP, SSH \
-   Bastion, MQTT, gRPC, GraphQL, TLS, Firewall) using external \
-   declarations with result-type wrappers.")
+  "OCaml tag and model scaffolds for proven-servers. Native operations are \
+   intentionally unavailable: direct OCaml external declarations to raw Zig \
+   C symbols used the wrong calling convention. Implement OCaml-compatible C \
+   stubs before advertising or enabling native FFI calls.")
  (depends
   (ocaml (>= 4.14))))

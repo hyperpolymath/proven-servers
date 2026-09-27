@@ -91,12 +91,18 @@ let player_state_of_tag = function
   | 0 -> Some Idle | 1 -> Some Ready | 2 -> Some Playing
   | 3 -> Some Paused | 4 -> Some Stopping | _ -> None
 
-(* --- C FFI declarations --- *)
+(* --- Disabled native FFI declarations --- *)
+(* Raw Zig C symbols are not OCaml primitives. All operations
+   raise a clear exception until OCaml-compatible stubs exist. *)
 
-external c_media_abi_version : unit -> int = "media_abi_version"
-external c_media_create_context : unit -> int = "media_create_context"
-external c_media_destroy_context : int -> unit = "media_destroy_context"
-external c_media_can_transition : int -> int -> int = "media_can_transition"
+let c_media_abi_version : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_media_create_context : unit -> int = fun () ->
+  Proven_unavailable.raise_unavailable ()
+let c_media_destroy_context : int -> unit = fun _arg0 ->
+  Proven_unavailable.raise_unavailable ()
+let c_media_can_transition : int -> int -> int = fun _arg0 _arg1 ->
+  Proven_unavailable.raise_unavailable ()
 
 (* --- Safe wrappers --- *)
 

@@ -1,54 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
-# fly.io deployment configuration for proven-nesy-solver-api (Zig build).
 #
-# Replaces the legacy V-lang deployment at ../v/fly.toml.
-#
-# Deploy:
-#   cd proven-servers/connectors/proven-nesy-solver-api/zig
-#   flyctl launch --no-deploy --copy-config          # first time only
-#   flyctl deploy
-#
-# Private networking: echidna-nesy and verisim-api are reached via Fly's
-# private 6PN network. Use .flycast (NOT .internal) so that auto-stopped
-# machines are woken on first request. .internal does NOT trigger auto-wake.
-
-app = "nesy-solver-api"
-primary_region = "lhr"  # London — nearest to the .dev registrar region
-kill_signal = "SIGTERM"
-kill_timeout = "10s"
-
-[build]
-  dockerfile = "Containerfile"
-
-[env]
-  NESY_PORT = "9000"
-  NESY_REPO_TAG = "hyperpolymath/nesy-solver"
-  NESY_FILE_TAG = "playground/submission.txt"
-  # .flycast (not .internal) — required for auto-wake of stopped machines.
-  ECHIDNA_URL = "http://echidna-nesy.flycast:8090"
-  VERISIM_URL = "http://verisim-api.flycast:8080"
-  # RGTV grant broker — set RGTV_URL + RGTV_AGENT_TOKEN as fly secrets to
-  # enable credential brokering. If unset, falls back to NESY_INGEST_TOKEN env.
-  RGTV_URL = "http://rgtv-nesy.flycast:9100"
-  # RGTV_AGENT_TOKEN set via: flyctl secrets set RGTV_AGENT_TOKEN=... -a nesy-solver-api
-
-[http_service]
-  internal_port = 9000
-  force_https = true
-  auto_stop_machines = "stop"
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ["app"]
-
-  [[http_service.checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "10s"
-    method = "GET"
-    path = "/health"
-
-[[vm]]
-  size = "shared-cpu-1x"
-  memory = "256mb"
-  cpu_kind = "shared"
-  cpus = 1
+# DISABLED: no Fly.io app, image, health checks, secrets, or upstream services
+# have been validated for this experimental connector. There is deliberately no
+# `app`, `[build]`, or `[http_service]` configuration here. Do not run flyctl
+# from this directory; deploy-fly.sh refuses to execute.

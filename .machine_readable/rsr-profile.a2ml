@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MPL-2.0
+# RSR capability inventory for this project-specific source monorepo.
+# The external template-applicability policy is DRAFT; this profile is not a
+# conformance certificate and deliberately avoids template-only capabilities.
+
+[profile]
+capabilities = ["bash", "idris2", "zig"]
+
+[rationale]
+bash = "Maintained non-trivial shell tooling exists under tests/, tools/, and the repository root."
+idris2 = "Maintained Idris2 package source exists under protocols/, core/, and connectors/."
+zig = "Maintained Zig package source and build manifests exist under protocols/, core/, connectors/, and ffi/."
+no-ffi = "Per-package FFI source exists, but the standards draft's gated src/interface/ffi/ module and repository-wide interop evidence are not present."
+no-abi = "No repository-wide formally specified ABI with generated-header correspondence is established."
+no-formal-proofs = "There is no verification/proofs/ module meeting the standards draft's gate; package proof declarations are not inferred as this capability."
+no-api-service = "Experimental server source is not a validated, deployable network service; the former full-E2E workflow path has been removed."
+no-container = "No container image is shipped. Disabled container/deployment scaffolding has been removed from the root package shape."
+no-docs-site = "No project-specific static site is maintained; the competing placeholder Pages workflows have been removed."
+no-published-package = "No validated registry package or release artifact is published; release automation has been removed."
+no-reproducible-build = "No reproducible Guix/Nix build is configured."
+no-benchmarks = "No benchmark suite exists; the empty benches placeholder has been removed."
+no-governance-tier = "This repository does not carry the standards draft's complete AUDIT/AFFIRMATION/GOVERNANCE/MAINTAINERS module set."
