@@ -109,7 +109,7 @@ jobs:
           echo "any_fail=$FAIL" >> $GITHUB_OUTPUT
       - name: Upload findings artifact
         if: always()
-        uses: actions/upload-artifact@v7.0.1
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: panic-findings-unified-api-adapter
           path: |
