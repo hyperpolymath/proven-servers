@@ -59,7 +59,8 @@ abiVersion = 1
 -- +---------------------------+-----------------------------------------------+
 -- | cache_execute             | (slot: c_int, cmd: u8) -> u8                  |
 -- |                           | Execute a command. Returns 0 on success,      |
--- |                           | or an ErrorCode tag on failure.               |
+-- |                           | or ErrorCode tag + 1 on failure.             |
+-- |                           | See errorToExecuteStatus in CacheABI.Types.  |
 -- +---------------------------+-----------------------------------------------+
 -- | cache_eviction_policy     | (slot: c_int) -> u8 (EvictionPolicy tag)      |
 -- |                           | Returns the eviction policy for this session. |

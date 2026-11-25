@@ -185,6 +185,31 @@ errorCodeRoundtrip KeyTooLong    = Refl
 errorCodeRoundtrip ValueTooLarge = Refl
 errorCodeRoundtrip CASConflict   = Refl
 
+||| cache_execute reserves zero for success; failures are raw tags plus one.
+public export
+errorToExecuteStatus : ErrorCode -> Bits8
+errorToExecuteStatus e = errorCodeToTag e + 1
+
+||| Decode a failure status. Zero (success) and out-of-range codes are not errors.
+public export
+executeStatusToError : Bits8 -> Maybe ErrorCode
+executeStatusToError 0 = Nothing
+executeStatusToError n = tagToErrorCode (n - 1)
+
+public export
+executeFailureRoundtrip : (e : ErrorCode) ->
+  executeStatusToError (errorToExecuteStatus e) = Just e
+executeFailureRoundtrip NotFound      = Refl
+executeFailureRoundtrip TypeMismatch  = Refl
+executeFailureRoundtrip OutOfMemory   = Refl
+executeFailureRoundtrip KeyTooLong    = Refl
+executeFailureRoundtrip ValueTooLarge = Refl
+executeFailureRoundtrip CASConflict   = Refl
+
+public export
+executeSuccessIsNotFailure : executeStatusToError 0 = Nothing
+executeSuccessIsNotFailure = Refl
+
 ---------------------------------------------------------------------------
 -- ReplicationMode (4 constructors, tags 0-3)
 ---------------------------------------------------------------------------
