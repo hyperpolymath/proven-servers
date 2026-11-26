@@ -11,4 +11,4 @@ sourcedir = "src"
 main = Main
 executable = "proven-amqp"
 
-modules = AMQP, AMQP.Types, AMQP.Properties, AMQP.Exchange, AMQP.Queue, AMQP.Session, AMQP.Frame, AMQPABI.Layout, AMQPABI.Transitions, AMQPABI.Foreign
+modules = AMQP, AMQP.Types, AMQP.Properties, AMQP.Exchange, AMQP.Queue, AMQP.Session, AMQP.Frame, AMQPABI.Layout, AMQPABI.Transitions, AMQPABI.Foreign, AMQPABI.Connector

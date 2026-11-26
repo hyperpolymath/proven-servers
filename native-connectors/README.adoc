@@ -1,0 +1,80 @@
+// SPDX-License-Identifier: MPL-2.0
+// Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+= Native connectors (pilot)
+
+This is the pilot of the uniform connector surface. It is meant to replace
+the hand-copied tag tables in `bindings/<language>/`. Nothing there is
+deleted yet: the owner reviews this shape first.
+
+== The idea
+
+A protocol library exports three C symbols and nothing else is bound:
+
+[source,c]
+----
+uint32_t     ps_abi_version(void);
+const char * ps_manifest(void);
+uint8_t      ps_invoke(uint16_t fn_tag, const ps_value *args, uint32_t n, ps_value *out);
+----
+
+`ps_manifest` returns text emitted by the protocol's Idris2 ABI. It holds
+the enum tags, the value-cell layout, the kind and status tags, and one `FN`
+line per callable function:
+
+----
+FN 2 create I32 vhost:BYTES frame_max:U32 channel_max:U16 heartbeat:U16
+----
+
+A connector reads the manifest when it opens the library. So one connector
+per language serves every protocol, and adding a protocol or a function
+needs no connector change.
+
+== Where each part lives
+
+[cols="1,2",options="header"]
+|===
+| Part | File
+| ABI (pure Idris2) | `protocols/proven-amqp/src/AMQPABI/Connector.idr`, printed by `AMQPABI/Emit.idr`
+| Rendering | `tools/gen-abi.sh` writes the `FNS` table and `MANIFEST` into `amqp_abi_gen.zig`, only for protocols that emit `FN` lines
+| FFI (pure Zig) | `ffi/zig/connector/ps_connector.zig` (shared dispatcher), plus three exports at the end of `protocols/proven-amqp/ffi/zig/src/amqp.zig`
+| Connectors | `c/`, `rust/`, `julia/ProvenConnector/`
+|===
+
+The Zig dispatcher checks every Idris2 signature against the real `amqp_*`
+export at comptime. A changed parameter type, a missing export or a
+reordered table fails `zig build`. It also checks the value-cell layout.
+
+Each connector checks the manifest layout against its own `ps_value` when
+it opens the library, and refuses a mismatch.
+
+`ps_invoke` checks arity, kinds, integer ranges and null buffers before it
+calls anything. Its statuses are `OK`, `UNKNOWN_FN`, `ARITY`,
+`KIND_MISMATCH`, `RANGE` and `NULL_PTR`, with the tags given in the manifest.
+
+== Running the smoke tests
+
+----
+# From the repository root.
+(cd protocols/proven-amqp/ffi/zig && zig build -Doptimize=ReleaseSafe)
+LIB=$PWD/protocols/proven-amqp/ffi/zig/zig-out/lib/libproven_amqp.so
+# C
+cc -std=c11 -Wall -Wextra -o /tmp/ps-smoke native-connectors/c/smoke.c native-connectors/c/ps_connector.c -ldl && /tmp/ps-smoke "$LIB"
+# Rust
+PS_AMQP_LIB="$LIB" cargo test --manifest-path native-connectors/rust/Cargo.toml
+# Julia
+PS_AMQP_LIB="$LIB" julia --project=native-connectors/julia/ProvenConnector -e 'using Pkg; Pkg.test()'
+----
+
+`just native-connector-smoke` runs all three.
+
+== Limits of the pilot
+
+* Only proven-amqp exports the surface.
+* Loading is POSIX `dlopen` only. Windows `LoadLibrary` is not done.
+* Results are integers or void. No function returns a buffer yet.
+* Verification: the Rust connector is to be verified with Creusot
+  (Pearlite contracts) and Verus (`3-practice/PROOF-POLICY.adoc` §1.2 in
+  standards). Both are PENDING. The first obligation to scope is that
+  `Library::call` passes `ps_invoke` only cells that match the manifest
+  signature. The `unsafe` dlopen and FFI seam is a Kani candidate. Today
+  the evidence is the smoke tests and the Zig comptime guard.

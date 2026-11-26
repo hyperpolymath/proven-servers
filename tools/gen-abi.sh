@@ -41,8 +41,33 @@ render_zig() {  # <manifest> <zig_out> <sot>
     awk '
       $1=="ABI_VERSION" { printf "pub const ABI_VERSION: u32 = %s;\n\n", $2; next }
       $1=="LAYOUT"      { printf "pub const %s: usize = %s;\n", $2, $3; next }
+      $1=="FN" {
+        # FN <tag> <name> <ret> <arg>:<KIND>... -> one ps_invoke table row.
+        kinds = ""
+        for (i = 5; i <= NF; i++) { split($i, a, ":"); kinds = kinds (i > 5 ? " " : "") a[2] }
+        fns[++nfn] = sprintf("    .{ .tag = %s, .name = \"%s\", .ret = \"%s\", .kinds = \"%s\" },", $2, $3, $4, kinds)
+        next
+      }
       { printf "pub const %s_%s: u8 = %s;\n", $1, $2, $3 }
+      END {
+        if (nfn == 0) exit
+        # Uniform-connector surface: emitted only for protocols whose Emit
+        # prints FN lines, so every other generated file stays byte-identical.
+        print ""
+        print "pub const FnSig = struct { tag: u16, name: []const u8, ret: []const u8, kinds: []const u8 };"
+        print ""
+        print "pub const FNS = [_]FnSig{"
+        for (i = 1; i <= nfn; i++) print fns[i]
+        print "};"
+      }
     ' <<< "$MANIFEST"
+    if grep -q "^FN " <<< "$MANIFEST"; then
+      echo ""
+      echo "/// The full Idris-emitted manifest, served verbatim by ps_manifest()."
+      echo "pub const MANIFEST: [:0]const u8 ="
+      sed "s/^/    \\\\\\\\/" <<< "$MANIFEST"
+      echo ";"
+    fi
   } > "$ZIG_OUT"
 }
 
@@ -80,6 +105,7 @@ gen_protocol() {  # <proto_dir> <ipkg> <exec> <prefix> <guard> <sot> <h_out> <zi
     awk -v p="$PREFIX" '
       $1=="ABI_VERSION" { printf "#define %s_ABI_VERSION %s\n\n", p, $2; next }
       $1=="LAYOUT"      { printf "#define %s_%s %s\n", p, $2, $3; next }
+      $1=="FN"          { next }  # connector signatures are not C tags
       { printf "#define %s_%s_%s %s\n", p, $1, $2, $3 }
     ' <<< "$MANIFEST"
     echo ""
