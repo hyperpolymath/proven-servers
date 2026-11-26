@@ -82,6 +82,7 @@ int ps_open(ps_lib *lib, const char *path, char *err, size_t errlen) {
 
   static const struct { const char *name; uint64_t want; } layout[] = {
     { "PS_VALUE_SIZE", sizeof(ps_value) },
+    { "PS_VALUE_ALIGN", _Alignof(ps_value) },
     { "PS_VALUE_OFF_KIND", offsetof(ps_value, kind) },
     { "PS_VALUE_OFF_WORD", offsetof(ps_value, word) },
     { "PS_VALUE_OFF_ADDR", offsetof(ps_value, addr) },

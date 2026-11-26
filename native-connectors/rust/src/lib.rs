@@ -157,7 +157,21 @@ const RTLD_NOW: c_int = 2;
 
 extern "C" {
     fn dlopen(filename: *const c_char, flags: c_int) -> *mut c_void;
-    fn dlsym(handle: *mut c_void, symbol: *const c_char) -> *mut c_void;
+    // dlsym returns `void *`. Each ps_* export is bound through its own typed
+    // declaration, so the null pointer arrives as `None` (guaranteed by the
+    // nullable-pointer layout of `Option<fn>`) and no transmute is needed.
+    // The three bindings differ only in the pointee type of the result, which
+    // the C ABI does not distinguish, so the clashing-declarations lint is
+    // allowed for them alone.
+    #[allow(clashing_extern_declarations)]
+    #[link_name = "dlsym"]
+    fn dlsym_abi(handle: *mut c_void, symbol: *const c_char) -> Option<AbiFn>;
+    #[allow(clashing_extern_declarations)]
+    #[link_name = "dlsym"]
+    fn dlsym_manifest(handle: *mut c_void, symbol: *const c_char) -> Option<ManifestFn>;
+    #[allow(clashing_extern_declarations)]
+    #[link_name = "dlsym"]
+    fn dlsym_invoke(handle: *mut c_void, symbol: *const c_char) -> Option<InvokeFn>;
     fn dlclose(handle: *mut c_void) -> c_int;
     fn dlerror() -> *const c_char;
 }
@@ -193,39 +207,37 @@ fn last_dl_error() -> String {
 
 impl Library {
     /// Open a protocol library and validate its manifest.
-    pub fn open(path: &str) -> Result<Library, Error> {
+    ///
+    /// # Safety
+    ///
+    /// Loading runs the library's initialisers and unloading runs its
+    /// finalisers. The caller must ensure both are sound for `path`, and that
+    /// its `ps_*` exports follow the connector contract. The manifest checks
+    /// catch layout and table drift; they are not a safety guarantee.
+    pub unsafe fn open(path: &str) -> Result<Library, Error> {
         let cpath = CString::new(path).map_err(|e| Error::Open(e.to_string()))?;
         // SAFETY: cpath is a valid NUL-terminated string.
         let handle = unsafe { dlopen(cpath.as_ptr(), RTLD_NOW) };
         if handle.is_null() {
             return Err(Error::Open(last_dl_error()));
         }
-        let sym = |name: &CStr| -> Result<*mut c_void, Error> {
-            // SAFETY: handle is a live dlopen handle; name is NUL-terminated.
-            let p = unsafe { dlsym(handle, name.as_ptr()) };
-            if p.is_null() {
-                Err(Error::Open(format!(
-                    "{path} does not export {}",
-                    name.to_string_lossy()
-                )))
-            } else {
-                Ok(p)
+        let missing =
+            |name: &CStr| Error::Open(format!("{path} does not export {}", name.to_string_lossy()));
+        // SAFETY: handle is a live dlopen handle and each name is NUL-terminated.
+        // The ps_* exports have these C signatures by contract
+        // (ffi/zig/connector/ps_connector.zig).
+        let resolved = unsafe {
+            match (
+                dlsym_abi(handle, c"ps_abi_version".as_ptr()),
+                dlsym_manifest(handle, c"ps_manifest".as_ptr()),
+                dlsym_invoke(handle, c"ps_invoke".as_ptr()),
+            ) {
+                (Some(a), Some(m), Some(i)) => Ok((a, m, i)),
+                (None, _, _) => Err(missing(c"ps_abi_version")),
+                (_, None, _) => Err(missing(c"ps_manifest")),
+                (_, _, None) => Err(missing(c"ps_invoke")),
             }
         };
-        let resolved = (|| {
-            let abi = sym(c"ps_abi_version")?;
-            let man = sym(c"ps_manifest")?;
-            let inv = sym(c"ps_invoke")?;
-            // SAFETY: the ps_* symbols have these C signatures by contract
-            // (ffi/zig/connector/ps_connector.zig).
-            unsafe {
-                Ok::<_, Error>((
-                    std::mem::transmute::<*mut c_void, AbiFn>(abi),
-                    std::mem::transmute::<*mut c_void, ManifestFn>(man),
-                    std::mem::transmute::<*mut c_void, InvokeFn>(inv),
-                ))
-            }
-        })();
         let (abi, man, invoke) = match resolved {
             Ok(t) => t,
             Err(e) => {
@@ -236,10 +248,22 @@ impl Library {
         };
         // SAFETY: calling the library's own exports.
         let version = unsafe { abi() };
-        // SAFETY: ps_manifest returns a static NUL-terminated string.
-        let manifest = unsafe { CStr::from_ptr(man()) }
-            .to_string_lossy()
-            .into_owned();
+        if version != CONNECTOR_ABI {
+            // SAFETY: handle came from dlopen and is closed once.
+            unsafe { dlclose(handle) };
+            return Err(Error::Open(format!(
+                "connector ABI {version}, this crate speaks {CONNECTOR_ABI}"
+            )));
+        }
+        // SAFETY: calling the library's own export.
+        let mp = unsafe { man() };
+        if mp.is_null() {
+            // SAFETY: handle came from dlopen and is closed once.
+            unsafe { dlclose(handle) };
+            return Err(Error::Manifest("ps_manifest returned NULL".into()));
+        }
+        // SAFETY: mp is non-null; ps_manifest returns a static NUL-terminated string.
+        let manifest = unsafe { CStr::from_ptr(mp) }.to_string_lossy().into_owned();
         let mut lib = Library {
             handle,
             invoke,
@@ -251,11 +275,6 @@ impl Library {
             status_name: HashMap::new(),
             _not_send: PhantomData,
         };
-        if version != CONNECTOR_ABI {
-            return Err(Error::Open(format!(
-                "connector ABI {version}, this crate speaks {CONNECTOR_ABI}"
-            )));
-        }
         lib.parse_manifest()?;
         Ok(lib)
     }

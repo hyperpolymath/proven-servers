@@ -15,7 +15,10 @@ fn lib() -> Option<Library> {
             return None;
         }
     };
-    Some(Library::open(&path).expect("open proven-amqp"))
+    // SAFETY: PS_AMQP_LIB names the proven-amqp build from this repo, whose
+    // initialisers and finalisers are trivial and whose ps_* exports are
+    // generated from the Idris2 connector table.
+    Some(unsafe { Library::open(&path) }.expect("open proven-amqp"))
 }
 
 #[test]

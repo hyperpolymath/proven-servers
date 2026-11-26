@@ -136,11 +136,20 @@ constant(lib::Library, kind::AbstractString, name::AbstractString) =
 
 signature(lib::Library, name::AbstractString) = get(lib.fns, String(name), nothing)
 
+"Byte buffers whose `pointer` addresses their own logical bytes."
+const DenseBytes = Union{Vector{UInt8},Base.CodeUnits{UInt8,String}}
+
+"Copy a byte view or other non-dense byte array into a fresh `Vector{UInt8}`."
+bytes_arg(a) = a isa AbstractString ? codeunits(String(a)) :
+               (a isa AbstractVector{UInt8} && !(a isa DenseBytes)) ? Vector{UInt8}(a) : a
+
 const INT_KINDS = Dict("I32" => Int32, "U8" => UInt8, "U16" => UInt16, "U32" => UInt32, "U64" => UInt64)
 
 function cell(lib::Library, kind::String, x)
     if kind == "BYTES"
         b = x isa AbstractString ? codeunits(String(x)) : x
+        b isa DenseBytes ||
+            throw(PSError("BYTES cell needs a String or a dense byte vector, got $(typeof(b))"))
         return Value(lib.kind_tag["BYTES"]; addr = UInt64(UInt(pointer(b))), len = UInt64(length(b)))
     end
     T = INT_KINDS[kind]
@@ -156,6 +165,7 @@ Call by tag without the manifest check. `roots` are kept alive for the call.
 Returns `(status_name, out::Value)`.
 """
 function invoke_raw(lib::Library, tag::Integer, cells::Vector{Value}, roots...)
+    lib.handle == C_NULL && throw(PSError("library is closed"))
     out = Ref(Value(0x00))
     st = GC.@preserve cells roots begin
         ccall(lib.invoke, UInt8, (UInt16, Ptr{Value}, UInt32, Ptr{Value}),
@@ -176,7 +186,7 @@ function call(lib::Library, name::AbstractString, args...)
     sig === nothing && throw(PSError("no function $name in manifest"))
     length(args) == length(sig.args) ||
         throw(PSError("$name takes $(length(sig.args)) arguments, got $(length(args))"))
-    bufs = Any[a isa AbstractString ? codeunits(String(a)) : a for a in args]
+    bufs = Any[bytes_arg(a) for a in args]
     cells = Value[cell(lib, k, b) for ((_, k), b) in zip(sig.args, bufs)]
     st, out = invoke_raw(lib, sig.tag, cells, bufs)
     st == "OK" || throw(PSError("ps_invoke status $st", st))

@@ -21,6 +21,9 @@ else
         @test call(lib, "state", slot) == UInt8(constant(lib, "BROKER", "CHANNEL_OPEN"))
         topic = constant(lib, "EXCH", "TOPIC")
         @test call(lib, "routing_match", "stock.usd.nyse", "stock.*.nyse", topic) == 0x01
+        # A strided view passes its logical bytes, not its parent's.
+        key = Vector{UInt8}("sxtxoxcxkx.xuxsxdx.xnxyxsxex")
+        @test call(lib, "routing_match", view(key, 1:2:length(key)), "stock.*.nyse", topic) == 0x01
         @test call(lib, "destroy", slot) === nothing
         @test [n for (n, _) in signature(lib, "create").args] == ["vhost", "frame_max", "channel_max", "heartbeat"]
     end
@@ -38,4 +41,9 @@ else
         @test invoke_raw(lib, signature(lib, "routing_match").tag, [nul, nul, cell(lib, "U8", 2)])[1] == "NULL_PTR"
     end
     close_library(lib)
+    @testset "closed" begin
+        @test_throws PSError call(lib, "abi_version")
+        close_library(lib)  # repeated cleanup is a no-op
+        @test lib.handle == C_NULL
+    end
 end

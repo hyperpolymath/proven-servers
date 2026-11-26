@@ -30,7 +30,7 @@ const std = @import("std");
 pub const Value = extern struct {
     kind: u8,
     _pad: [7]u8 = [_]u8{0} ** 7,
-    word: u64 = 0,
+    word: u64 align(8) = 0,
     addr: u64 = 0,
     len: u64 = 0,
 };
