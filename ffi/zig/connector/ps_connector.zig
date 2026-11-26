@@ -119,9 +119,16 @@ pub fn Dispatcher(comptime impl: type, comptime prefix: []const u8, comptime gen
         fn decodeInt(comptime P: type, comptime kname: []const u8, v: Value) ?P {
             if (v.kind != kindTag(kname)) return null;
             if (P == c_int or P == i32) {
-                const s: i64 = @bitCast(v.word);
-                if (s < std.math.minInt(i32) or s > std.math.maxInt(i32)) return null;
-                return @intCast(s);
+                // I32 travels sign-extended in the u64 word. Decode it with
+                // plain integer arithmetic: words up to maxInt(i32) are the
+                // non-negatives, words from 0xFFFF_FFFF_8000_0000 up are the
+                // two's-complement negatives, and anything between is RANGE.
+                const max: u64 = std.math.maxInt(i32);
+                const neg_floor: u64 = 0xFFFF_FFFF_8000_0000;
+                if (v.word <= max) return @intCast(v.word);
+                if (v.word < neg_floor) return null;
+                const mag: i64 = @intCast(~v.word); // 0 ..= maxInt(i32)
+                return @intCast(-mag - 1);
             }
             if (v.word > std.math.maxInt(P)) return null;
             return @intCast(v.word);
@@ -162,7 +169,9 @@ pub fn Dispatcher(comptime impl: type, comptime prefix: []const u8, comptime gen
             const r = @call(.auto, func, tuple);
             out.* = .{ .kind = kindTag(comptime kindOf(R)) };
             if (R == c_int or R == i32) {
-                out.word = @bitCast(@as(i64, r));
+                // Sign-extend to u64 with plain integer arithmetic.
+                const wide: i64 = r;
+                out.word = if (wide >= 0) @intCast(wide) else ~@as(u64, @intCast(-(wide + 1)));
             } else if (R != void) {
                 out.word = r;
             }
