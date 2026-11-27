@@ -11,10 +11,18 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     // -- Shared library -------------------------------------------------------
+    // Shared uniform-connector dispatcher (repository-level ffi/zig/connector).
+    const ps_connector = b.createModule(.{
+        .root_source_file = b.path("../../../../ffi/zig/connector/ps_connector.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
     const lib_module = b.createModule(.{
         .root_source_file = b.path("src/amqp.zig"),
         .target = target,
         .optimize = optimize,
+        .imports = &.{.{ .name = "ps_connector", .module = ps_connector }},
     });
     const shared_lib = b.addLibrary(.{
         .name = "proven_amqp",
@@ -28,6 +36,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/amqp.zig"),
         .target = target,
         .optimize = optimize,
+        .imports = &.{.{ .name = "ps_connector", .module = ps_connector }},
     });
     const static_lib = b.addLibrary(.{
         .name = "proven_amqp",
@@ -41,6 +50,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/amqp.zig"),
         .target = target,
         .optimize = optimize,
+        .imports = &.{.{ .name = "ps_connector", .module = ps_connector }},
     });
     const test_module = b.createModule(.{
         .root_source_file = b.path("test/amqp_test.zig"),

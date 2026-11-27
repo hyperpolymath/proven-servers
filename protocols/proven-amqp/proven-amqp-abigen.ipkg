@@ -18,4 +18,5 @@ modules = AMQP.Types
         , AMQP.Session
         , AMQPABI.Layout
         , AMQPABI.Foreign
+        , AMQPABI.Connector
         , AMQPABI.Emit

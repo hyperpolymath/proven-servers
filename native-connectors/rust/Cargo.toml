@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MPL-2.0
+# Copyright (c) 2026 Jonathan D.A. Jewell (hyperpolymath) <j.d.a.jewell@open.ac.uk>
+[package]
+name = "proven-connector"
+version = "0.1.0"
+edition = "2021"
+license = "MPL-2.0"
+description = "Native Rust connector for the uniform proven-servers ps_* surface"
+publish = false
+
+[dependencies]

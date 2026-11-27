@@ -130,6 +130,10 @@ security-test:
 binding-inventory:
     bash tests/binding_inventory.sh
 
+# Native-connector pilot: C, Rust and Julia through ps_invoke (proven-amqp).
+native-connector-smoke:
+    bash tests/native_connector_smoke.sh
+
 e2e:
     bash tests/e2e.sh
 

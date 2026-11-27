@@ -1042,3 +1042,33 @@ comptime {
     if (@sizeOf(@TypeOf(sessions)) > 16 * 1024 * 1024)
         @compileError("pool 'sessions' exceeds the 16 MiB budget; heap-allocate or shrink (see audits/proof-panic-attack-2026-06-23.md)");
 }
+
+// =========================================================================
+// Uniform native-connector surface (pilot)
+// =========================================================================
+//
+// Three symbols any language can bind: the connector ABI version, the
+// Idris2-emitted manifest (function table and tags), and one dispatcher that
+// calls the amqp_* exports above by tag. The dispatcher checks, at comptime,
+// that every Idris2 signature in amqp_abi_gen.zig matches the real export.
+// See ffi/zig/connector/ps_connector.zig at the repository root.
+
+const ps = @import("ps_connector");
+const Dispatch = ps.Dispatcher(@This(), "amqp_", gen);
+
+/// Uniform connector ABI version (from AMQPABI.Connector.connectorAbiVersion).
+pub export fn ps_abi_version() callconv(.c) u32 {
+    return gen.CONNECTOR_ABI;
+}
+
+/// The Idris2-emitted manifest, NUL-terminated, with static lifetime.
+pub export fn ps_manifest() callconv(.c) [*:0]const u8 {
+    return gen.MANIFEST.ptr;
+}
+
+/// Call the function with tag `fn_tag` on `n` argument cells. The return
+/// value is a ps_invoke status (STATUS_* in amqp_abi_gen.zig); on STATUS_OK
+/// the function's result is in `out`.
+pub export fn ps_invoke(fn_tag: u16, args: ?[*]const ps.Value, n: u32, out: ?*ps.Value) callconv(.c) u8 {
+    return Dispatch.invoke(fn_tag, args, n, out);
+}

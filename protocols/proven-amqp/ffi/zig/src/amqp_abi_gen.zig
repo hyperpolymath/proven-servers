@@ -40,3 +40,135 @@ pub const BROKER_CHANNEL_OPEN: u8 = 2;
 pub const BROKER_CONSUMING: u8 = 3;
 pub const BROKER_PUBLISHING: u8 = 4;
 pub const BROKER_DISCONNECTING: u8 = 5;
+pub const CONNECTOR_ABI: u8 = 1;
+pub const PS_VALUE_SIZE: usize = 32;
+pub const PS_VALUE_ALIGN: usize = 8;
+pub const PS_VALUE_OFF_KIND: usize = 0;
+pub const PS_VALUE_OFF_WORD: usize = 8;
+pub const PS_VALUE_OFF_ADDR: usize = 16;
+pub const PS_VALUE_OFF_LEN: usize = 24;
+pub const KIND_VOID: u8 = 0;
+pub const KIND_I32: u8 = 1;
+pub const KIND_U8: u8 = 2;
+pub const KIND_U16: u8 = 3;
+pub const KIND_U32: u8 = 4;
+pub const KIND_U64: u8 = 5;
+pub const KIND_BYTES: u8 = 6;
+pub const STATUS_OK: u8 = 0;
+pub const STATUS_UNKNOWN_FN: u8 = 1;
+pub const STATUS_ARITY: u8 = 2;
+pub const STATUS_KIND_MISMATCH: u8 = 3;
+pub const STATUS_RANGE: u8 = 4;
+pub const STATUS_NULL_PTR: u8 = 5;
+
+pub const FnSig = struct { tag: u16, name: []const u8, ret: []const u8, kinds: []const u8 };
+
+pub const FNS = [_]FnSig{
+    .{ .tag = 1, .name = "abi_version", .ret = "U32", .kinds = "" },
+    .{ .tag = 2, .name = "create", .ret = "I32", .kinds = "BYTES U32 U16 U16" },
+    .{ .tag = 3, .name = "destroy", .ret = "VOID", .kinds = "I32" },
+    .{ .tag = 4, .name = "state", .ret = "U8", .kinds = "I32" },
+    .{ .tag = 5, .name = "can_publish", .ret = "U8", .kinds = "I32" },
+    .{ .tag = 6, .name = "can_consume", .ret = "U8", .kinds = "I32" },
+    .{ .tag = 7, .name = "channel_open", .ret = "U8", .kinds = "I32 U16" },
+    .{ .tag = 8, .name = "channel_close", .ret = "U8", .kinds = "I32 U16" },
+    .{ .tag = 9, .name = "channel_count", .ret = "U16", .kinds = "I32" },
+    .{ .tag = 10, .name = "exchange_declare", .ret = "U8", .kinds = "I32 U16 BYTES U8 U8 U8 U8" },
+    .{ .tag = 11, .name = "queue_declare", .ret = "U8", .kinds = "I32 U16 BYTES U8 U8 U8" },
+    .{ .tag = 12, .name = "queue_bind", .ret = "U8", .kinds = "I32 U16 BYTES BYTES BYTES" },
+    .{ .tag = 13, .name = "basic_publish", .ret = "U8", .kinds = "I32 U16 BYTES BYTES BYTES U8 U8 U8" },
+    .{ .tag = 14, .name = "basic_consume", .ret = "U8", .kinds = "I32 U16 BYTES BYTES U8 U8" },
+    .{ .tag = 15, .name = "basic_cancel", .ret = "U8", .kinds = "I32 U16 BYTES" },
+    .{ .tag = 16, .name = "basic_ack", .ret = "U8", .kinds = "I32 U16 U64 U8" },
+    .{ .tag = 17, .name = "basic_nack", .ret = "U8", .kinds = "I32 U16 U64 U8 U8" },
+    .{ .tag = 18, .name = "basic_reject", .ret = "U8", .kinds = "I32 U16 U64 U8" },
+    .{ .tag = 19, .name = "basic_qos", .ret = "U8", .kinds = "I32 U16 U16 U32 U8" },
+    .{ .tag = 20, .name = "consumer_count", .ret = "U32", .kinds = "I32" },
+    .{ .tag = 21, .name = "disconnect", .ret = "U8", .kinds = "I32" },
+    .{ .tag = 22, .name = "cleanup", .ret = "U8", .kinds = "I32" },
+    .{ .tag = 23, .name = "can_transition", .ret = "U8", .kinds = "U8 U8" },
+    .{ .tag = 24, .name = "routing_match", .ret = "U8", .kinds = "BYTES BYTES U8" },
+};
+
+/// The full Idris-emitted manifest, served verbatim by ps_manifest().
+pub const MANIFEST: [:0]const u8 =
+    \\ABI_VERSION 1
+    \\FRAME METHOD 0
+    \\FRAME HEADER 1
+    \\FRAME BODY 2
+    \\FRAME HEARTBEAT 3
+    \\CLASS CONNECTION 0
+    \\CLASS CHANNEL 1
+    \\CLASS EXCHANGE 2
+    \\CLASS QUEUE 3
+    \\CLASS BASIC 4
+    \\CLASS TX 5
+    \\CLASS CONFIRM 6
+    \\EXCH DIRECT 0
+    \\EXCH FANOUT 1
+    \\EXCH TOPIC 2
+    \\EXCH HEADERS 3
+    \\DMODE NON_PERSISTENT 0
+    \\DMODE PERSISTENT 1
+    \\SEV CHANNEL_LEVEL 0
+    \\SEV CONNECTION_LEVEL 1
+    \\CONN IDLE 0
+    \\CONN NEGOTIATING 1
+    \\CONN TUNING_OK 2
+    \\CONN OPEN 3
+    \\CONN CLOSING 4
+    \\CHAN CLOSED 0
+    \\CHAN OPENING 1
+    \\CHAN CH_OPEN 2
+    \\CHAN CH_CLOSING 3
+    \\BROKER IDLE 0
+    \\BROKER CONNECTED 1
+    \\BROKER CHANNEL_OPEN 2
+    \\BROKER CONSUMING 3
+    \\BROKER PUBLISHING 4
+    \\BROKER DISCONNECTING 5
+    \\CONNECTOR ABI 1
+    \\LAYOUT PS_VALUE_SIZE 32
+    \\LAYOUT PS_VALUE_ALIGN 8
+    \\LAYOUT PS_VALUE_OFF_KIND 0
+    \\LAYOUT PS_VALUE_OFF_WORD 8
+    \\LAYOUT PS_VALUE_OFF_ADDR 16
+    \\LAYOUT PS_VALUE_OFF_LEN 24
+    \\KIND VOID 0
+    \\KIND I32 1
+    \\KIND U8 2
+    \\KIND U16 3
+    \\KIND U32 4
+    \\KIND U64 5
+    \\KIND BYTES 6
+    \\STATUS OK 0
+    \\STATUS UNKNOWN_FN 1
+    \\STATUS ARITY 2
+    \\STATUS KIND_MISMATCH 3
+    \\STATUS RANGE 4
+    \\STATUS NULL_PTR 5
+    \\FN 1 abi_version U32
+    \\FN 2 create I32 vhost:BYTES frame_max:U32 channel_max:U16 heartbeat:U16
+    \\FN 3 destroy VOID slot:I32
+    \\FN 4 state U8 slot:I32
+    \\FN 5 can_publish U8 slot:I32
+    \\FN 6 can_consume U8 slot:I32
+    \\FN 7 channel_open U8 slot:I32 channel:U16
+    \\FN 8 channel_close U8 slot:I32 channel:U16
+    \\FN 9 channel_count U16 slot:I32
+    \\FN 10 exchange_declare U8 slot:I32 channel:U16 name:BYTES exch_type:U8 durable:U8 auto_delete:U8 internal:U8
+    \\FN 11 queue_declare U8 slot:I32 channel:U16 name:BYTES durable:U8 exclusive:U8 auto_delete:U8
+    \\FN 12 queue_bind U8 slot:I32 channel:U16 queue:BYTES exchange:BYTES routing_key:BYTES
+    \\FN 13 basic_publish U8 slot:I32 channel:U16 exchange:BYTES routing_key:BYTES body:BYTES delivery_mode:U8 priority:U8 mandatory:U8
+    \\FN 14 basic_consume U8 slot:I32 channel:U16 queue:BYTES consumer_tag:BYTES no_ack:U8 exclusive:U8
+    \\FN 15 basic_cancel U8 slot:I32 channel:U16 consumer_tag:BYTES
+    \\FN 16 basic_ack U8 slot:I32 channel:U16 delivery_tag:U64 multiple:U8
+    \\FN 17 basic_nack U8 slot:I32 channel:U16 delivery_tag:U64 multiple:U8 requeue:U8
+    \\FN 18 basic_reject U8 slot:I32 channel:U16 delivery_tag:U64 requeue:U8
+    \\FN 19 basic_qos U8 slot:I32 channel:U16 prefetch_count:U16 prefetch_size:U32 global:U8
+    \\FN 20 consumer_count U32 slot:I32
+    \\FN 21 disconnect U8 slot:I32
+    \\FN 22 cleanup U8 slot:I32
+    \\FN 23 can_transition U8 from:U8 to:U8
+    \\FN 24 routing_match U8 routing_key:BYTES pattern:BYTES exch_type:U8
+;

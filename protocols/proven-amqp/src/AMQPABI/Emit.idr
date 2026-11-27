@@ -4,6 +4,8 @@
 -- AMQPABI.Emit: ABI tag-manifest emitter (single source of truth).
 -- Prints `KIND NAME DECIMAL` lines from the proven *ToTag encoders;
 -- tools/gen-abi.sh renders them into amqp_abi_gen.zig for the comptime guard.
+-- It then prints AMQPABI.Connector.connectorLines (CONNECTOR, KIND and FN
+-- lines), the signature table the uniform ps_invoke dispatcher is checked against.
 
 module AMQPABI.Emit
 
@@ -11,6 +13,7 @@ import AMQP.Types
 import AMQP.Session
 import AMQPABI.Layout
 import AMQPABI.Foreign
+import AMQPABI.Connector
 
 %default total
 
@@ -58,4 +61,4 @@ manifest =
 
 covering
 main : IO ()
-main = traverse_ putStrLn manifest
+main = traverse_ putStrLn (manifest ++ connectorLines)
