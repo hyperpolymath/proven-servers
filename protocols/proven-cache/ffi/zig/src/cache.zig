@@ -118,6 +118,13 @@ comptime {
     if (@intFromEnum(ErrorCode.value_too_large) != gen.ERR_VALUE_TOO_LARGE) @compileError("ABI drift: ErrorCode.value_too_large");
     if (@intFromEnum(ErrorCode.cas_conflict) != gen.ERR_CAS_CONFLICT) @compileError("ABI drift: ErrorCode.cas_conflict");
 
+    if (@intFromEnum(ErrorCode.not_found) + 1 != gen.STATUS_NOT_FOUND) @compileError("ABI drift: cache_execute not_found status");
+    if (@intFromEnum(ErrorCode.type_mismatch) + 1 != gen.STATUS_TYPE_MISMATCH) @compileError("ABI drift: cache_execute type_mismatch status");
+    if (@intFromEnum(ErrorCode.out_of_memory) + 1 != gen.STATUS_OUT_OF_MEMORY) @compileError("ABI drift: cache_execute out_of_memory status");
+    if (@intFromEnum(ErrorCode.key_too_long) + 1 != gen.STATUS_KEY_TOO_LONG) @compileError("ABI drift: cache_execute key_too_long status");
+    if (@intFromEnum(ErrorCode.value_too_large) + 1 != gen.STATUS_VALUE_TOO_LARGE) @compileError("ABI drift: cache_execute value_too_large status");
+    if (@intFromEnum(ErrorCode.cas_conflict) + 1 != gen.STATUS_CAS_CONFLICT) @compileError("ABI drift: cache_execute cas_conflict status");
+
     if (@intFromEnum(ReplicationMode.none) != gen.REPL_NONE) @compileError("ABI drift: ReplicationMode.none");
     if (@intFromEnum(ReplicationMode.primary) != gen.REPL_PRIMARY) @compileError("ABI drift: ReplicationMode.primary");
     if (@intFromEnum(ReplicationMode.replica) != gen.REPL_REPLICA) @compileError("ABI drift: ReplicationMode.replica");
@@ -223,8 +230,8 @@ pub export fn cache_execute(slot: c_int, cmd: u8) callconv(.c) u8 {
     mutex.lock();
     defer mutex.unlock();
 
-    const idx = validSlot(slot) orelse return 1; // not_found + 1 as generic error
-    if (cmd > 12) return 1;
+    const idx = validSlot(slot) orelse return gen.STATUS_NOT_FOUND; // generic error
+    if (cmd > 12) return gen.STATUS_NOT_FOUND;
 
     const command: Command = @enumFromInt(cmd);
 
@@ -241,13 +248,13 @@ pub export fn cache_execute(slot: c_int, cmd: u8) callconv(.c) u8 {
                 sessions[idx].key_count >= sessions[idx].max_keys and
                 sessions[idx].max_keys > 0)
             {
-                return @intFromEnum(ErrorCode.out_of_memory) + 1;
+                return gen.STATUS_OUT_OF_MEMORY;
             }
             sessions[idx].key_count += 1;
         },
         .delete => {
             if (sessions[idx].key_count == 0) {
-                return @intFromEnum(ErrorCode.not_found) + 1;
+                return gen.STATUS_NOT_FOUND;
             }
             sessions[idx].key_count -= 1;
         },
@@ -268,17 +275,17 @@ pub export fn cache_execute(slot: c_int, cmd: u8) callconv(.c) u8 {
         },
         .incr, .decr => {
             if (sessions[idx].key_count == 0) {
-                return @intFromEnum(ErrorCode.not_found) + 1;
+                return gen.STATUS_NOT_FOUND;
             }
         },
         .append, .prepend => {
             if (sessions[idx].key_count == 0) {
-                return @intFromEnum(ErrorCode.not_found) + 1;
+                return gen.STATUS_NOT_FOUND;
             }
         },
         .cas => {
             if (sessions[idx].key_count == 0) {
-                return @intFromEnum(ErrorCode.not_found) + 1;
+                return gen.STATUS_NOT_FOUND;
             }
         },
     }
