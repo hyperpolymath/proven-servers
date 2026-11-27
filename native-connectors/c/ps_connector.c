@@ -22,7 +22,8 @@ static void set_err(char *err, size_t errlen, const char *msg, const char *detai
 /* Find a line whose first two fields are a and b; return a pointer just past
  * them (at the separating space), or NULL. */
 static const char *find_line(const char *text, const char *a, const char *b) {
-  size_t la = strlen(a), lb = strlen(b);
+  size_t la = strlen(a);
+  size_t lb = strlen(b);
   const char *p = text;
   while (p && *p) {
     if (strncmp(p, a, la) == 0 && p[la] == ' ' && strncmp(p + la + 1, b, lb) == 0 &&

@@ -52,7 +52,8 @@ int main(int argc, char **argv) {
 
   uint64_t topic = 0;
   ps_const(&lib, "EXCH", "TOPIC", &topic);
-  const char *key = "stock.usd.nyse", *pat = "stock.*.nyse";
+  const char *key = "stock.usd.nyse";
+  const char *pat = "stock.*.nyse";
   ps_value rm_args[3] = {
     ps_bytes(&lib, key, strlen(key)), ps_bytes(&lib, pat, strlen(pat)), ps_int(&lib, PS_U8, (int64_t)topic),
   };

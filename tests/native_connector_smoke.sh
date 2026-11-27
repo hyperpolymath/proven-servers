@@ -21,7 +21,7 @@ AMQP="protocols/proven-amqp/ffi/zig"
 # That is a pre-existing issue in amqp.zig, reported separately.
 (cd "$AMQP" && zig build -Doptimize=ReleaseSafe)
 LIB="$ROOT/$AMQP/zig-out/lib/libproven_amqp.so"
-[ -f "$LIB" ] || { echo "ERROR: $LIB was not built" >&2; exit 1; }
+[[ -f "$LIB" ]] || { echo "ERROR: $LIB was not built" >&2; exit 1; }
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
